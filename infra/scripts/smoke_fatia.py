@@ -32,11 +32,15 @@ def s1(base_url: str, customer_id: str) -> int:
     for campo, valor in ESPERADO_S1.items():
         passou = cartao.get(campo) == valor
         ok += passou
-        print(f"{'✓' if passou else '✗'} card.{campo} = {cartao.get(campo)} (esperado {valor})")
+        print(
+            f"{'✓' if passou else '✗'} card.{campo} = {cartao.get(campo)} (esperado {valor})"
+        )
     meses = len(perfil.get("invoice_history") or [])
     passou = meses == 12 and perfil.get("reference_month") == 202512
     ok += passou
-    print(f"{'✓' if passou else '✗'} 12 meses de histórico, referência 202512 (meses={meses})")
+    print(
+        f"{'✓' if passou else '✗'} 12 meses de histórico, referência 202512 (meses={meses})"
+    )
     print(f"\n{ok}/5 verificacoes passaram — sem nenhuma chamada ao modelo")
     return 0 if ok == 5 else 1
 
