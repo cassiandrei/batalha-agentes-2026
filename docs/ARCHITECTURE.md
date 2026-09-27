@@ -1,252 +1,204 @@
-# Arquitetura
+# Documento explicativo da arquitetura: Vita
 
-> Documento vivo. A parte genérica está preenchida; o que depende da jornada
-> está marcado com `TODO(jornada)` e deve ser completado no evento.
+> Estado em 27/09/2026, 03h. Descreve o que está publicado no projeto do evento
+> (`batalha-time-06-1t82`, `us-central1`), não o desenho ideal. Onde o ambiente do evento
+> impôs um contorno, o texto diz qual e por quê. Este arquivo é a fonte do entregável 5;
+> os diagramas estão em `docs/diagrams/` e no PRD (`docs/produto/PRD.md`).
 
 ---
 
 ## 1. Visão geral
 
-Agente conversacional de bem-estar financeiro construído sobre o **Google Agent
-Development Kit (ADK) 2.8**, implantado no **Cloud Run**, com modelos **Gemini** servidos
-pelo Vertex AI.
+O Vita é um assistente de bem-estar financeiro com IA que age antes de o cliente pedir
+ajuda. Ele detecta o **dreno de juros do rotativo do cartão** no extrato, mostra em reais
+quanto isso custou e oferece só os tratamentos que cabem no orçamento. A persona de demo é
+o Bruno, cliente real da base do evento (`36d74064`): três faturas seguidas sem pagamento
+integral, R$ 101,51 de juros em dezembro, R$ 725,07 no rotativo.
 
-O desenho separa três responsabilidades que costumam se misturar em protótipos de agente:
+Três princípios sustentam a arquitetura, e há teste para cada um:
 
-- **Raciocínio** fica no LLM (orquestração, linguagem, explicação).
-- **Fatos e cálculo** ficam em tools determinísticas. O modelo nunca produz número.
-- **Política** (segurança, LGPD, autorização) fica numa camada transversal que o modelo
-  não pode contornar.
+- **Nenhum número vem do modelo.** Toda cifra sai de uma tool determinística. O redator
+  da abertura só recebe um payload já calculado, e sua resposta só chega ao cliente se
+  passar num schema; se não passar, entra um texto calculado.
+- **Os guardrails cobrem todos os agentes por construção**, como plugin do `App`, não por
+  disciplina de quem cria um agente novo.
+- **O modelo recebe o mínimo.** O identificador do cliente vive no estado da sessão e
+  nunca é parâmetro de tool nem entra no prompt; as tools projetam só os campos
+  necessários.
 
-`TODO(jornada)`: descrever a jornada escolhida, o público e o momento de atuação.
-
----
+Dois serviços no Cloud Run: o **agente** (`batalha-agentes`, FastAPI + ADK 2.8) e o
+**front** (`vita-app`, React servido por Express). O front não tem chave de modelo: tudo
+que ele mostra ou responde passa pelo agente.
 
 ## 2. Componentes
 
-| Componente | Responsabilidade | Onde |
+| Componente | Tecnologia | Papel | Estado |
+|---|---|---|---|
+| API e runtime do agente | Cloud Run `batalha-agentes`, FastAPI, ADK 2.8, Gemini pelo Vertex AI | Recebe conversa e eventos, executa os agentes | Publicado, revisão `fatia-s2` |
+| Front | Cloud Run `vita-app`, Vite/React + Express | Telas do cliente; proxy para o agente (`/api/abertura`, `/api/financial-profile`, `/api/chat`) | Publicado |
+| Orquestrador | `LlmAgent` raiz | Conduz a conversa e roteia para `analyst` e `educator` | Implementado; prompt ainda genérico (S3) |
+| Analista | `LlmAgent` com as tools de dados e cálculo | Situação financeira concreta, só via tools | Implementado, com as tools do Vita |
+| Educador | `LlmAgent` + busca local em `data/knowledge` | Conceitos financeiros com fonte | Implementado; RAG Engine é caminho de produção |
+| Pipeline de abertura | `SequentialAgent`: `DiagnosticoAgent` (sem LLM) → `redator` (`LlmAgent` com `output_schema`) | Gatilho → payload no estado → mensagem de abertura com ações do catálogo | Implementado (S2) |
+| Tools | Python tipado: `get_fatura_rotativo`, `get_perfil_risco`, `get_diagnostico`, transações, conta, cartão, três calculadoras, memória, `propose_action` | Dados, cálculo, memória e ação | Implementadas |
+| Dados do cliente | Snapshot da `extrato_sintetico` (1.000 clientes, 467 mil linhas) e das tabelas do time em `vita_sintetico`, embarcado na imagem | Fonte de toda tool de dados | Implementado; BigQuery ao vivo é opção com a `squad-agent-sa` |
+| Prompts | Arquivos em `app/prompts/v1/` (`orchestrator`, `analyst`, `educator`, `redator`), selecionados por `PROMPT_VERSION` | Experimento sem mudar código | Implementado |
+| Guardrails | `SecurityPlugin` (PII, injection direta e indireta, autorização de tools, checagem de saída) | Cobre orquestrador, subagentes e redator | Implementado; Model Armor **indisponível** no projeto do evento |
+| Auditoria | `AuditPlugin` → Cloud Logging, JSON sem conteúdo | Rastreabilidade sem PII | Implementado |
+| Eventos proativos | `POST /events`; tipo `dreno_rotativo` dispara o pipeline de abertura | Agente age no momento certo | Implementado; Pub/Sub é caminho de produção |
+| Sessão | ADK em memória + semente (`seed_sessions.json`) carregada no boot | Abertura pré-montada sobrevive a reinício | Implementado; Agent Engine Sessions é o próximo passo (engine já criado) |
+| Memória de longo prazo | SQLite com consentimento, TTL e exclusão, exposta como tools | Preferências do cliente | Implementado; Memory Bank é caminho de produção |
+| Identidade de execução | `squad-agent-sa` (Vertex, BigQuery, Secret Manager) | Sem chave de modelo em lugar nenhum | Em uso nas revisões `fatia-s2` e `vita-app` |
+
+## 3. Fluxo da abertura proativa (o momento de atuação)
+
+1. Uma rotina sobre a `vw_fatura_mensal` seleciona quem completou três faturas seguidas
+   sem pagamento integral terminando no mês de referência (245 dos 1.000 clientes). Para
+   cada um, `POST /events` recebe `dreno_rotativo` com o identificador do cliente, que vai
+   para o **estado** da sessão `abertura-<cliente>`.
+2. `DiagnosticoAgent` lê as tools (fatura reconstruída, perfil de risco, bioimpedância) e
+   grava o payload no estado. Sem LLM.
+3. `redator` recebe só esse payload pela instrução, sem histórico e sem tools, e devolve
+   JSON no schema `{texto, acoes}`. O ADK valida o `output_schema`; o agente valida de novo
+   as ações contra o catálogo e a validade das simulações.
+4. Se qualquer validação falhar, ou o modelo estiver indisponível, a abertura vira um texto
+   calculado a partir do payload, com as três ações padrão. O cliente nunca vê erro nem
+   texto fora do contrato.
+5. A abertura fica no estado e no histórico da sessão. O push é uma constante neutra:
+   "O Vita tem uma análise nova para você".
+6. `GET /customers/{id}/opening` entrega a abertura ao front sem chamar o modelo. Uma
+   semente gerada uma vez (`make seed-abertura`) recria a sessão a cada boot.
+
+## 4. Fluxo de uma conversa
+
+1. O front envia a mensagem para `POST /run` do agente na sessão pré-montada. Na demo, a
+   identidade vem de `DEMO_CUSTOMER_ID`; em produção, do canal autenticado.
+2. `SecurityPlugin.before_model` detecta injection na mensagem nova e mascara PII em todo
+   o histórico.
+3. O orquestrador roteia; o analista chama tools, que leem a identidade do estado e
+   devolvem campos projetados. Texto de terceiros vindo dos dados passa pela detecção de
+   injection indireta em `after_tool`.
+4. Ação financeira exige confirmação explícita (`require_confirmation`).
+5. `after_model` verifica PII, suitability e transparência; `AuditPlugin` registra
+   metadados. O front extrai o texto dos eventos e mostra.
+
+## 5. Decisões técnicas e alternativas descartadas
+
+| Decisão | Por quê | Alternativa descartada |
 |---|---|---|
-| `orchestrator` | Entende a intenção e roteia. Responde saudações e conversa geral | `app/agent.py` |
-| `analyst` | Situação financeira concreta, **apenas** via tools | `app/agent.py` |
-| `educator` | Conceitos financeiros, com base no conhecimento recuperado | `app/agent.py` |
-| `SecurityPlugin` | Guardrails de entrada, de tool e de saída | `app/plugins/` |
-| `AuditPlugin` | Log estruturado sem PII | `app/plugins/` |
-| `DataSource` | Contrato de acesso a dados | `app/datasources/` |
-| `MemoryStore` | Memória de longo prazo com consentimento e TTL | `app/memory/` |
-| Tools | Dados, cálculo, conhecimento, memória, ação | `app/tools/` |
-| Prompts | Versionados em arquivo, selecionados por `PROMPT_VERSION` | `app/prompts/` |
-| `POST /events` | Agente proativo: evento externo dispara mensagem | `app/events.py`, `app/fast_api_app.py` |
+| D1. Guardrails como plugin do `App`, com lógica em funções puras | Cobrem qualquer agente presente ou futuro, inclusive o redator criado hoje; funções puras testam sem subir agente | Callback por agente |
+| D2. Identidade nunca é parâmetro de tool | Se fosse, o modelo a preencheria a partir do texto: "me mostre o extrato do cliente 42". `before_tool` rejeita identificadores nos argumentos, inclusive aninhados | Validar depois, com o id já no prompt |
+| D3. Três calculadoras separadas | O modelo escolhe tool pela docstring; uma função com modos roteia pior | Uma calculadora com parâmetro `mode` |
+| D4. Fonte de dados atrás de `Protocol` + fábrica | `local`, `evento` (snapshot) e `bigquery` trocam por variável; as tools não mudam | Stub que finge funcionar |
+| D5. Região do serviço separada da do modelo | No evento coincidem (`us-central1`), mas a separação permite declarar onde o dado transita | Derivar uma da outra |
+| D6. Memória exposta como tools | Consentimento, TTL e exclusão são regras de negócio demonstráveis na conversa | Só o memory service do runner |
+| D7. Identidade só em demo; consentimento nunca pré-preenchido | A demo mostra recusa antes e gravação depois | Pré-preencher |
+| D8. Minimização na camada de tools (`projections.py`) | O maior caminho de PII até o modelo é o resultado da tool | Mascarar só a entrada |
+| D9. Injection detectada também nos dados | Descrição de Pix é texto de terceiro que entra pela tool | Proteger só a mensagem |
+| **D10. Diagnóstico sem LLM, redator com schema** | O que decide (elegibilidade, números) é código; o modelo só redige, a partir de um payload fechado, e dentro de um contrato validado duas vezes | Um agente com tools escrevendo a abertura livremente |
+| **D11. Fallback calculado, nunca erro nem texto solto** | Cota, rede ou modelo fora do contrato não podem virar tela em branco na demo nem texto inventado para o cliente | Regenerar até passar ou mostrar o erro |
+| **D12. Abertura pré-montada e semeada** | A primeira mensagem aparece sem chamada ao modelo e sobrevive a reinício da instância; a demo não depende de cota | Gerar a abertura ao abrir o chat |
+| **D13. Front sem chave de modelo** | O protótipo chamava o Gemini direto, com números no prompt e sem guardrail: dois cérebros. Agora todo texto e número passam pelo agente | Manter o chat do protótipo e sincronizar prompts |
+| **D14. Snapshot embarcado em vez de BigQuery ao vivo** | Determinístico, sem custo por turno e sem dependência de rede na demo; a fábrica liga o BigQuery com uma variável | Consultar o BigQuery a cada tool |
 
-`TODO(jornada)`: renomear `analyst` e `educator` para os papéis da jornada.
+## 6. Contexto e memória
 
----
+**Curto prazo.** Estado da sessão do ADK: `customer_id`, `trigger`, `abertura_payload`,
+`abertura`, `suitability`, contador de guardrails. Compactação de eventos
+(`compaction_interval=10`, `overlap_size=3`). No projeto do evento a sessão vive na
+instância (uma só), recriada da semente no boot; o Agent Engine `6089108039007207424`
+já existe e a `squad-agent-sa` tem permissão nele, então trocar para sessão gerenciada é
+`MEMORY_BACKEND=agent_engine` no deploy.
 
-## 3. Fluxo de uma mensagem
+**Longo prazo.** `MemoryStore` com `created_at`, `expires_at`, `consent_given_at`. Sem
+consentimento não grava; TTL aplicado na leitura; "esqueça tudo" apaga e revoga.
 
-```
-CANAL
-  │
-  ├─ before_agent ─────► semeia customer_id no estado (só em modo demo;
-  │                       em produção vem do canal autenticado)
-  ▼
-SecurityPlugin.before_model
-  ├─ detecta injection na mensagem NOVA ──► bloqueia, soma strike, audita
-  └─ mascara PII em todo o histórico
-  ▼
-ORCHESTRATOR (Gemini)
-  │
-  ├──► ANALYST
-  │      ├─ before_tool ──► rejeita identificador nos argumentos
-  │      ├─ tool ────────► DataSource ──► projeção mínima
-  │      └─ after_tool ──► neutraliza injection vinda dos dados
-  │
-  ├──► EDUCATOR ──► search_knowledge
-  │
-  └──► tools de memória ──► MemoryStore
-  ▼
-SecurityPlugin.after_model ──► PII, suitability, transparência
-  ▼
-AuditPlugin ──► JSON sem conteúdo
-  ▼
-CANAL
-```
+**Contexto de dados.** A base do evento tem 467.585 transações de 1.000 clientes em 2025,
+sem PII (descrições padronizadas, id pseudonimizado). Dela derivam, por regra e sem LLM:
+modo de pagamento da fatura (integral, parcial, mínimo, no fim do `descr`), fatura
+reconstruída em mês de mínimo (pago ÷ 0,15), saldo no rotativo (juros ÷ 0,14), perfil de
+risco (faixas A, B, C, V com motivo) e bioimpedância anual. Tudo em
+`docs/produto/DADOS_EVENTO.md`.
 
-Diagramas visuais: `docs/diagrams/arquitetura.svg`, `topologia_agentes.svg` e
-`motor_de_decisao.svg` (os mesmos do PRD). O entregável 4 da banca, em draw.io, vive na
-pasta do Drive "Batalha de Agentes – Templates dos entregáveis".
+## 7. Segurança
 
----
-
-## 4. Decisões técnicas e alternativas descartadas
-
-### 4.1 Guardrails como Plugin, não como callback por agente
-
-**Escolhido:** funções puras em `app/callbacks/` (sem dependência de ADK), aplicadas por um
-`SecurityPlugin` registrado uma vez em `App(plugins=[...])`.
-
-**Descartado — callback por agente:** faz a cobertura depender de disciplina. Um subagente
-criado sob pressão nasce sem guardrail, silenciosamente.
-
-**Descartado — só plugin, sem funções puras:** regras específicas de um agente virariam
-`if agent.name == ...` dentro do plugin.
-
-**Consequência:** tool nova herda os guardrails automaticamente.
-
-### 4.2 Identidade fora da assinatura da tool
-
-**Escolhido:** as tools leem `customer_id` de `tool_context.state`. O parâmetro não existe.
-
-**Descartado — `customer_id` como parâmetro, validado depois:** se é parâmetro, quem o
-preenche é o modelo, a partir do texto do usuário. Validar depois converte o ataque em erro,
-mas o identificador já transitou pelo prompt.
-
-**Defesa em profundidade:** o `before_tool` rejeita `customer_id`, `cpf`, `client`,
-`account` e `user_id` nos argumentos, inclusive aninhados.
-
-### 4.3 Três calculadoras, não uma
-
-**Escolhido:** `compound_interest`, `compare_revolving_vs_installments`, `time_to_reach_goal`.
-
-**Descartado — uma função com parâmetro `mode`:** o modelo escolhe tool lendo docstring, e
-uma docstring que descreve três comportamentos roteia pior.
-
-### 4.4 Região do serviço separada da location do modelo
-
-**Escolhido:** `REGION` (Cloud Run, `southamerica-east1`) e `GOOGLE_CLOUD_LOCATION`
-(modelo, `global`) como variáveis independentes.
-
-**Descartado — uma variável só:** a disponibilidade de Gemini em `southamerica-east1` é
-limitada, e igualar as duas produz 404 de modelo.
-
-### 4.5 Memória como regra de domínio, não como serviço de runner
-
-**Escolhido:** `MemoryStore` como protocolo, exposto ao agente por tools
-(`give_consent`, `remember_preference`, `recall_profile`, `forget_me`).
-
-**Descartado — usar apenas o memory service do ADK:** consentimento, TTL e direito de
-exclusão são regras de negócio. Como tools, o direito de exclusão é acionável pelo próprio
-cliente na conversa.
-
-### 4.6 Sem stub para BigQuery — e, agora, BigQuery de verdade
-
-**Escolhido originalmente:** `NotImplementedError` com mensagem clara, em vez de um stub que
-devolve dados falsos e quebra no pior momento.
-
-**Superada em 2026-09-25:** `BigQueryDataSource` foi implementada e está em uso. A decisão
-valeu enquanto durou — a fábrica nunca mentiu sobre o que existia — e a troca custou apenas
-uma classe nova, porque `DataSource` é protocolo.
-
-**Toda consulta é parametrizada.** Concatenar o `customer_id` no texto do SQL recriaria por
-outra via o buraco que a decisão 4.2 fechou no prompt: um identificador com aspas viraria
-injeção. Há teste que passa `FICT-0001' OR '1'='1` e verifica que não aparece na query.
-
-**A minimização vale igual nas duas fontes.** `cpf` e `full_name` existem nas tabelas do
-BigQuery, e `projections.py` os descarta antes de qualquer dado chegar ao modelo — o mesmo
-código, para as duas origens.
-
-### 4.7 Identidade do evento vem do sistema, não do texto
-
-**Escolhido:** o `POST /events` recebe `customer_id` do chamador e o grava no **estado da
-sessão**; o texto enviado ao modelo descreve apenas o evento.
-
-**Por que não contradiz a decisão 4.2:** um evento vem de push subscription autenticada por
-OIDC — chamador de sistema, não usuário. O que a 4.2 proíbe é o identificador ser extraído
-de texto conversacional e chegar ao contexto do modelo. Aqui ele nunca chega: há teste que
-inspeciona o `LlmRequest` real e falha se o id aparecer.
-
-Campos de texto livre do evento passam pelo mesmo guard de injeção aplicado aos dados.
-
----
-
-## 5. Contexto e memória
-
-**Curto prazo.** Session State do ADK guarda `customer_id`, `suitability`,
-`consent_given_at` e o contador de guardrails. A compactação de eventos
-(`EventsCompactionConfig`, `compaction_interval=10`, `overlap_size=3`) mantém o contexto
-sob controle em conversas longas, preservando sobreposição entre janelas.
-
-**Longo prazo.** `MemoryStore` guarda preferências com três campos de governança:
-`created_at`, `expires_at` e `consent_given_at`. O consentimento é uma porta: sem ele, a
-gravação é recusada. O TTL é aplicado na leitura — linhas expiradas são filtradas e
-apagadas.
-
-**Em produção: Agent Engine, em `southamerica-east1`.** O `InMemorySessionService` do
-scaffold é um dicionário no processo — com mais de uma instância, o turno 2 de uma conversa
-pode chegar onde a sessão não existe. Em produção a sessão vai para o `VertexAiSessionService`
-e a memória para o `VertexAiMemoryBankService`, ambos num Agent Engine criado só para isso
-(`make agent-engine`); o agente continua servindo pelo Cloud Run.
-
-**Verificado:** uma sessão criada pelo serviço no Cloud Run é lida por um cliente externo
-direto no Agent Engine — ela não vive mais no container. E a memória de longo prazo, contra
-o serviço real: consentir e guardar numa sessão, lembrar numa sessão nova, esquecer, e uma
-terceira sessão nova não lembra mais. Consentimento, persistência entre sessões e exclusão,
-os três provados em produção.
-
-**Por que São Paulo, e não a região do modelo:** a sessão persiste o texto **bruto** do
-usuário (o mascaramento age no `LlmRequest`, não no evento gravado). Sessão e memória ficam
-no Brasil; só a inferência sai, em `global` — a mesma separação da decisão 4.4.
-
-**Localmente** continua SQLite (`MEMORY_BACKEND=local`, o padrão), porque é o modo que roda
-sem projeto GCP. O backend gerenciado sem `GOOGLE_CLOUD_AGENT_ENGINE_ID` **falha alto** em
-vez de cair no SQLite em silêncio.
-
----
-
-## 6. Segurança
-
-Detalhamento em `docs/SECURITY_LGPD.md`. Resumo das camadas:
-
-| Camada | O que faz |
-|---|---|
-| Entrada | Mascara CPF (com dígito verificador), cartão (Luhn), e-mail e telefone; detecta injection |
-| Tool (antes) | Rejeita identificador vindo nos argumentos |
-| Tool (depois) | Neutraliza instrução plantada em texto de terceiro |
-| Saída | Vazamento de PII, produto incompatível com suitability, transparência de IA |
-| Auditoria | JSON com metadados, nunca conteúdo |
-| Escalonamento | Contador de disparos; ao atingir o limite, oferece atendente humano |
-
----
-
-## 7. Experimentação
-
-Detalhamento em `docs/EXPERIMENTATION.md`. Os prompts são versionados em arquivo e
-selecionados por `PROMPT_VERSION`, o que permite comparar revisões sem alterar código. O
-alvo de deploy é Cloud Run justamente para viabilizar split de tráfego entre revisões com
-tag.
-
----
-
-## 8. Observabilidade
-
-- **Log estruturado** em JSON, com `conversation_id`, `prompt_version`, `model`, latência,
-  contagem de tokens e qual guardrail foi acionado.
-- **Nunca o conteúdo da conversa.** Um log com PII é um vazamento com carimbo de data.
-- O `SecurityPlugin` emite a própria linha de auditoria quando age, porque o
-  `PluginManager` do ADK interrompe a cadeia no primeiro plugin que retorna algo — sem
-  isso, os eventos de segurança ficariam invisíveis.
-
-`TODO(jornada)`: definir alertas e SLOs.
-
----
-
-## 9. Custo e escala
-
-- Cloud Run com `min-instances=0`: sem tráfego, não há cobrança.
-- `max-instances=3` no preparo; ajustar conforme a carga esperada.
-- O custo dominante é a inferência. A compactação de contexto reduz tokens por turno.
-- Tools determinísticas são mais baratas e mais confiáveis que pedir cálculo ao modelo.
-
-`TODO(jornada)`: estimar custo por conversa com o volume esperado.
-
----
-
-## 10. Verificação
-
-| Nível | Comando | Cobertura |
+| Ameaça | Mitigação | Como está provado |
 |---|---|---|
-| Unitário | `make test` | 145 testes, **sem credencial** |
-| Integração | `make test-llm` | roteamento e resposta numérica contra o modelo |
-| Arquitetura | `make smoke BASE_URL=...` | 13 verificações contra um agente vivo |
+| Prompt injection direta | Heurística na mensagem nova; Model Armor como segunda camada quando disponível | Testes de detecção e de sessão que sobrevive à tentativa; smoke |
+| Injection indireta pelos dados | Detecção em `after_tool` | Teste com Pix malicioso nos dados sintéticos |
+| Acesso a dado de outro cliente | Identidade só no estado; guarda nos argumentos; endpoint do front usa o id do ambiente | Teste que inspeciona a declaração real das tools; teste do payload sem id |
+| Número inventado pelo modelo | Tools determinísticas; redator com `output_schema`; validador de ações; fallback calculado | Testes do schema e do fallback; smoke confere os números na URL |
+| Vazamento de PII | Mascaramento na entrada (CPF com dígito verificador, Luhn, e-mail, telefone), projeções, checagem de saída | Testes de mascaramento e projeção |
+| Ação indevida | `require_confirmation` | Teste de que a tool não executa sem confirmação |
+| Oferta a cliente vulnerável | Faixa V no `perfil_risco`; catálogo sem linha para V | Gerador com assert; tool de ofertas na S4 |
+| Chave de modelo exposta | Nenhuma: tudo roda pela `squad-agent-sa` | Teste do deploy que falha se `GEMINI_API_KEY` aparecer |
 
-O smoke de arquitetura exercita cada decisão deste documento contra o serviço implantado.
-Foi ele que encontrou um defeito que os testes unitários não pegavam.
+Números: 277 testes automatizados sem credencial; smokes por fatia contra o serviço vivo
+(S1 5/5, S2 7/7, S2b 6/6).
+
+## 8. LGPD
+
+- **Base legal.** Execução de contrato para o atendimento (art. 7º, V); consentimento para
+  a memória de longo prazo (art. 7º, I).
+- **Minimização.** Tools devolvem só campos projetados; o id nunca chega ao modelo; a base
+  do evento não tem nome, CPF nem texto livre de pessoa.
+- **Retenção.** Memória com TTL; logs sem conteúdo.
+- **Direitos do titular.** Exclusão pela conversa ("esqueça tudo"); "Falar com uma pessoa"
+  sempre disponível.
+- **Transferência internacional.** Serviço, modelo e dados em `us-central1`, como o ambiente
+  do evento. Em produção, sessão e memória iriam para `southamerica-east1` e só a
+  inferência sairia, separação que a D5 permite.
+- **Dados.** Base sintética dos organizadores e tabelas sintéticas do time, com coluna
+  `origem` em tudo que foi gerado.
+
+## 9. Experimentação
+
+Prompts em arquivo por versão e modelo por variável: um experimento é uma variável de
+ambiente. Cada fatia publica uma revisão com tag e 0% de tráfego (`fatia-s1`, `fatia-s2`),
+roda o smoke na URL da tag e só então promove; o rollback é de tráfego, em segundos. A
+avaliação offline roda no harness do `agents-cli` (14 casos). Métrica principal proposta no
+PRD: juros de rotativo evitados por cliente elegível; proteção: nenhuma oferta a faixa V,
+zero número fora do payload.
+
+## 10. Ciência de dados
+
+Sem modelo estatístico no gatilho, de propósito: a regra "três faturas seguidas sem
+integral" é explicável, auditável e cobre 245 clientes. As features vêm de SQL sobre a
+base (`vw_fatura_mensal`, `vw_bioimpedancia`, `perfil_risco`) e as constantes do rotativo
+foram **inferidas da própria base** (razão juros/mínimo constante em 0,793 ⇒ mínimo de 15%
+e taxa de 14% a.m.), documentadas com a evidência em `docs/produto/DADOS_EVENTO.md`.
+
+## 11. Observabilidade
+
+Log JSON por interação (`conversation_id`, `prompt_version`, modelo, latência, tokens,
+guardrail acionado), nunca conteúdo. `jsonPayload.event="guard"` no Cloud Logging mostra
+cada bloqueio. O `SecurityPlugin` emite a própria linha de auditoria quando age, porque o
+`PluginManager` interrompe a cadeia no primeiro plugin que responde.
+
+## 12. Custo e escala
+
+Cloud Run com `min-instances=0`; modelo da linha Flash. A abertura não gasta inferência
+(semente); o perfil financeiro não gasta; só o chat gasta. O snapshot completo carrega em
+4,4 s e 0,44 GB, dentro dos 2 GiB da instância.
+
+## 13. Limitações conhecidas
+
+- Sessão na instância, com uma instância: o backend gerenciado existe e liga por variável,
+  mas ainda não foi validado no projeto do evento.
+- Model Armor negado no projeto do evento; roda o guard heurístico.
+- Streaming desligado; PII partida entre trechos escaparia da checagem.
+- O orquestrador ainda responde em texto livre no chat; o schema de ações vale hoje para a
+  abertura. Estender ao chat é a fatia de confirmação.
+- No front, cards A e B, Visão Financeira e parcelamento ainda mostram a história inicial
+  do protótipo; entram nas fatias S3 a S5.
+- Três recursos do ADK 2.8 em uso são experimentais: confirmação de ação, compactação de
+  eventos e declaração de função por JSON Schema. Estão cobertos por testes.
+
+## 14. Caminho para produção
+
+1. Canal autenticado do banco criando a sessão com identidade validada.
+2. Agent Engine Sessions e Memory Bank no lugar da sessão na instância e do SQLite.
+3. BigQuery ao vivo pela `squad-agent-sa` (`DATA_SOURCE=bigquery`).
+4. Model Armor como segunda camada; RAG Engine para o educador.
+5. Pub/Sub autenticado por OIDC no `/events`, com a rotina do gatilho agendada.
+6. Piloto A/B por hash do cliente, com os critérios de promoção do PRD.
