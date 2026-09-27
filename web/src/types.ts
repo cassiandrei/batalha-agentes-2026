@@ -77,6 +77,43 @@ export interface FinancialProfile {
     essenciaisMediaMensal: number | null;
   };
   t01: SimulacaoT01 | null;
+  // S4: ofertas por regra e T02 pela tabela Price; o motor diz qual é o principal.
+  offers: Ofertas | null;
+  t02: SimulacaoT02 | null;
+  principal: 't01' | 't02' | null;
+  ordem: { tipo: 't01' | 't02'; custo_mensal: number; descricao: string; prazo?: number }[];
+}
+
+export interface Ofertas {
+  faixa_risco: 'A' | 'B' | 'C' | 'V';
+  motivo_faixa: string;
+  elegivel: boolean;
+  ofertas: { modalidade: string; taxa_mensal: number; prazo_min: number; prazo_max: number; carencia_dias: number }[];
+  motivo: string;
+  encaminhamento?: string;
+  regra_atencao: boolean;
+  custo_mensal_juros_atual: number;
+}
+
+export interface OpcaoT02 {
+  prazo: number;
+  parcela: number;
+  juros_totais: number;
+  aprovado: boolean;
+  motivo: string;
+}
+
+export interface SimulacaoT02 {
+  simulacao_id: string;
+  expira_em: string;
+  saldo: number;
+  faixa_risco: string;
+  taxa_mensal: number;
+  carencia_dias: number;
+  custo_mensal_juros_atual: number;
+  regra_atencao: boolean;
+  opcoes: OpcaoT02[];
+  aviso: string;
 }
 
 export interface SimulacaoT01 {

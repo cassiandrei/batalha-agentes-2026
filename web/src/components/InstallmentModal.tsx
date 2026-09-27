@@ -1,50 +1,44 @@
 import React, { useState } from 'react';
-import { X, Calendar, CheckCircle2, Shield, ArrowRight } from 'lucide-react';
+import { X, Calendar, CheckCircle2, XCircle, Shield, ArrowRight } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { OpcaoT02, SimulacaoT02 } from '../types';
+
+// S4: todo número desta tela vem de t02 (simular_parcelamento_fatura, no agente).
+// Aprovado e rejeitado aparecem em texto e ícone, não só em cor.
+const brl = (v: number | null | undefined) =>
+  v === null || v === undefined ? '—' : v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 interface InstallmentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (plan: { count: number; value: number; total: number }) => void;
+  onConfirm: (opcao: OpcaoT02) => void;
+  t02: SimulacaoT02 | null;
 }
 
-export const InstallmentModal: React.FC<InstallmentModalProps> = ({
-  isOpen,
-  onClose,
-  onConfirm,
-}) => {
-  const [selectedPlan, setSelectedPlan] = useState<number>(6);
+export const InstallmentModal: React.FC<InstallmentModalProps> = ({ isOpen, onClose, onConfirm, t02 }) => {
+  const [prazoEscolhido, setPrazoEscolhido] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successView, setSuccessView] = useState(false);
 
   if (!isOpen) return null;
 
-  const plans = [
-    { count: 3, value: 412.00, total: 1236.00, tag: 'Menor Custo Total' },
-    { count: 6, value: 214.00, total: 1284.00, tag: 'Recomendado pela Vita' },
-    { count: 12, value: 112.00, total: 1344.00, tag: 'Menor Parcela Mensal' },
-  ];
-
-  const currentChoice = plans.find(p => p.count === selectedPlan) || plans[1];
+  const aprovadas = t02?.opcoes.filter((o) => o.aprovado) ?? [];
+  const escolhida =
+    (t02?.opcoes.find((o) => o.prazo === prazoEscolhido && o.aprovado)) ??
+    (aprovadas.length ? aprovadas.reduce((a, b) => (a.juros_totais <= b.juros_totais ? a : b)) : null);
 
   const handleApply = () => {
+    if (!escolhida) return;
     setIsSubmitting(true);
     setTimeout(() => {
       setIsSubmitting(false);
       setSuccessView(true);
-
       try {
-        confetti({
-          particleCount: 70,
-          spread: 60,
-          origin: { y: 0.6 },
-          colors: ['#1FA37C', '#FF8F00', '#FFFFFF']
-        });
+        confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 }, colors: ['#1FA37C', '#FFFFFF'] });
       } catch {
         // ignore
       }
-
-      onConfirm(currentChoice);
+      onConfirm(escolhida);
     }, 1000);
   };
 
@@ -55,7 +49,7 @@ export const InstallmentModal: React.FC<InstallmentModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-      <div 
+      <div
         className="bg-[#181818] border border-gray-800 w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]"
         onClick={(e) => e.stopPropagation()}
       >
@@ -68,15 +62,15 @@ export const InstallmentModal: React.FC<InstallmentModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-[#1FA37C] bg-[#1FA37C]/10 px-2 py-0.5 rounded border border-[#1FA37C]/20">
-                  Opção B
+                  T02
                 </span>
-                <h2 className="text-base font-semibold text-white">Parcelar Saldo da Fatura</h2>
+                <h2 className="text-base font-semibold text-white">Parcelar o saldo do rotativo</h2>
               </div>
-              <p className="text-xs text-gray-400 mt-0.5">Fixe as parcelas em taxas pré-fixadas menores que o rotativo</p>
+              <p className="text-xs text-gray-400 mt-0.5">Prazos calculados pelo agente; a regra decide o que cabe no seu orçamento</p>
             </div>
           </div>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-gray-800 transition-colors cursor-pointer"
             aria-label="Fechar"
           >
@@ -84,65 +78,81 @@ export const InstallmentModal: React.FC<InstallmentModalProps> = ({
           </button>
         </div>
 
-        {/* Content */}
-        {!successView ? (
+        {!t02 ? (
+          <div className="p-6 text-sm text-gray-300">
+            Não há parcelamento disponível para você agora. Isso acontece quando não há saldo no rotativo ou quando a regra
+            não permite oferta de crédito. Se quiser, fale com uma pessoa.
+          </div>
+        ) : !successView ? (
           <div className="p-5 overflow-y-auto space-y-5">
-            {/* Rates Comparison */}
+            {/* Resumo */}
             <div className="p-4 bg-[#121212] border border-gray-800 rounded-xl space-y-2">
               <div className="flex items-center justify-between text-xs text-gray-400">
-                <span>Saldo financiado:</span>
-                <span className="font-semibold text-white">R$ 1.200,00</span>
+                <span>Saldo a parcelar:</span>
+                <span className="font-semibold text-white">{brl(t02.saldo)}</span>
               </div>
               <div className="flex items-center justify-between text-xs text-gray-400">
-                <span>Taxa rotativa anterior:</span>
-                <span className="text-red-400 font-semibold line-through">14,80% ao mês</span>
+                <span>Custo atual de juros por mês:</span>
+                <span className="text-red-400 font-semibold">{brl(t02.custo_mensal_juros_atual)}</span>
               </div>
               <div className="flex items-center justify-between text-xs pt-2 border-t border-gray-800">
-                <span className="text-emerald-400 font-medium">Nova taxa pré-fixada:</span>
-                <span className="text-emerald-400 font-bold">1,49% ao mês (fixa)</span>
+                <span className="text-emerald-400 font-medium">Taxa do parcelamento (faixa {t02.faixa_risco}):</span>
+                <span className="text-emerald-400 font-bold">{(t02.taxa_mensal * 100).toLocaleString('pt-BR')}% ao mês</span>
               </div>
+              {t02.regra_atencao && (
+                <p className="text-[11px] text-amber-300 pt-1">
+                  Regra de atenção: só entra prazo cuja parcela fique até o custo atual de juros ({brl(t02.custo_mensal_juros_atual)}).
+                </p>
+              )}
             </div>
 
-            {/* Plan Options Selector */}
+            {/* Prazos */}
             <div className="space-y-3">
-              <label className="text-xs font-semibold text-gray-300 uppercase tracking-wider block">
-                Selecione o plano ideal para seu orçamento mensal:
-              </label>
-
-              <div className="space-y-2.5">
-                {plans.map((p) => {
-                  const isSelected = selectedPlan === p.count;
+              <span className="text-xs font-semibold text-gray-300 uppercase tracking-wider block">Prazos calculados</span>
+              <div className="space-y-2.5" role="radiogroup" aria-label="Prazos do parcelamento">
+                {t02.opcoes.map((o) => {
+                  const selecionada = escolhida?.prazo === o.prazo;
                   return (
                     <button
-                      key={p.count}
+                      key={o.prazo}
                       type="button"
-                      onClick={() => setSelectedPlan(p.count)}
-                      className={`w-full text-left p-4 rounded-xl border transition-all flex items-center justify-between cursor-pointer ${
-                        isSelected
-                          ? 'bg-[#1FA37C]/15 border-[#1FA37C] ring-1 ring-[#1FA37C]'
-                          : 'bg-[#141414] border-gray-800 hover:border-gray-700'
+                      role="radio"
+                      aria-checked={selecionada}
+                      disabled={!o.aprovado}
+                      onClick={() => setPrazoEscolhido(o.prazo)}
+                      className={`w-full text-left p-4 rounded-xl border transition-all flex items-center justify-between ${
+                        !o.aprovado
+                          ? 'bg-[#141414] border-gray-800 opacity-70 cursor-not-allowed'
+                          : selecionada
+                            ? 'bg-[#1FA37C]/15 border-[#1FA37C] ring-1 ring-[#1FA37C] cursor-pointer'
+                            : 'bg-[#141414] border-gray-800 hover:border-gray-700 cursor-pointer'
                       }`}
                     >
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-bold text-white">
-                            {p.count}x de R$ {p.value.toFixed(2).replace('.', ',')}
+                            {o.prazo}x de {brl(o.parcela)}
                           </span>
-                          <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${
-                            isSelected ? 'bg-[#1FA37C] text-white' : 'bg-gray-800 text-gray-300'
-                          }`}>
-                            {p.tag}
+                          <span
+                            className={`text-[10px] px-2 py-0.5 rounded font-medium inline-flex items-center gap-1 ${
+                              o.aprovado ? 'bg-emerald-900/50 text-emerald-300' : 'bg-red-950/50 text-red-300'
+                            }`}
+                          >
+                            {o.aprovado ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+                            {o.aprovado ? 'Aprovado' : 'Rejeitado'}
                           </span>
                         </div>
                         <div className="text-xs text-gray-400">
-                          Total parcelado: R$ {p.total.toFixed(2).replace('.', ',')} (previsibilidade total)
+                          {brl(o.juros_totais)} de juros no total · {o.motivo}
                         </div>
                       </div>
-
-                      <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${
-                        isSelected ? 'border-[#1FA37C] bg-[#1FA37C]' : 'border-gray-600'
-                      }`}>
-                        {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
+                      <div
+                        className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${
+                          selecionada ? 'border-[#1FA37C] bg-[#1FA37C]' : 'border-gray-600'
+                        }`}
+                        aria-hidden="true"
+                      >
+                        {selecionada && <div className="w-2 h-2 rounded-full bg-white" />}
                       </div>
                     </button>
                   );
@@ -150,14 +160,13 @@ export const InstallmentModal: React.FC<InstallmentModalProps> = ({
               </div>
             </div>
 
-            {/* Simulation breakdown */}
             <div className="p-3.5 bg-gray-900/60 rounded-xl border border-gray-800/80 text-xs text-gray-300 space-y-1.5">
               <div className="flex items-center gap-1.5 font-semibold text-white">
                 <Shield className="w-4 h-4 text-emerald-400" />
-                <span>Primeira parcela apenas no próximo vencimento</span>
+                <span>{t02.aviso}</span>
               </div>
               <p className="text-[11px] text-gray-400 leading-relaxed">
-                As parcelas virão fixas nas próximas faturas. Você não precisa desembolsar nada hoje e mantém 100% da sua reserva de emergência intacta no CDB.
+                Primeira parcela em {t02.carencia_dias} dias. Nada é contratado sem a sua confirmação no aplicativo.
               </p>
             </div>
           </div>
@@ -166,36 +175,26 @@ export const InstallmentModal: React.FC<InstallmentModalProps> = ({
             <div className="w-16 h-16 bg-[#1FA37C]/10 border-2 border-[#1FA37C] rounded-full flex items-center justify-center mx-auto text-[#1FA37C] animate-bounce">
               <CheckCircle2 className="w-8 h-8" />
             </div>
-
             <div>
-              <h3 className="text-xl font-bold text-white">Parcelamento Contratado!</h3>
+              <h3 className="text-xl font-bold text-white">Parcelamento confirmado</h3>
               <p className="text-sm text-gray-300 mt-2 max-w-sm mx-auto">
-                Seu plano de <strong>{currentChoice.count}x de R$ {currentChoice.value.toFixed(2).replace('.', ',')}</strong> foi ativado. O rotativo foi eliminado.
+                {escolhida ? `${escolhida.prazo}x de ${brl(escolhida.parcela)}` : ''}. O rotativo para de correr.
               </p>
             </div>
-
             <div className="bg-[#121212] border border-gray-800 rounded-xl p-4 max-w-xs mx-auto text-left space-y-2 text-xs">
               <div className="flex justify-between">
-                <span className="text-gray-400">Plano:</span>
-                <span className="font-bold text-white">{currentChoice.count} parcelas mensais fixas</span>
+                <span className="text-gray-400">Juros no total:</span>
+                <span className="font-bold text-white">{brl(escolhida?.juros_totais)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">Valor da parcela:</span>
-                <span className="font-bold text-[#1FA37C]">R$ {currentChoice.value.toFixed(2).replace('.', ',')}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">1º Vencimento:</span>
-                <span className="font-semibold text-gray-200">10/11/2026</span>
+                <span className="text-gray-400">Simulação:</span>
+                <span className="font-mono text-gray-400">{t02.simulacao_id}</span>
               </div>
             </div>
-
-            <p className="text-xs text-blue-400 pt-1">
-              Você pode salvar o resumo detalhado desta operação direto no seu Google Drive.
-            </p>
           </div>
         )}
 
-        {/* Footer Actions */}
+        {/* Footer */}
         <div className="p-4 border-t border-gray-800 bg-[#141414] flex gap-3 justify-end">
           {!successView ? (
             <>
@@ -204,21 +203,21 @@ export const InstallmentModal: React.FC<InstallmentModalProps> = ({
                 disabled={isSubmitting}
                 className="px-4 py-2.5 bg-transparent hover:bg-gray-800 text-gray-400 text-xs font-medium rounded-lg transition-colors cursor-pointer"
               >
-                Cancelar
+                Voltar
               </button>
               <button
                 onClick={handleApply}
-                disabled={isSubmitting}
-                className="bg-[#1FA37C] hover:bg-[#d96600] text-white text-xs font-semibold px-5 py-2.5 rounded-lg transition-colors flex items-center gap-2 cursor-pointer"
+                disabled={isSubmitting || !escolhida}
+                className="bg-[#1FA37C] hover:bg-[#178a68] disabled:opacity-50 text-white text-xs font-semibold px-5 py-2.5 rounded-lg transition-colors flex items-center gap-2 cursor-pointer"
               >
                 {isSubmitting ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Contratando...</span>
+                    <span>Confirmando...</span>
                   </>
                 ) : (
                   <>
-                    <span>Confirmar {currentChoice.count}x de R$ {currentChoice.value.toFixed(2).replace('.', ',')}</span>
+                    <span>{escolhida ? `Confirmar ${escolhida.prazo}x de ${brl(escolhida.parcela)}` : 'Nenhum prazo aprovado'}</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
@@ -227,9 +226,9 @@ export const InstallmentModal: React.FC<InstallmentModalProps> = ({
           ) : (
             <button
               onClick={handleFinish}
-              className="bg-[#1FA37C] hover:bg-[#d96600] text-white text-xs font-semibold px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 w-full justify-center cursor-pointer"
+              className="bg-[#1FA37C] hover:bg-[#178a68] text-white text-xs font-semibold px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 w-full justify-center cursor-pointer"
             >
-              <span>Ver conversa com Vita</span>
+              <span>Voltar para a conversa</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           )}

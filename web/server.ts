@@ -134,6 +134,11 @@ app.get('/api/financial-profile', async (_req: Request, res: Response) => {
         essenciaisMediaMensal: agente.diagnosis?.essenciais_media_mensal ?? null,
       },
       t01: agente.treatments?.t01 ?? null,
+      // S4
+      offers: agente.offers ?? null,
+      t02: agente.treatments?.t02 ?? null,
+      principal: agente.treatments?.principal ?? null,
+      ordem: agente.treatments?.ordem ?? [],
     });
   } catch (e) {
     res.status(502).json({ error: `falha ao consultar o agente: ${(e as Error).message}` });

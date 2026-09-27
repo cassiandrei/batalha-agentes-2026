@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Message, FinancialProfile, ActiveModal, Abertura, AcaoAgente } from './types';
+import { Message, FinancialProfile, ActiveModal, Abertura, AcaoAgente, OpcaoT02 } from './types';
 import { Header } from './components/Header';
 import { ChatArea } from './components/ChatArea';
 import { PrescriptionFooter } from './components/PrescriptionFooter';
@@ -37,6 +37,10 @@ const INITIAL_PROFILE: FinancialProfile = {
     essenciaisMediaMensal: null,
   },
   t01: null,
+  offers: null,
+  t02: null,
+  principal: null,
+  ordem: [],
 };
 
 // S2: a conversa começa vazia. A primeira mensagem vem da sessão pré-montada no
@@ -223,23 +227,24 @@ export default function App() {
   };
 
   // Execution: Option B - Installment Treatment
-  const handleConfirmInstallment = (plan: { count: number; value: number; total: number }) => {
+  // S4: o estado pós-confirmação deriva da opção do T02 escolhida. A confirmação real
+  // (iToken, evento tratamento_confirmado) é da S5; aqui só a tela muda.
+  const handleConfirmInstallment = (opcao: OpcaoT02) => {
+    const t02 = profile.t02;
+    if (!t02 || !opcao.aprovado) return;
     setTreatmentStatus('installment_active');
-    // S4 vai derivar isto do T02 calculado; por ora só zera o rotativo na tela.
     setProfile((prev) => ({
       ...prev,
       card: { ...prev.card, outstandingBalance: 0, rotaryInterestCharged: 0 },
       financialOverview: { ...prev.financialOverview, jurosUltimoMes: 0 },
     }));
-
     const confirmMsg: Message = {
       id: `inst_${Date.now()}`,
       role: 'assistant',
-      content: `🔒 Parcelamento ativado com sucesso! Congelamos o saldo em **${plan.count}x** fixas de **R$ ${plan.value.toFixed(2).replace('.', ',')}** a taxas pré-fixadas menores que o rotativo. Você eliminou a taxa de **14,8% ao mês** e manteve seus **R$ 5.480,00** intactos na reserva de emergência. A primeira parcela virá apenas na próxima fatura. Você pode salvar o resumo detalhado desta operação direto no seu Google Drive.`,
+      content: `Feito. Os ${brlTxt(t02.saldo)} do rotativo foram parcelados em ${opcao.prazo}x de ${brlTxt(opcao.parcela)} a ${(t02.taxa_mensal * 100).toLocaleString('pt-BR')}% ao mês, ${brlTxt(opcao.juros_totais)} de juros no total. ${t02.aviso} A primeira parcela vem na próxima fatura.`,
       timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
       actionTaken: 'installment_active',
     };
-
     setMessages((prev) => [...prev, confirmMsg]);
   };
 
@@ -316,6 +321,7 @@ export default function App() {
 
         {/* Action Cards (Prescription / Closed Solutions) */}
         <PrescriptionFooter
+          profile={profile}
           onSelectFlowAdjustment={() => setActiveModal('flow_adjustment')}
           onSelectInstallment={() => setActiveModal('installment')}
           onSendMessage={handleSendMessage}
@@ -347,6 +353,7 @@ export default function App() {
           isOpen={activeModal === 'installment'}
           onClose={() => setActiveModal('none')}
           onConfirm={handleConfirmInstallment}
+          t02={profile.t02}
         />
 
         <InvoiceDetailModal
