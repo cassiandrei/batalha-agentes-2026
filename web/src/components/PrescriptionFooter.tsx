@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Send, Brain, Eraser } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Send, Brain, Eraser, AlertTriangle } from 'lucide-react';
 import { Chip } from './ui';
 
 // Rodapé do chat no Vita-UI: chips acima, composer em pílula. Os cards de tratamento
@@ -12,10 +12,24 @@ interface ComposerProps {
   onForgetAll: () => void;
 }
 
-const PERGUNTAS = ['Qual a economia entre quitar à vista ou parcelar?', 'Quanto paguei de juros no ano?', 'Como recompor minha reserva?'];
+// Ordem pensada para a demo: o que rende na apresentação vem primeiro; a memória depois.
+const PERGUNTAS = [
+  'Quanto paguei de juros no ano?',
+  'Posso ficar no rotativo por mais de um mês?',
+  'Qual a economia entre quitar à vista ou parcelar?',
+  'Como recompor minha reserva?',
+];
 
 export const PrescriptionFooter: React.FC<ComposerProps> = ({ onSendMessage, isTyping, onShowMemory, onForgetAll }) => {
   const [texto, setTexto] = useState('');
+  // "Esqueça tudo" apaga de verdade: pede um segundo toque, que expira sozinho.
+  const [confirmarEsquecer, setConfirmarEsquecer] = useState(false);
+
+  useEffect(() => {
+    if (!confirmarEsquecer) return;
+    const id = setTimeout(() => setConfirmarEsquecer(false), 5000);
+    return () => clearTimeout(id);
+  }, [confirmarEsquecer]);
 
   const enviar = (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,20 +38,34 @@ export const PrescriptionFooter: React.FC<ComposerProps> = ({ onSendMessage, isT
     setTexto('');
   };
 
+  const esquecer = () => {
+    if (!confirmarEsquecer) {
+      setConfirmarEsquecer(true);
+      return;
+    }
+    setConfirmarEsquecer(false);
+    onForgetAll();
+  };
+
   return (
     <footer className="shrink-0 bg-surface border-t border-line z-20 flex flex-col">
       <div className="flex gap-2 overflow-x-auto no-scrollbar rail-fade px-3.5 pr-10 pt-2.5 pb-1">
-        <Chip onClick={onShowMemory} icon={<Brain className="w-4 h-4" />}>
-          O que você lembra sobre mim?
-        </Chip>
-        <Chip onClick={onForgetAll} icon={<Eraser className="w-4 h-4" />}>
-          Esqueça tudo
-        </Chip>
         {PERGUNTAS.map((p) => (
           <Chip key={p} onClick={() => onSendMessage(p)} disabled={isTyping}>
             {p}
           </Chip>
         ))}
+        <Chip onClick={onShowMemory} icon={<Brain className="w-4 h-4" />}>
+          O que você lembra sobre mim?
+        </Chip>
+        <Chip
+          onClick={esquecer}
+          icon={confirmarEsquecer ? <AlertTriangle className="w-4 h-4 text-alert" /> : <Eraser className="w-4 h-4" />}
+          className={confirmarEsquecer ? 'border-alert/40 bg-alert-soft text-alert-text' : ''}
+          aria-live="polite"
+        >
+          {confirmarEsquecer ? 'Toque de novo para apagar tudo' : 'Esqueça tudo'}
+        </Chip>
       </div>
 
       <div className="px-3.5 pt-1.5 pb-2.5">
