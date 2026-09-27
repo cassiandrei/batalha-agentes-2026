@@ -66,6 +66,7 @@ def _req(url: str, metodo: str = "GET", corpo: dict | None = None) -> tuple[int,
         return e.code, json.loads(e.read().decode() or "{}")
 
 
+MARCOS = "8fbc8ba3-7d20-4382-ba8d-ffd070e836a1"
 CANDIDATOS_MEMORIA = (
     "198fd3b8-5d5f-4b38-ad52-02464b769596",
     "258bf045-e201-4b2c-adc3-7caf08828ec1",
