@@ -55,21 +55,50 @@ export interface FinancialProfile {
     rotaryInterestCharged: number | null;
     invoiceHistory: InvoiceMonth[];
   };
+  // S3: reserva (posicao_investimentos), índice por regra (vw_bioimpedancia) e T01
+  // calculado pela tool simular_uso_reserva. null = sem dado, nunca um chute.
   reserve: {
-    total: number;
-    product: string;
-    monthlyYieldRate: number;
-    monthsCoverage: number;
-  };
+    produto: string;
+    liquidez: string;
+    saldo: number | null;
+    percentualCdi: number | null;
+    finalidade: string;
+  } | null;
   financialOverview: {
-    // null até a S3 definir a fórmula do índice sobre a vw_bioimpedancia
     score: number | null;
-    status: string;
-    freeCashflowPercentage: number;
-    emergencyReserve: number;
-    variableExpensesPercentage: number;
-    monthlyInterestCost: number;
+    status: 'organizado' | 'atencao' | 'critico' | null;
+    componentes: { poupanca: number; dreno: number; comprometimento: number; cronicidade: number } | null;
+    poupancaSobreEntradasPct: number | null;
+    drenoPctRenda: number | null;
+    comprometimentoCreditoPct: number | null;
+    mesesPagandoJuros: number | null;
+    jurosUltimoMes: number | null;
+    jurosEncargosAno: number | null;
+    essenciaisMediaMensal: number | null;
   };
+  t01: SimulacaoT01 | null;
+}
+
+export interface SimulacaoT01 {
+  simulacao_id: string;
+  expira_em: string;
+  saldo_quitado: number;
+  taxa_rotativo_mes: number;
+  juros_evitados_mes: number;
+  origem_reserva: string;
+  reserva_antes: number;
+  reserva_restante: number;
+  percentual_cdi: number;
+  cdi_aa_pct: number;
+  cdi_origem: string;
+  cdi_data: string;
+  rendimento_bruto_perdido_mes: number;
+  ir_aliquota: number;
+  ir_mes: number;
+  rendimento_liquido_perdido_mes: number;
+  ganho_liquido_mes: number;
+  meses_cobertura_essenciais: number;
+  justificativa: string;
 }
 
 export type ActiveModal = 'none' | 'flow_adjustment' | 'installment' | 'financial_overview' | 'invoice_details';

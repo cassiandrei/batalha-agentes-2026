@@ -111,21 +111,29 @@ app.get('/api/financial-profile', async (_req: Request, res: Response) => {
         rotaryInterestCharged: agente.card.revolving_interest_charged,
         invoiceHistory: agente.invoice_history,
       },
-      // TODO(S3): reserve e financialOverview saem das tools de investimento e do índice.
-      reserve: {
-        total: 0,
-        product: '',
-        monthlyYieldRate: 0,
-        monthsCoverage: 0,
-      },
+      // S3: tudo abaixo vem do agente (índice por regra, reserva e T01 calculado).
+      reserve: agente.reserve
+        ? {
+            produto: agente.reserve.produto,
+            liquidez: agente.reserve.liquidez,
+            saldo: agente.reserve.saldo,
+            percentualCdi: agente.reserve.percentual_cdi,
+            finalidade: agente.reserve.finalidade,
+          }
+        : null,
       financialOverview: {
-        score: null,
-        status: '',
-        freeCashflowPercentage: 0,
-        emergencyReserve: 0,
-        variableExpensesPercentage: 0,
-        monthlyInterestCost: agente.card.revolving_interest_charged ?? 0,
+        score: agente.index?.score ?? null,
+        status: agente.index?.status ?? null,
+        componentes: agente.index?.componentes ?? null,
+        poupancaSobreEntradasPct: agente.diagnosis?.poupanca_sobre_entradas_pct ?? null,
+        drenoPctRenda: agente.diagnosis?.dreno_pct_renda ?? null,
+        comprometimentoCreditoPct: agente.diagnosis?.comprometimento_credito_pct ?? null,
+        mesesPagandoJuros: agente.diagnosis?.meses_pagando_juros ?? null,
+        jurosUltimoMes: agente.diagnosis?.juros_ultimo_mes ?? null,
+        jurosEncargosAno: agente.diagnosis?.juros_encargos_ano ?? null,
+        essenciaisMediaMensal: agente.diagnosis?.essenciais_media_mensal ?? null,
       },
+      t01: agente.treatments?.t01 ?? null,
     });
   } catch (e) {
     res.status(502).json({ error: `falha ao consultar o agente: ${(e as Error).message}` });
