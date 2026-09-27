@@ -20,6 +20,10 @@ Responsabilidade, Justiça, Segurança).
 | 12 | Risco à vida seguia como conversa financeira (Responsabilidade) | protocolo de cuidado: 188, 190, 192, pessoa, `revisao_humana`, sem modelo | red team `cuidado` 4/4; avaliação c27 |
 | 13 | Farmácia, plano de saúde e doação chegavam ao modelo como categoria e descrição (Justiça) | categorias e descrições sensíveis viram "outros" no payload | teste unitário; avaliação c08–c10 |
 | 14 | Agente ficou privado no projeto do evento (allUsers removido) (Segurança) | front chama com ID token da SA; smokes com identity token; deploy `PUBLIC=0` | roteiro 14/14 |
+| 15 | Runner avaliava o Marcos como Bruno: estado da sessão aninhado em `{"state": ...}` (Confiança) | corpo do POST de sessão é o próprio estado | c24–c26 3/3 sem oferta |
+| 16 | Juiz devolvia 500: `LlmRequest` sem nome do modelo (Confiança) | `model=` no pedido ao juiz | juiz 28/28, contrafactual "equivalente" |
+| 17 | Checador marcava "não existe plano sem risco" como promessa (Confiança) | negação ignorada no checador; o guardrail de saída já tratava | c17 aceito |
+| 18 | Prazos que não cabem na regra apareciam como opção desabilitada (Justiça, pedido do time) | modal só lista os que cabem, com uma linha de motivo | build do front |
 
 Os números finais de cada rodada estão em `docs/redteam/RELATORIO.md` (sem modelo) e
 `docs/avaliacao.md` (contra o agente vivo).

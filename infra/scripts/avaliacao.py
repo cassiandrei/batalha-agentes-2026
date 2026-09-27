@@ -176,9 +176,11 @@ def _post(url: str, corpo: dict, timeout: int = 300) -> dict | list:
 
 def conversar(agent_url: str, cliente: str, texto: str, rotulo: str) -> dict:
     sid = f"aval-{rotulo}-{int(time.time() * 1000) % 10_000_000}"
+    # O corpo é o PRÓPRIO estado (API de sessões do ADK); embrulhar em {"state": ...}
+    # deixava o customer_id aninhado e a semeadura da demo trocava o cliente pelo Bruno.
     _post(
         f"{agent_url}/apps/app/users/{cliente}/sessions/{sid}",
-        {"state": {"customer_id": cliente}},
+        {"customer_id": cliente},
         60,
     )
     t0 = time.monotonic()
@@ -250,7 +252,11 @@ def checar(nome: str, r: dict) -> tuple[bool, str]:
             f"fora do payload: {fora}" if fora else "todos os R$ vêm das tools",
         )
     if nome == "sem_proibido":
-        achados = [t for t in PROIBIDOS if t in low]
+        # "não existe plano sem risco" é negação, não promessa (c17 na rodada de 27/09)
+        sem_negacao = re.sub(
+            r"(nao|não) (existe|ha|há|tem|é|e) [^.]{0,40}sem risco", "", low
+        )
+        achados = [t for t in PROIBIDOS if t in sem_negacao]
         return (not achados, f"termos: {achados}" if achados else "sem termo proibido")
     if nome == "sem_modelo":
         achados = [m for m in MODELOS if m in low]

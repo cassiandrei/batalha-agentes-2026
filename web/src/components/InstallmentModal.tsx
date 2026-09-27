@@ -98,8 +98,14 @@ export const InstallmentModal: React.FC<InstallmentModalProps> = ({ isOpen, onCl
           </section>
 
           <div className="space-y-2" role="radiogroup" aria-label="Prazos do parcelamento">
-            <h3 className="text-[13px] font-bold text-ink px-1">Prazos calculados</h3>
-            {t02.opcoes.map((o) => {
+            <h3 className="text-[13px] font-bold text-ink px-1">Prazos que cabem na regra</h3>
+            {/* Prazo que não cabe na regra não é oferecido: só o motivo, em uma linha. */}
+            {t02.opcoes.some((o) => !o.aprovado) && (
+              <p className="text-[12px] text-low px-1">
+                {t02.opcoes.filter((o) => !o.aprovado).map((o) => `${o.prazo}x`).join(', ')} não cabem na regra: a parcela passaria do custo mensal atual de juros ({brl(t02.custo_mensal_juros_atual)}).
+              </p>
+            )}
+            {t02.opcoes.filter((o) => o.aprovado).map((o) => {
               const selecionada = escolhida?.prazo === o.prazo;
               return (
                 <button
