@@ -15,6 +15,11 @@ cliente. **Todo número vem de uma tool determinística; o modelo nunca calcula,
 | 4 | **Desenho de solução** (arquitetura, engenharia e ciência de dados) | [`docs/entregaveis/4. Desenho de solução (arquitetura).drawio`](docs/entregaveis/4.%20Desenho%20de%20solu%C3%A7%C3%A3o%20%28arquitetura%29.drawio) (abrir em diagrams.net) e a mesma imagem em [`.svg`](docs/entregaveis/4.%20Desenho%20de%20solu%C3%A7%C3%A3o%20%28arquitetura%29.svg) | Entregue |
 | 5 | **Documento explicativo da arquitetura** (componentes, integrações, decisões, justificativas) | [`docs/entregaveis/5. Documento explicativo da arquitetura.md`](docs/entregaveis/5.%20Documento%20explicativo%20da%20arquitetura.md) (mesmo conteúdo de [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)) | Entregue |
 
+<p align="center">
+  <a href="https://vita-app-996610300787.us-central1.run.app"><img src="docs/images/qrcode-vita.png" width="180" alt="QR code do protótipo do Vita"></a><br>
+  <sub>Aponte a câmera do celular: abre o protótipo no ar.</sub>
+</p>
+
 ### Como navegar no protótipo (entregável 2)
 
 1. Abra a URL: a tela de bloqueio mostra o push do Vita. Toque em **Abrir no Vita**.
