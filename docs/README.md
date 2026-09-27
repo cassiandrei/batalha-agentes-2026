@@ -13,7 +13,7 @@
 | `produto/avaliacao.md`, `redteam/` | números medidos: conversas sintéticas, contrafactual e red team |
 | `banca/` | relatórios da banca simulada (skill `banca-batalha-agentes`) |
 | `rai/` | system card, política de conteúdo e ciclo purple (IA Responsável) |
-| `design/` | `PRODUCT.md` e `DESIGN.md` do front (artefatos do impeccable; a skill os procura na raiz, copie para lá se for regenerar) |
+| `design/` | `PRODUCT.md`, `DESIGN.md` e `RACIONAL_PROTOTIPACAO.md` do front (artefatos do impeccable; a skill os procura na raiz, copie para lá se for regenerar); `DESIGN_SPEC.md` registra as jornadas, telas e estados do `web/` |
 | `diagrams/` | SVGs usados no PRD |
 | `historico/` | blueprint do template, patches do protótipo, specs e planos antigos |
 
