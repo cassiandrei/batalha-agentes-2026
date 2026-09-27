@@ -151,3 +151,15 @@ def project_parametro(row: dict) -> dict:
         "origem": row.get("origem", ""),
         "fonte": row.get("fonte", ""),
     }
+
+
+def project_oferta(row: dict) -> dict:
+    """catalogo_ofertas: uma linha por modalidade e faixa; sem `origem`."""
+    return {
+        "modalidade": row["modalidade"],
+        "faixa_risco": row["faixa_risco"],
+        "taxa_mensal": float(row["taxa_mensal"]),
+        "prazo_min": int(float(row["prazo_min"])),
+        "prazo_max": int(float(row["prazo_max"])),
+        "carencia_dias": int(float(row["carencia_dias"])),
+    }

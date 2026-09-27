@@ -194,3 +194,173 @@ def simular_uso_reserva(tool_context: ToolContext) -> dict:
     }
     tool_context.state["simulacoes"] = registro
     return {"simulacao": sim}
+
+
+AVISO_T02 = "Valores sem IOF e CET; o contrato traz o custo efetivo total."
+PRAZOS_T02 = (3, 6, 9, 12)
+
+
+def _politica(customer_id: str) -> dict:
+    """Elegibilidade por regra: faixa do perfil_risco + catálogo + regra de atenção."""
+    ds = get_data_source()
+    perfil = ds.get_perfil_risco(customer_id)
+    if perfil is None:
+        return {"error": f"Cliente {customer_id} não tem perfil de risco na base."}
+    faixa = perfil["faixa_risco"]
+    fatura = fatura_rotativo(customer_id)
+    ref = fatura["meses"][-1] if fatura["meses"] else {}
+    custo_atual = ref.get("juros_rotativo") or 0.0
+    params = ds.get_parametros_modelo()
+    limite_atencao = params.get("guardrail_atencao", {}).get("valor", 0.35)
+    base = {
+        "faixa_risco": faixa,
+        "motivo_faixa": perfil["motivo_faixa"],
+        "comprometimento": perfil["comprometimento"],
+        "custo_mensal_juros_atual": custo_atual,
+        "saldo_rotativo": ref.get("saldo_rotativo_reconstruido") or 0.0,
+    }
+    if faixa == "V":
+        return {
+            **base,
+            "elegivel": False,
+            "ofertas": [],
+            "motivo": (
+                f"Faixa V ({perfil['motivo_faixa']}): nenhuma oferta de crédito, por regra."
+            ),
+            "encaminhamento": "Renegociação assistida com uma pessoa, sem novo crédito.",
+            "regra_atencao": False,
+        }
+    ofertas = [
+        {k: v for k, v in o.items() if k != "faixa_risco"}
+        for o in ds.get_catalogo_ofertas(faixa)
+    ]
+    return {
+        **base,
+        "elegivel": True,
+        "ofertas": ofertas,
+        "regra_atencao": perfil["comprometimento"] >= limite_atencao,
+        "motivo": (
+            f"Faixa {faixa} ({perfil['motivo_faixa']}). "
+            + (
+                "Comprometimento acima do limite de atenção: só prazos com parcela até o "
+                "custo mensal atual de juros são aprovados."
+                if perfil["comprometimento"] >= limite_atencao
+                else "Sem regra de atenção."
+            )
+        ),
+    }
+
+
+def get_ofertas_elegiveis(tool_context: ToolContext) -> dict:
+    """Retorna as ofertas de crédito que a regra permite para o cliente da sessão.
+
+    Faixa V devolve lista vazia com o motivo e o encaminhamento (renegociação
+    assistida); as demais faixas devolvem as modalidades do catálogo com taxa e
+    prazos, e se a regra de atenção se aplica (comprometimento acima do limite).
+
+    Returns:
+        faixa_risco, elegivel, ofertas, motivo, regra_atencao,
+        custo_mensal_juros_atual; ou error se não houver identificação.
+    """
+    cid = _customer_id(tool_context)
+    if not cid:
+        return dict(NO_IDENTITY)
+    return _politica(cid)
+
+
+def _price(principal: float, taxa: float, n: int) -> float:
+    return principal * taxa / (1 - (1 + taxa) ** (-n))
+
+
+def calcular_t02(customer_id: str, prazos: tuple[int, ...] = PRAZOS_T02) -> dict:
+    """T02: parcelar o saldo do rotativo pela tabela Price, na taxa do catálogo da
+    faixa, com a regra de atenção decidindo aprovado/rejeitado por prazo."""
+    politica = _politica(customer_id)
+    if "error" in politica:
+        return politica
+    if not politica["elegivel"]:
+        return {
+            "error": f"Faixa V: sem oferta de crédito. {politica['encaminhamento']}"
+        }
+    saldo = politica["saldo_rotativo"]
+    if saldo <= 0:
+        return {
+            "error": "Sem saldo no rotativo no mês de referência: o T02 não se aplica."
+        }
+    oferta = next(
+        (o for o in politica["ofertas"] if o["modalidade"] == "parcelamento_fatura"),
+        None,
+    )
+    if oferta is None:
+        return {"error": "Sem parcelamento de fatura no catálogo para esta faixa."}
+    custo_atual = politica["custo_mensal_juros_atual"]
+    opcoes = []
+    for n in prazos:
+        if not (oferta["prazo_min"] <= n <= oferta["prazo_max"]):
+            continue
+        exata = _price(saldo, oferta["taxa_mensal"], n)
+        parcela = round(exata, 2)
+        # juros sobre a parcela exata: arredondar antes acumula centavos no total
+        juros = round(exata * n - saldo, 2)
+        if politica["regra_atencao"] and parcela > custo_atual:
+            aprovado, motivo = (
+                False,
+                (
+                    f"Parcela de {_brl(parcela)} supera o custo mensal atual de juros "
+                    f"({_brl(custo_atual)})."
+                ),
+            )
+        else:
+            aprovado, motivo = True, "Cabe na regra."
+        opcoes.append(
+            {
+                "prazo": n,
+                "parcela": parcela,
+                "juros_totais": juros,
+                "aprovado": aprovado,
+                "motivo": motivo,
+            }
+        )
+    return {
+        "simulacao_id": f"t02-{customer_id[:8]}-{uuid.uuid4().hex[:6]}",
+        "tipo": "t02",
+        "expira_em": (datetime.now(UTC) + VALIDADE_SIMULACAO).isoformat(
+            timespec="seconds"
+        ),
+        "saldo": saldo,
+        "faixa_risco": politica["faixa_risco"],
+        "taxa_mensal": oferta["taxa_mensal"],
+        "carencia_dias": oferta["carencia_dias"],
+        "custo_mensal_juros_atual": custo_atual,
+        "regra_atencao": politica["regra_atencao"],
+        "opcoes": opcoes,
+        "aviso": AVISO_T02,
+    }
+
+
+def simular_parcelamento_fatura(tool_context: ToolContext) -> dict:
+    """Simula o T02: parcelar o saldo do rotativo em 3, 6, 9 e 12 vezes pela tabela Price.
+
+    Usa a taxa do catálogo da faixa do cliente. Cada prazo sai com parcela, juros
+    totais e aprovado/rejeitado pela regra de atenção (com comprometimento acima do
+    limite, só parcela até o custo mensal atual de juros). Valores sem IOF e CET.
+    Faixa V recebe error: nenhuma oferta de crédito. Registra a simulação na sessão
+    com validade de 24 horas.
+
+    Returns:
+        simulacao com saldo, taxa_mensal, opcoes e simulacao_id, ou error.
+    """
+    cid = _customer_id(tool_context)
+    if not cid:
+        return dict(NO_IDENTITY)
+    sim = calcular_t02(cid)
+    if "error" in sim:
+        return sim
+    registro = dict(tool_context.state.get("simulacoes") or {})
+    registro[sim["simulacao_id"]] = {
+        "tipo": "t02",
+        "expira_em": sim["expira_em"],
+        "saldo": sim["saldo"],
+    }
+    tool_context.state["simulacoes"] = registro
+    return {"simulacao": sim}

@@ -39,8 +39,10 @@ from app.tools.memory_tools import (
 from app.tools.vita import (
     get_diagnostico,
     get_fatura_rotativo,
+    get_ofertas_elegiveis,
     get_perfil_risco,
     get_posicao_investimentos,
+    simular_parcelamento_fatura,
     simular_uso_reserva,
 )
 
@@ -72,6 +74,8 @@ analyst = Agent(
         get_diagnostico,
         get_posicao_investimentos,
         simular_uso_reserva,
+        get_ofertas_elegiveis,
+        simular_parcelamento_fatura,
         compound_interest,
         compare_revolving_vs_installments,
         time_to_reach_goal,

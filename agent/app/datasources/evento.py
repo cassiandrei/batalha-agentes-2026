@@ -24,6 +24,7 @@ from app.datasources.projections import (
     project_diagnostico,
     project_fatura,
     project_investimento,
+    project_oferta,
     project_parametro,
     project_perfil_risco,
     project_transaction,
@@ -37,6 +38,7 @@ TABELAS_DO_TIME = (
     "vw_bioimpedancia",
     "posicao_investimentos",
     "parametros_modelo",
+    "catalogo_ofertas",
 )
 # CDI sem o arquivo do SGS (make cdi): valor fixo, com a origem dizendo que é fixo.
 # O modelo pode citar a origem; nunca fica em dúvida se o número é medido ou chutado.
@@ -87,6 +89,7 @@ class EventoDataSource:
     ) -> None:
         self._cdi = dict(cdi) if cdi else None
         self._parametros: dict[str, dict] = {}
+        self._catalogo: list[dict] = []
         por_usuario: dict[str, list[dict]] = defaultdict(list)
         for r in linhas:
             por_usuario[r["id_usuario"]].append(r)
@@ -97,6 +100,9 @@ class EventoDataSource:
         for nome, rows in (tabelas or {}).items():
             if nome == "parametros_modelo":  # não é por usuário
                 self._parametros = {r["parametro"]: project_parametro(r) for r in rows}
+                continue
+            if nome == "catalogo_ofertas":  # por faixa, não por usuário
+                self._catalogo = [project_oferta(r) for r in rows]
                 continue
             idx: dict[str, list[dict]] = defaultdict(list)
             for r in rows:
@@ -221,6 +227,10 @@ class EventoDataSource:
 
     def get_cdi(self) -> dict:
         return dict(self._cdi) if self._cdi else dict(CDI_FIXO_DECLARADO)
+
+    def get_catalogo_ofertas(self, faixa_risco: str) -> list[dict]:
+        """Ofertas da faixa. A faixa V não tem linha no catálogo — por desenho."""
+        return [dict(o) for o in self._catalogo if o["faixa_risco"] == faixa_risco]
 
 
 @lru_cache(maxsize=8)
