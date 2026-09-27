@@ -1,10 +1,10 @@
 ---
 name: Vita
-description: Chat de bem-estar financeiro em superfícies claras, forma pedra e acento verde próprio, onde cada número vem de uma tool.
+description: Chat de bem-estar financeiro em superfícies claras, forma pedra e acento laranja, onde cada número vem de uma tool.
 colors:
-  accent: "#0f7a5a"
-  accent-dark: "#0b5c44"
-  accent-soft: "#e6f4ee"
+  accent: "#ff6200"
+  accent-dark: "#c24a00"
+  accent-soft: "#fff0e6"
   ink: "#1a1a1a"
   ink-2: "#2e2e2e"
   ink-3: "#4d4d4d"
@@ -164,29 +164,29 @@ components:
 
 **Creative North Star: "O Consultório Claro"**
 
-O Vita atende como um consultório de luz branca: o cliente entra por um push, senta numa conversa e recebe um Raio-X da própria fatura, seguido de tratamentos que cabem no orçamento. A metáfora já está na linguagem do produto (Raio-X, tratamentos, "por que recomendamos isso") e o mundo visual a sustenta sem dramatizar: superfícies claras (`canvas` e `surface`), grafite para o texto, uma única cor viva, o verde Vita, reservada para o que age, e cores de feedback que aparecem só quando um número precisa ser lido como pago, juros, atenção ou confirmado.
+O Vita atende como um consultório de luz branca: o cliente entra por um push, senta numa conversa e recebe um Raio-X da própria fatura, seguido de tratamentos que cabem no orçamento. A metáfora já está na linguagem do produto (Raio-X, tratamentos, "por que recomendamos isso") e o mundo visual a sustenta sem dramatizar: superfícies claras (`canvas` e `surface`), grafite para o texto, uma única cor viva, o laranja Vita, reservada para o que age, e cores de feedback que aparecem só quando um número precisa ser lido como pago, juros, atenção ou confirmado.
 
 O chat é o app. Não há painel, dashboard ou cabeçalho escuro: o diagnóstico e as opções são cards dentro da conversa, as ações são chips em pílula, e tudo o que exige decisão sobe do rodapé como uma folha (sheet) contida na moldura do aparelho. A densidade é a de um app de banco lido de perto, com corpo de 13,5 px e valores em negrito tabular, mas cada card respira 16 px de borda e as ações têm 44 px de altura. O único ambiente escuro é a tela de bloqueio, que existe para dar ao push o palco de um celular real; dentro do app, escuro é só o balão do cliente.
 
-O tom é sereno e preciso. Nada brilha, nada salta: as sombras ficam abaixo de 4% de opacidade em repouso, o movimento é uma subida curta com desaceleração exponencial, e o momento memorável, o hero de confirmação, ganha sua ênfase por forma (pedra verde de 72 px com check) e não por cor extra. Rejeições confirmadas pela migração: o protótipo anterior de fundo `#121212` com Plus Jakarta Sans, modais centrais e rodapé de cards; e qualquer marca, cor ou fonte do Itaú.
+O tom é sereno e preciso. Nada brilha, nada salta: as sombras ficam abaixo de 4% de opacidade em repouso, o movimento é uma subida curta com desaceleração exponencial, e o momento memorável, o hero de confirmação, ganha sua ênfase por forma (pedra verde de 72 px com check) e não por cor extra. Rejeições confirmadas pela migração: o protótipo anterior de fundo `#121212` com Plus Jakarta Sans, modais centrais e rodapé de cards; e o nome, o azul e as fontes do Itaú (o laranja entrou por decisão registrada).
 
 **Key Characteristics:**
 - Chat como tela principal: cards e opções vivem na conversa, decisões sobem em sheets.
 - Superfícies claras em duas camadas (`canvas` sob `surface`) com bordas de 1 px; sombras quase invisíveis.
 - Forma pedra (24 px) nos cards e sheets, 16 px nos balões e opções, 12 px nas linhas internas, pílula (999 px) em toda ação.
 - Uma família, Inter, com dígitos tabulares em todo o app; só o relógio do bloqueio usa a fonte do sistema.
-- Verde Vita (`accent`) só no que age ou identifica: marca, CTA primário, chip ativo, presença, foco.
+- Laranja Vita (`accent`) só no que age ou identifica: marca, CTA primário, chip ativo, presença, foco.
 - Feedback semântico sempre em par: tom cheio para preenchimento e barra, tom `-text` para texto, tom `-soft` para fundo.
 - Cada número vem de `/api/*`, em formato PT-BR, negrito e tabular; o front não escreve cifra.
 
 ## Colors
 
-Uma paleta quase acromática, com um único verde próprio e quatro cores de feedback que só aparecem quando um número precisa ser lido.
+Uma paleta quase acromática, com um único laranja e quatro cores de feedback que só aparecem quando um número precisa ser lido.
 
 ### Primary
-- **Verde Vita** (`accent`): a única cor viva da interface. Squircle da marca, botão primário, ponto do push, chip ativo, seleção de opção, cursor e anel de foco. Aparece porque algo age ou identifica o Vita, nunca como decoração.
-- **Verde Fundo** (`accent-dark`): hover e pressão do botão primário; texto sobre `accent-soft` (chip ativo, valor em destaque `accent`, link de fonte citada).
-- **Névoa Verde** (`accent-soft`): fundo do chip ativo, da seleção de opção, do ícone da marca em cards, do toggle de voz ligado e da tag "T01/T02" no sheet. É o verde que se pode pisar.
+- **Laranja Vita** (`accent`): a única cor viva da interface. Squircle da marca, botão primário, ponto do push, chip ativo, seleção de opção, cursor e anel de foco. Aparece porque algo age ou identifica o Vita, nunca como decoração.
+- **Laranja Fundo** (`accent-dark`): hover e pressão do botão primário; texto sobre `accent-soft` (chip ativo, valor em destaque `accent`, link de fonte citada).
+- **Névoa Laranja** (`accent-soft`): fundo do chip ativo, da seleção de opção, do ícone da marca em cards, do toggle de voz ligado e da tag "T01/T02" no sheet. É o laranja que se pode pisar.
 
 ### Neutral
 - **Grafite** (`ink`): texto principal, títulos, e o balão do cliente (fundo grafite, texto branco). Também o handle do composer a 20%.
@@ -210,9 +210,9 @@ Uma paleta quase acromática, com um único verde próprio e quatro cores de fee
 ### Named Rules
 **The Text-Tone Rule.** O tom cheio de uma cor de feedback (`success`, `alert`, `warn`) preenche barras, pontos e ícones; texto só usa o tom `-text` sobre o tom `-soft` ou sobre branco. Não há exceção, nem em tags de 10 px.
 
-**The Green Acts Rule.** O verde Vita aparece apenas onde há ação, seleção, identidade ou foco. Um card sem ação não tem verde; um fundo nunca é verde. Se a tela tiver mais verde do que grafite, algo está errado.
+**The Green Acts Rule.** O laranja Vita aparece apenas onde há ação, seleção, identidade ou foco. Um card sem ação não tem laranja; um fundo nunca é laranja. Se a tela tiver mais laranja do que grafite, algo está errado.
 
-**The No-Orange Rule.** Nenhum laranja (`#FF6200`, `#EC7000`), nenhum azul de marca (`#003399`), nenhuma fonte ou nome do Itaú, em nenhuma superfície. É regra 3 do projeto e vale para assets, prompts e código.
+**The Brand Decision Rule.** O laranja `#FF6200` é o laranja do Itaú e entrou por decisão do usuário em 27/09, contra a regra 3 do projeto (registrado no PRODUCT.md). Azul `#003399`, fontes Itaú Text/Display e o nome Itaú continuam fora.
 
 ## Typography
 
@@ -269,7 +269,7 @@ O sistema é tonal com sombras ambientais quase invisíveis. Profundidade vem de
 
 A forma-mãe é a pedra: 24 px de raio nos cards, nos sheets (só os cantos de cima) e na pedra do hero (22 px, 72 px de lado). Um degrau abaixo, 16 px nos balões, nas opções de tratamento e nos prazos; 12 px nas linhas internas de card, no campo do iToken e nos ícones-caixa de 32 px; 8 px nos ícones-caixa de 28 px. Toda ação é pílula (999 px): botões, chips, tags, controles circulares, o composer e o anel de foco (`outline: 2px solid accent; offset 2px; radius 999px`), com o campo de texto como exceção (foco em 12 px, offset 0).
 
-Os balões são assimétricos: o do agente tem o canto superior esquerdo reto (2 px), o do cliente tem o canto inferior direito reto. Bordas são sempre de 1 px, em `line` para contêineres e `line-strong` para controles. Ícones são SVG de traço (lucide), de 14 a 20 px, sempre dentro de uma caixa de raio 8–12 px; a marca é uma estrela de quatro pontas num squircle verde de 28, 32 ou 36 px.
+Os balões são assimétricos: o do agente tem o canto superior esquerdo reto (2 px), o do cliente tem o canto inferior direito reto. Bordas são sempre de 1 px, em `line` para contêineres e `line-strong` para controles. Ícones são SVG de traço (lucide), de 14 a 20 px, sempre dentro de uma caixa de raio 8–12 px; a marca é uma estrela de quatro pontas num squircle laranja de 28, 32 ou 36 px.
 
 **The Pill Acts, the Stone Holds Rule.** Pílula (999 px) é o que se toca; pedra (24 px) é o que se lê. Um card nunca é pílula; um botão nunca é pedra.
 
@@ -337,10 +337,10 @@ Uma curva só para o app, `cubic-bezier(0.16, 1, 0.3, 1)`: `fade-in` 0,25 s (men
 - **Do** respeitar `prefers-reduced-motion` em animações e confete.
 
 ### Don't:
-- **Don't** usar laranja (`#FF6200`, `#EC7000`), azul `#003399`, fontes Itaú Text/Display ou o nome Itaú em nenhuma superfície.
+- **Don't** usar azul `#003399`, fontes Itaú Text/Display ou o nome Itaú em nenhuma superfície; o laranja `#FF6200` entrou por decisão registrada, não use o `#EC7000` alternativo.
 - **Don't** escrever "garantido", "aprovado", "sem risco", "sangria" ou "você errou".
 - **Don't** pôr texto no tom cheio de `success`, `alert` ou `warn`; texto usa o tom `-text`.
 - **Don't** centralizar modais nem usar cabeçalho escuro dentro do app; escuro é só a tela de bloqueio, a moldura e o balão do cliente.
-- **Don't** pintar fundos de card em verde; o verde Vita é ação, seleção, identidade e foco.
+- **Don't** pintar fundos de card em laranja; o laranja Vita é ação, seleção, identidade e foco.
 - **Don't** introduzir uma segunda família tipográfica, um tamanho fora da escala de meio pixel ou uma sombra estrutural nova.
 - **Don't** mostrar CPF, cartão ou nome completo; a tool não devolve e a tela não inventa.

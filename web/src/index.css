@@ -15,9 +15,12 @@
   --color-mid: #6e6e6e;
   --color-low: #a3a3a3;
 
-  --color-accent: #0f7a5a;
-  --color-accent-dark: #0b5c44;
-  --color-accent-soft: #e6f4ee;
+  /* Acento trocado para o laranja do Itaú a pedido do usuário (27/09), contra a regra 3
+     do projeto; a decisão está registrada no PRODUCT.md. O tom escuro é o que vira texto
+     sobre branco (o #ff6200 puro fica em 3,0:1, abaixo do AA). */
+  --color-accent: #ff6200;
+  --color-accent-dark: #c24a00;
+  --color-accent-soft: #fff0e6;
 
   --color-success: #00875a;
   --color-success-text: #0b6b48;

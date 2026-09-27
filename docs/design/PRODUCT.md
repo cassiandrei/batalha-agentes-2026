@@ -103,12 +103,15 @@ produto); avaliação offline com LLM como juiz (S10) não feita.
   confirmação, Comparison Columns, Service Options Selector e Protection Badge na
   negociação assistida com os cinco estados (default, empty, loading, error, success),
   Fixed Bottom Action Bar, moldura de iPhone com Dynamic Island.
-- **Excluído por decisão (regra 3):** tudo o que é marca Itaú no Vita-UI: o nome "Itaú"
-  ("VITA • Itaú", "Assistente Financeiro Itaú"), o Laranja Protagonista `#FF6200`/`#EC7000`
-  e seus tons, o Azul de Confiança `#003399`, as fontes Itaú Text/Display, o nome "Voxel" e
-  a menção ao rebranding. **Decisão em aberto:** a cor de acento que substitui o laranja
-  (a interface atual usa o verde `#1FA37C` sobre fundo escuro; o Vita-UI pede superfícies
-  claras). Escolher em new-work, não aqui.
+- **Acento: o laranja do Itaú `#FF6200`**, por decisão do usuário em 27/09 (segunda
+  decisão do dia: a primeira, pela manhã, tinha sido o verde `#0F7A5A`). Isso contraria a
+  regra 3 do `CLAUDE.md` e o regulamento do evento, que vetam identidade visual do Itaú;
+  a ressalva foi dada e a decisão é do time. Sobre branco, `#FF6200` rende 3,0:1: o texto
+  no acento usa o tom escuro `#C24A00` (5,0:1); botões com texto branco sobre `#FF6200`
+  ficam abaixo do AA em texto normal.
+- **Continua excluído:** o nome "Itaú" ("VITA • Itaú", "Assistente Financeiro Itaú"), o
+  Azul de Confiança `#003399`, as fontes Itaú Text/Display, o nome "Voxel", o tom `#EC7000`
+  e a menção ao rebranding.
 - **Incumbente hoje:** `web/` (protótipo do Dan, `danmarcello/Vita` `f7d9d34`): verde
   `#1FA37C`, fundo `#121212`, Plus Jakarta Sans. É evidência e ponto de partida, não
   autoridade: a migração para o mundo do Vita-UI é redesign, não polimento.

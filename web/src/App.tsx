@@ -325,7 +325,7 @@ export default function App() {
         particleCount: 90,
         spread: 70,
         origin: { y: 0.65 },
-        colors: ['#0F7A5A', '#00875A', '#FFFFFF'],
+        colors: ['#FF6200', '#00875A', '#FFFFFF'],
       });
     } catch {
       // sem confete não é erro

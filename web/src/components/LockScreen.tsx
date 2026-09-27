@@ -56,7 +56,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ push, onOpen }) => {
               </div>
 
               <div className="flex items-start gap-2 mt-3.5">
-                <span className="w-2.5 h-2.5 mt-[7px] rounded-full bg-accent shadow-[0_0_8px_rgba(15,122,90,0.7)] shrink-0" aria-hidden="true" />
+                <span className="w-2.5 h-2.5 mt-[7px] rounded-full bg-accent shadow-[0_0_8px_rgba(255,98,0,0.6)] shrink-0" aria-hidden="true" />
                 <h2 className="font-bold text-[17px] tracking-tight leading-snug">{push ?? 'Carregando…'}</h2>
               </div>
               <p className="text-zinc-300 text-[14px] leading-[1.45] mt-2">
