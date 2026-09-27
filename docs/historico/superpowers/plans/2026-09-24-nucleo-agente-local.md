@@ -8,7 +8,7 @@
 
 **Tech Stack:** Python 3.12, `google-adk` 2.8.x, `uv`, `agents-cli` 1.7.0 (via `uvx`), Faker `pt_BR`, `sqlite3` e `csv` da stdlib, pytest, ruff.
 
-**Spec:** `docs/superpowers/specs/2026-09-24-nucleo-agente-local-design.md`
+**Spec:** `docs/historico/superpowers/specs/2026-09-24-nucleo-agente-local-design.md`
 
 ## Global Constraints
 

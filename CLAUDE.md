@@ -9,7 +9,7 @@
 
 O **Vita**, agente de bem-estar financeiro em **ADK 2.8** sobre **GCP** para a Batalha de
 Agentes (26–27/09/2026). Nasceu de um template genérico (histórico em
-`docs/produto/BLUEPRINT.md` e `HANDOFF.md`) e foi construído em fatias verticais S1–S8
+`docs/historico/BLUEPRINT.md` e `docs/historico/HANDOFF.md`) e foi construído em fatias verticais S1–S8
 sobre a jornada do rotativo do cartão (persona Bruno; cena do Marcos na faixa V).
 
 Leitura na primeira vez, nesta ordem: `docs/produto/PRD.md` (o produto),
@@ -105,8 +105,12 @@ data/
   redteam/             casos do red team (make redteam, sem modelo)
 web/                   front React/Vite + Express publicado como vita-app; só proxy, nenhum número escrito
 infra/scripts/         deploy, deploy_web, smoke, smoke_fatia, roteiro_e2e, redteam, seed_abertura, fetch_cdi
-docs/produto/          PRD, fatias verticais, DADOS_EVENTO (uma seção por fatia), blueprint histórico
-docs/                  arquitetura (entregável 5), drawio (entregável 4), LGPD, experimentação, checklist, redteam
+docs/produto/          PRD, fatias verticais, DADOS_EVENTO (uma seção por fatia)
+docs/entregaveis/      drawio (entregável 4) e documento explicativo (entregável 5)
+docs/design/           PRODUCT.md e DESIGN.md do front (artefatos do impeccable)
+docs/rai/              system card, política de conteúdo, ciclo purple (S10)
+docs/historico/        blueprint, handoff, patches do protótipo, specs antigas
+docs/                  ARCHITECTURE, SECURITY_LGPD, EXPERIMENTATION, SATURDAY_CHECKLIST, avaliacao, redteam
 ```
 
 ---
@@ -137,6 +141,8 @@ docs/                  arquitetura (entregável 5), drawio (entregável 4), LGPD
 ---
 
 ## Estilo
+
+- **Nenhum documento solto na raiz.** Só `CLAUDE.md`, `Makefile` e `skills-lock.json` ficam lá; todo `.md`, diagrama ou relatório vai para `docs/` (mapa em `docs/README.md`).
 
 - **Código e identificadores em inglês; comentários, docstrings e documentação em
   português.** Os prompts também são em português — é a língua do cliente.

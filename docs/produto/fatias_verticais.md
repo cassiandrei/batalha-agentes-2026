@@ -219,7 +219,7 @@ Use o LLM simulado. Publique com --tag s5 --no-traffic e mostre o fluxo na URL d
 
 ## S7b — Migração de UI para o Vita-UI (feita em 27/09)
 
-Apenas UI, funcionalidades do chat mantidas. O `web/` passou para o mundo visual do repositório `Grazinascito/Vita-UI` (superfícies claras, pedra 24 px, pílulas, Inter, feedback semântico; tela de bloqueio com push rico, Raio-X e tratamentos no chat, sheets, hero de confirmação, negociação assistida) com acento verde próprio e sem marca Itaú. Fluxo Impeccable: `PRODUCT.md`, brief com contrato de direção, revisão de acabamento (`ship` após uma rodada de 8 correções), `DESIGN.md` + `.impeccable/design.json`. Publicado como tag `ui-vita` do `vita-app` apontando para a `fatia-s7`: roteiro 12/12 sem modelo, smokes s6 5/5 e s8 4/4.
+Apenas UI, funcionalidades do chat mantidas. O `web/` passou para o mundo visual do repositório `Grazinascito/Vita-UI` (superfícies claras, pedra 24 px, pílulas, Inter, feedback semântico; tela de bloqueio com push rico, Raio-X e tratamentos no chat, sheets, hero de confirmação, negociação assistida) com acento verde próprio e sem marca Itaú. Fluxo Impeccable: `docs/design/PRODUCT.md`, brief com contrato de direção, revisão de acabamento (`ship` após uma rodada de 8 correções), `DESIGN.md` + `.impeccable/design.json`. Publicado como tag `ui-vita` do `vita-app` apontando para a `fatia-s7`: roteiro 12/12 sem modelo, smokes s6 5/5 e s8 4/4.
 
 ## S6 — Guardrails e cena do Marcos (feita em 27/09)
 

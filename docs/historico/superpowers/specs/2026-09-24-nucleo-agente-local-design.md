@@ -3,7 +3,7 @@
 **Data:** 2026-09-24
 **Revisão:** 2 — incorpora a revisão do autor do HANDOFF (6 ajustes)
 **Sub-projeto:** 1 de 3
-**Cobre:** Fases 0–5 do `HANDOFF.md`, mais dois itens puxados da Fase 8
+**Cobre:** Fases 0–5 do `docs/historico/HANDOFF.md`, mais dois itens puxados da Fase 8
 **Não cobre:** BigQuery, RAG Engine, Model Armor, deploy, Pub/Sub, `/events`, split de tráfego, `make eval`, os seis documentos da Fase 8
 
 ---
@@ -182,7 +182,7 @@ batalha-agentes/
 ├── Makefile
 ├── .gitignore                       # .env, data/synthetic/, *.db, .venv/, __pycache__
 ├── .vscode/extensions.json
-├── docs/superpowers/specs/          # este spec
+├── docs/historico/superpowers/specs/          # este spec
 ├── agent/                           # create agent -o . -d cloud_run --region southamerica-east1
 │   ├── agents-cli-manifest.yaml     # scaffold — root_agent_name: orchestrator
 │   ├── pyproject.toml               # scaffold + faker no grupo dev

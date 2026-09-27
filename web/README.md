@@ -2,7 +2,7 @@
 
 Origem: protótipo do designer (`danmarcello/Vita`, commit `f7d9d34`), trazido para este
 repositório na fatia S2b com as mudanças das fatias S1 e S2 aplicadas. A partir daqui o
-código vive aqui; os patches em `docs/prototipo/` são históricos.
+código vive aqui; os patches em `docs/historico/prototipo/` são históricos.
 
 ## O que mudou em relação ao protótipo
 
@@ -60,5 +60,5 @@ rico, Top App Bar, balões, Raio-X e tratamentos dentro do chat, chips e compose
 que sobem do rodapé, hero de confirmação, negociação assistida com estados), com o acento verde
 próprio do Vita (`#0F7A5A`) no lugar de qualquer marca do Itaú (regra 3). Tokens em
 `src/index.css` (`@theme`); primitivas em `src/components/ui.tsx`; o design system está
-registrado em `DESIGN.md` (raiz) e `.impeccable/design.json`. Nenhuma funcionalidade do chat mudou:
+registrado em `docs/design/DESIGN.md` e `.impeccable/design.json`. Nenhuma funcionalidade do chat mudou:
 todos os números continuam vindo de `/api/*`.
