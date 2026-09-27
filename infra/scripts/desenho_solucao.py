@@ -115,7 +115,7 @@ CAIXAS = [
         False,
     ),
     # observabilidade
-    ("log", 940, 310, 220, 50, "Cloud Logging\nguard · turn (sem texto)", IMPL, False),
+    ("log", 940, 310, 220, 50, "Cloud Logging\nauditoria sem PII", IMPL, False),
     ("redteam", 940, 375, 220, 50, "Red team\n131 casos · 13 categorias", IMPL, False),
     ("aval", 940, 440, 220, 50, "Avaliação\n28 conversas · contrafactual", IMPL, False),
     ("ab", 940, 515, 220, 45, "Rollout por revisão · 10% → 100%", IMPL, False),

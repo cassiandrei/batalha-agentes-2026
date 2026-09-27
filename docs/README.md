@@ -10,7 +10,8 @@
 | `entregaveis/` | racional (3), desenho de solução em `.drawio` e `.svg` (4, gerados por `infra/scripts/desenho_solucao.py`) e documento explicativo (5) |
 | `SECURITY_LGPD.md`, `EXPERIMENTATION.md` | LGPD e estratégia de experimentação |
 | `SATURDAY_CHECKLIST.md` | preparação e roteiro do dia da banca |
-| `avaliacao.md`, `redteam/` | números medidos: conversas sintéticas, contrafactual e red team |
+| `produto/avaliacao.md`, `redteam/` | números medidos: conversas sintéticas, contrafactual e red team |
+| `banca/` | relatórios da banca simulada (skill `banca-batalha-agentes`) |
 | `rai/` | system card, política de conteúdo e ciclo purple (IA Responsável) |
 | `design/` | `PRODUCT.md` e `DESIGN.md` do front (artefatos do impeccable; a skill os procura na raiz, copie para lá se for regenerar) |
 | `diagrams/` | SVGs usados no PRD |
