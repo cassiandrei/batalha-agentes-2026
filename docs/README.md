@@ -16,4 +16,4 @@
 | `diagrams/` | SVGs usados no PRD |
 | `historico/` | blueprint e handoff do template, patches do protótipo, specs e planos antigos |
 
-Regra: nenhum documento solto na raiz do repositório.
+Regra: nenhum documento solto na raiz do repositório, exceto o `README.md` (porta de entrada: os cinco entregáveis obrigatórios e a URL pública do protótipo) e o `CLAUDE.md`.
