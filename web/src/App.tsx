@@ -335,9 +335,9 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#E9E9EB] flex flex-col items-center justify-center font-sans antialiased text-ink">
+    <div className="min-h-dvh bg-[#E9E9EB] flex flex-col items-center justify-center font-sans antialiased text-ink">
       <div
-        className={`relative w-full h-screen flex flex-col overflow-hidden transition-all ${
+        className={`relative w-full h-dvh flex flex-col overflow-hidden transition-all ${
           isMobileFrame
             ? 'max-w-[420px] max-h-[880px] md:h-[92vh] md:rounded-[44px] md:border-[10px] md:border-[#1c1c1e] md:shadow-[0_30px_80px_rgba(0,0,0,0.35)] bg-canvas'
             : 'max-w-4xl md:h-[94vh] md:rounded-3xl md:border md:border-line-strong md:shadow-[0_20px_60px_rgba(0,0,0,0.12)] bg-canvas'

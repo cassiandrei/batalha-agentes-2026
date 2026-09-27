@@ -70,18 +70,21 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
   onConsent,
   onForgetAll,
 }) => {
-  const bottomRef = useRef<HTMLDivElement>(null);
   const mainRef = useRef<HTMLElement>(null);
 
   // A abertura começa pelo topo (a mensagem do agente e o Raio-X são a primeira tela);
   // só as mensagens seguintes puxam a rolagem para o fim.
+  // Rola só o container do chat: scrollIntoView rolaria também o documento e, no
+  // celular, tiraria o cabeçalho da tela.
   useEffect(() => {
+    const main = mainRef.current;
     const ultima = messages[messages.length - 1];
-    if (ultima?.isInitial) {
-      mainRef.current?.scrollTo({ top: 0 });
+    if (!main || !ultima) return;
+    if (ultima.isInitial) {
+      main.scrollTo({ top: 0 });
       return;
     }
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    main.scrollTo({ top: main.scrollHeight, behavior: 'smooth' });
   }, [messages, isTyping]);
 
   return (
@@ -206,7 +209,6 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
         </div>
       )}
 
-      <div ref={bottomRef} />
     </main>
   );
 };
