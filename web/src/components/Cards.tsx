@@ -255,9 +255,7 @@ const Opcao: React.FC<{ principal: boolean; icon: React.ReactNode; titulo: strin
       principal ? 'border-accent bg-accent-soft/50 shadow-xs hover:bg-accent-soft' : 'border-line bg-canvas hover:border-low'
     }`}
   >
-    {principal && (
-      <span className="absolute -top-2.5 right-3 bg-accent text-white text-[9.5px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Recomendação Vita</span>
-    )}
+    {/* Sem selo de recomendação: o Vita não enviesa a decisão financeira (27/09). */}
     <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${principal ? 'bg-accent text-white' : 'bg-surface text-mid border border-line'}`} aria-hidden="true">
       {icon}
     </div>
