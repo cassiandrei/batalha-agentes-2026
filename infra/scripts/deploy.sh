@@ -49,6 +49,8 @@ BUILD="${BUILD:-cloudbuild}"
 # visível a quem tem run.viewer — aceitável em projeto isolado por time.
 MODEL_KEY_SECRET="${MODEL_KEY_SECRET:-}"
 MAX_INSTANCES="${MAX_INSTANCES:-3}"
+# S7: MIN_INSTANCES=1 durante a apresentação (instância sempre quente; custa crédito).
+MIN_INSTANCES="${MIN_INSTANCES:-0}"
 DATA_SOURCE="${DATA_SOURCE:-local}"
 DRY_RUN=0
 
@@ -143,7 +145,7 @@ else
   MODEL_ENV="GOOGLE_GENAI_USE_VERTEXAI=true,GOOGLE_CLOUD_LOCATION=${MODEL_LOCATION}"
 fi
 
-ENV_VARS="${MODEL_ENV},GOOGLE_CLOUD_PROJECT=${PROJECT_ID},REGION=${REGION},DATA_DIR=/code/data,DATA_SOURCE=${DATA_SOURCE},DEMO_MODE=true,DEMO_CUSTOMER_ID=${DEMO_CUSTOMER_ID:-FICT-0001},USE_MODEL_ARMOR=${USE_MODEL_ARMOR:-false},USE_RAG_ENGINE=false,${MODEL_NAME_NORMAS:+MODEL_NAME_NORMAS=${MODEL_NAME_NORMAS},}${ENGINE_ENV}MEMORY_BACKEND=${MEMORY_BACKEND},MEMORY_LOCATION=${MEMORY_LOCATION}"
+ENV_VARS="${MODEL_ENV},GOOGLE_CLOUD_PROJECT=${PROJECT_ID},REGION=${REGION},DATA_DIR=/code/data,DATA_SOURCE=${DATA_SOURCE},DEMO_MODE=true,DEMO_CUSTOMER_ID=${DEMO_CUSTOMER_ID:-FICT-0001},USE_MODEL_ARMOR=${USE_MODEL_ARMOR:-false},USE_RAG_ENGINE=false,${MODEL_NAME_NORMAS:+MODEL_NAME_NORMAS=${MODEL_NAME_NORMAS},}${MODEL_NAME_REDATOR:+MODEL_NAME_REDATOR=${MODEL_NAME_REDATOR},}${LLM_MODE:+LLM_MODE=${LLM_MODE},}DEMO_CUSTOMER_ID_MARCOS=${DEMO_CUSTOMER_ID_MARCOS:-8fbc8ba3-7d20-4382-ba8d-ffd070e836a1},${ENGINE_ENV}MEMORY_BACKEND=${MEMORY_BACKEND},MEMORY_LOCATION=${MEMORY_LOCATION}"
 
 if [[ "$MANAGED_IAM" == "0" ]]; then
   IMAGE="${REGION}-docker.pkg.dev/${PROJECT_ID}/${AR_REPO}/${SERVICE}:$(date +%Y%m%d-%H%M%S)"
@@ -161,7 +163,7 @@ if [[ "$MANAGED_IAM" == "0" ]]; then
     --image="$IMAGE" \
     --service-account="$SA_EMAIL" \
     --no-allow-unauthenticated --port=8080 --memory=2Gi --cpu=1 \
-    --min-instances=0 --max-instances="$MAX_INSTANCES" \
+    --min-instances="$MIN_INSTANCES" --max-instances="$MAX_INSTANCES" \
     --set-env-vars="$ENV_VARS" $TAG_ARGS
 else
 echo "# 5. Deploy a partir do fonte (Cloud Build monta a imagem)"
@@ -174,7 +176,7 @@ run gcloud run deploy "$SERVICE" \
   --port=8080 \
   --memory=2Gi \
   --cpu=1 \
-  --min-instances=0 \
+  --min-instances="$MIN_INSTANCES" \
   --max-instances="$MAX_INSTANCES" \
   --set-env-vars="$ENV_VARS" $TAG_ARGS
 fi  # MANAGED_IAM

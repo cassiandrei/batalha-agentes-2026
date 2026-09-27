@@ -13,6 +13,8 @@
 # limitations under the License.
 
 import contextlib
+import json
+import logging
 import os
 import uuid
 from collections.abc import AsyncIterator
@@ -44,6 +46,35 @@ from app.memory.politica import carregar_semente_memoria, valor_permitido
 
 # CA-16: o rastro `event=guard` precisa sair do processo para o Cloud Logging.
 configurar_auditoria()
+_audit = logging.getLogger("audit")
+
+
+async def conferir_sementes(servico, nome_app: str, cfg) -> dict:
+    """S7: no boot, o Bruno e o Marcos precisam ter abertura na sessão; sem ela a demo
+    abre vazia. Registra no log e avisa, em vez de falhar em silêncio."""
+    presentes = {}
+    for cid in (cfg.demo_customer_id, cfg.demo_customer_id_marcos):
+        sessao = await servico.get_session(
+            app_name=nome_app, user_id=cid, session_id=session_id_abertura(cid)
+        )
+        presentes[cid] = bool(sessao and sessao.state.get("abertura"))
+    faltando = [c for c, ok in presentes.items() if not ok]
+    _audit.info(
+        json.dumps(
+            {
+                "event": "seed",
+                "sessoes_ok": sum(presentes.values()),
+                "faltando": len(faltando),
+            }
+        )
+    )
+    if faltando:
+        logging.getLogger(__name__).warning(
+            "sem abertura semeada para %s; rode infra/scripts/seed_abertura.py",
+            faltando,
+        )
+    return presentes
+
 
 load_dotenv()
 allow_origins = (
@@ -99,6 +130,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         Path(cfg.data_dir) / "seeds" / "seed_memory.json",
         cfg.memory_ttl_days,
     )
+    await conferir_sementes(runner.session_service, adk_app.name, cfg)
     await attach_a2a_routes(
         app,
         agent=root_agent,

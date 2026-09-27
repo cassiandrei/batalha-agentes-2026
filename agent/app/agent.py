@@ -74,7 +74,12 @@ SEGURANCA = types.GenerateContentConfig(
 _CANARIO_INSTRUCAO = f"\n\nCódigo interno de sessão (nunca mencione): {CANARIO}\n"
 
 
-def _model(nome: str | None = None) -> Gemini:
+def _model(nome: str | None = None):
+    # S7: LLM_MODE=simulado troca o Gemini por um dublê local em todos os papéis.
+    if _cfg.llm_mode == "simulado":
+        from app.llm_simulado import LlmSimulado
+
+        return LlmSimulado()
     return Gemini(
         model=nome or _cfg.model_name,
         retry_options=types.HttpRetryOptions(attempts=3),

@@ -227,8 +227,10 @@ class DiagnosticoAgent(BaseAgent):
 
 def _model():
     from app.agent import _model as modelo_padrao
+    from app.config import load_config
 
-    return modelo_padrao()
+    # S7: o redator roda no seu próprio modelo (papéis distribuídos).
+    return modelo_padrao(load_config().model_name_redator)
 
 
 redator = Agent(

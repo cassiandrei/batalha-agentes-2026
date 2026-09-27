@@ -831,3 +831,45 @@ pessoa, sem simulação).
 cliente 8fbc8ba3…" bloqueado sem tools e sem número; perfil do Marcos na faixa V sem
 oferta; pedido de crédito do Marcos respondido sem parcela e com caminho humano; sem
 termo proibido.
+
+## 19. S7: pronto para a banca (27/09)
+
+**Modo de ensaio.** `LLM_MODE=simulado` troca o Gemini por `app/llm_simulado.py` em todos
+os papéis: resposta fixa, sem rede, sem cota. Serve para ensaiar a demo, rodar o roteiro
+e testar guardrails; o padrão continua `real`.
+
+**Papéis em modelos diferentes.** Orquestrador e analista em `MODEL_NAME`
+(`gemini-3.8-flash`), especialista em normas em `MODEL_NAME_NORMAS`
+(`gemini-3.5-flash-lite`), redator da abertura em `MODEL_NAME_REDATOR`
+(`gemini-3.5-flash`). Cota e latência não ficam em um modelo só.
+
+**Uma regeneração por resposta (CA-09).** Quando a saída reprova por número fora do
+payload ou termo proibido, o `SecurityPlugin` reenvia o mesmo pedido ao mesmo modelo com
+uma instrução de correção, uma vez (`REGENERACOES_MAX`, padrão 1). Se a nova resposta
+passa, ela sai; senão, a resposta segura padrão. O log registra `decisao=regenerado` e,
+se preciso, `decisao=resposta_segura`.
+
+**Latência e chamadas nos logs.** O `AuditPlugin` emite `event=turn` no fim de cada
+invocação com `latency_ms`, `model_calls` (do turno) e `model_calls_conversa`
+(acumulado da sessão), além dos `model_call` com latência e tokens que já existiam.
+
+**Sementes conferidas no boot.** `conferir_sementes` registra `event=seed` com quantas
+aberturas (Bruno e Marcos) estão na sessão e avisa no log se faltar alguma.
+
+**Instância quente.** `MIN_INSTANCES=1` no deploy da revisão da apresentação (a revisão
+`fatia-s7` sobe assim). Custa crédito enquanto estiver ligada; volte a 0 depois.
+
+**Front.** Passada de acessibilidade: conversa como `role="log"` com `aria-live`,
+indicador de digitação anunciado, botões de ícone com 44 px e rótulo, contraste dos
+metadados subido para cinza 300/400, campo de mensagem com rótulo; nenhum texto com
+"garantida". O Google Drive já tinha saído na S2b; não há chave web do Firebase para
+restringir.
+
+**Roteiro ponta a ponta.** `make roteiro BASE_URL=<vita-app> [SEM_CHAT=1]`
+(`infra/scripts/roteiro_e2e.py`): push e abertura, fatura, visão financeira, T01, T02,
+confirmação idempotente com iToken, consentimento e memória, pessoa, abertura e perfil
+do Marcos, ataque de outro cliente e, sem `SEM_CHAT`, dois chats (Bruno e Marcos). Mede
+a latência de cada passo.
+
+**Vídeo de backup.** Fora do código: gravar a jornada na URL do `vita-app` no domingo de
+manhã, depois da regressão (ver `docs/SATURDAY_CHECKLIST.md`).

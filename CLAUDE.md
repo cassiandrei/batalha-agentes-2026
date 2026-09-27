@@ -101,6 +101,7 @@ docs/              blueprint, arquitetura, LGPD, experimentação, checklist
 | `make switch-project PROJECT_ID=x [REGION=y] [MODE=vertex\|local]` | troca projeto, região e modo |
 | `make deploy PROJECT_ID=x [DRY_RUN=1]` | deploy no Cloud Run |
 | `make smoke BASE_URL=x [TOKEN=y]` | 13 verificações contra agente vivo |
+| `make roteiro BASE_URL=x [SEM_CHAT=1]` | roteiro ponta a ponta da demo (Bruno + Marcos) com latência por passo |
 | `make redteam` | red team sobre as camadas determinísticas, sem modelo; grava `docs/redteam/RELATORIO.md` |
 | `make teardown PROJECT_ID=x [DRY_RUN=1]` | apaga o que o deploy criou |
 
@@ -155,6 +156,7 @@ Teste que precisa de modelo leva `pytest.mark.llm` — `make test` os exclui, e 
 | `ALREADY_EXISTS` no deploy | Dois deploys simultâneos |
 | Teste lê CSV e falha | `conftest.py` gera em `tmp`; rode `make data` se persistir |
 | Porta 8000 ocupada nos testes e2e | Eles escolhem porta livre; `E2E_PORT` força |
+| Quer ensaiar sem gastar cota | `LLM_MODE=simulado` (todos os papéis respondem um texto fixo) |
 
 **`REGION` e `GOOGLE_CLOUD_LOCATION` são variáveis diferentes.** A primeira é onde o Cloud
 Run roda; a segunda é onde o modelo roda. Nunca derive uma da outra.

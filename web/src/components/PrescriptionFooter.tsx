@@ -101,14 +101,14 @@ export const PrescriptionFooter: React.FC<PrescriptionFooterProps> = ({
         <button
           type="button"
           onClick={onShowMemory}
-          className="whitespace-nowrap text-[11px] bg-gray-800/80 hover:bg-gray-700 text-gray-300 hover:text-white px-3 py-1.5 rounded-full border border-gray-700 transition-colors shrink-0 cursor-pointer"
+          className="whitespace-nowrap text-xs bg-gray-800/80 hover:bg-gray-700 text-gray-200 hover:text-white px-3 py-2 min-h-11 rounded-full border border-gray-700 transition-colors shrink-0 cursor-pointer"
         >
           O que você lembra sobre mim?
         </button>
         <button
           type="button"
           onClick={onForgetAll}
-          className="whitespace-nowrap text-[11px] bg-gray-800/80 hover:bg-gray-700 text-gray-300 hover:text-white px-3 py-1.5 rounded-full border border-gray-700 transition-colors shrink-0 cursor-pointer"
+          className="whitespace-nowrap text-xs bg-gray-800/80 hover:bg-gray-700 text-gray-200 hover:text-white px-3 py-2 min-h-11 rounded-full border border-gray-700 transition-colors shrink-0 cursor-pointer"
         >
           Esqueça tudo
         </button>
@@ -118,7 +118,7 @@ export const PrescriptionFooter: React.FC<PrescriptionFooterProps> = ({
             type="button"
             onClick={() => onSendMessage(prompt)}
             disabled={isTyping}
-            className="whitespace-nowrap text-[11px] bg-gray-800/80 hover:bg-gray-700 text-gray-300 hover:text-white px-3 py-1.5 rounded-full border border-gray-700 transition-colors shrink-0 disabled:opacity-50 cursor-pointer"
+            className="whitespace-nowrap text-xs bg-gray-800/80 hover:bg-gray-700 text-gray-200 hover:text-white px-3 py-2 min-h-11 rounded-full border border-gray-700 transition-colors shrink-0 disabled:opacity-50 cursor-pointer"
           >
             {prompt}
           </button>
@@ -171,8 +171,9 @@ export const PrescriptionFooter: React.FC<PrescriptionFooterProps> = ({
           </div>
           <button
             onClick={onResetTreatment}
-            className="text-[11px] text-gray-400 hover:text-white flex items-center gap-1 p-1 hover:bg-gray-800 rounded transition-colors cursor-pointer"
+            className="text-xs text-gray-300 hover:text-white inline-flex items-center gap-1 p-2.5 min-w-11 min-h-11 justify-center hover:bg-gray-800 rounded transition-colors cursor-pointer"
             title="Simular outra opção"
+            aria-label="Simular outra opção"
           >
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
@@ -186,13 +187,14 @@ export const PrescriptionFooter: React.FC<PrescriptionFooterProps> = ({
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             placeholder="Tire dúvidas sobre seu orçamento com o Vita..."
-            className="w-full bg-[#1E1E1E] border border-gray-700 focus:border-[#1FA37C] focus:ring-1 focus:ring-[#1FA37C] rounded-xl px-4 py-2.5 text-xs text-white placeholder-gray-500 outline-none transition-colors"
+            aria-label="Mensagem para o Vita"
+            className="w-full bg-[#1E1E1E] border border-gray-700 focus:border-[#1FA37C] focus:ring-1 focus:ring-[#1FA37C] rounded-xl px-4 py-3 min-h-11 text-sm text-white placeholder-gray-400 outline-none transition-colors"
           />
         </div>
         <button
           type="submit"
           disabled={!inputText.trim() || isTyping}
-          className="bg-[#1FA37C] hover:bg-teal-600 disabled:bg-gray-800 disabled:text-gray-600 text-white p-2.5 rounded-xl transition-colors cursor-pointer shrink-0"
+          className="bg-[#1FA37C] hover:bg-teal-600 disabled:bg-gray-800 disabled:text-gray-500 text-white p-3 min-w-11 min-h-11 rounded-xl transition-colors cursor-pointer shrink-0"
           aria-label="Enviar mensagem para Vita"
         >
           <Send className="w-4 h-4" />

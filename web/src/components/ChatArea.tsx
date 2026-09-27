@@ -47,7 +47,12 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
   }, [messages, isTyping]);
 
   return (
-    <main className="flex-1 overflow-y-auto p-4 space-y-5 flex flex-col scroll-smooth">
+    <main
+      className="flex-1 overflow-y-auto p-4 space-y-5 flex flex-col scroll-smooth"
+      role="log"
+      aria-live="polite"
+      aria-label="Conversa com o Vita"
+    >
       {/* Date Pill / Conversation Start */}
       <div className="flex justify-center my-1">
         <span className="text-[11px] text-gray-500 bg-gray-900/60 px-3 py-1 rounded-full border border-gray-800">
@@ -144,14 +149,15 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
               </div>
 
               {/* Message metadata & listen button */}
-              <div className="flex items-center gap-2 mt-1 px-1 text-[10px] text-gray-500">
-                <span className="font-semibold text-gray-400">Vita · IA</span>
+              <div className="flex items-center gap-2 mt-1 px-1 text-[11px] text-gray-400">
+                <span className="font-semibold text-gray-300">Vita · IA</span>
                 <span>·</span>
                 <span>{message.timestamp}</span>
                 <button
                   onClick={() => onSpeak(message.content)}
-                  className="opacity-0 group-hover:opacity-100 hover:text-[#1FA37C] transition-opacity p-0.5 cursor-pointer"
+                  className="opacity-60 focus:opacity-100 group-hover:opacity-100 hover:text-[#1FA37C] transition-opacity p-2 -m-1 min-w-11 min-h-11 inline-flex items-center justify-center cursor-pointer"
                   title="Ouvir mensagem"
+                  aria-label="Ouvir mensagem"
                 >
                   <Volume2 className="w-3 h-3" />
                 </button>
@@ -166,7 +172,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
             <div className="bg-gray-700 p-4 rounded-l-xl rounded-br-xl text-sm leading-relaxed text-white shadow-sm">
               {message.content}
             </div>
-            <div className="flex items-center gap-1 mt-1 px-1 text-[10px] text-gray-500">
+            <div className="flex items-center gap-1 mt-1 px-1 text-[11px] text-gray-400">
               <span>{message.timestamp}</span>
               <CheckCheck className="w-3 h-3 text-[#1FA37C]" />
             </div>
@@ -176,8 +182,8 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
 
       {/* Typing indicator */}
       {isTyping && (
-        <div className="flex flex-col items-start max-w-[85%] animate-fade-in">
-          <div className="bg-gray-800/50 border-l-2 border-[#1FA37C] p-3.5 rounded-r-xl rounded-bl-xl text-sm text-gray-400 flex items-center gap-2">
+        <div className="flex flex-col items-start max-w-[85%] animate-fade-in" role="status" aria-live="polite">
+          <div className="bg-gray-800/50 border-l-2 border-[#1FA37C] p-3.5 rounded-r-xl rounded-bl-xl text-sm text-gray-300 flex items-center gap-2">
             <div className="flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-[#1FA37C] animate-bounce" style={{ animationDelay: '0ms' }} />
               <span className="w-1.5 h-1.5 rounded-full bg-[#1FA37C] animate-bounce" style={{ animationDelay: '150ms' }} />

@@ -67,8 +67,9 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Invoice trigger */}
         <button
           onClick={onOpenInvoice}
-          className="p-1.5 text-gray-400 hover:text-gray-200 hover:bg-gray-800/80 rounded-lg transition-colors cursor-pointer"
+          className="p-2.5 min-w-11 min-h-11 inline-flex items-center justify-center text-gray-300 hover:text-white hover:bg-gray-800/80 rounded-lg transition-colors cursor-pointer"
           title="Ver detalhes da fatura"
+          aria-label="Ver detalhes da fatura"
         >
           <Receipt className="w-4 h-4" />
         </button>
@@ -79,7 +80,7 @@ export const Header: React.FC<HeaderProps> = ({
             const marcos = new URLSearchParams(window.location.search).get('cliente') === 'marcos';
             window.location.search = marcos ? '' : '?cliente=marcos';
           }}
-          className="hidden sm:inline-flex items-center px-2 py-1 rounded-lg text-[11px] font-medium text-gray-400 hover:text-gray-200 hover:bg-gray-800/80 border border-gray-800 transition-colors cursor-pointer"
+          className="hidden sm:inline-flex items-center px-3 min-h-11 rounded-lg text-xs font-medium text-gray-300 hover:text-white hover:bg-gray-800/80 border border-gray-700 transition-colors cursor-pointer"
           title="Alternar entre a cena do Bruno e a do Marcos"
         >
           {new URLSearchParams(window.location.search).get('cliente') === 'marcos' ? 'Marcos' : 'Bruno'}
@@ -88,7 +89,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* S5: Falar com uma pessoa, sempre visível */}
         <button
           onClick={onTalkToHuman}
-          className="p-1.5 text-gray-400 hover:text-gray-200 hover:bg-gray-800/80 rounded-lg transition-colors cursor-pointer"
+          className="p-2.5 min-w-11 min-h-11 inline-flex items-center justify-center text-gray-300 hover:text-white hover:bg-gray-800/80 rounded-lg transition-colors cursor-pointer"
           title="Falar com uma pessoa"
           aria-label="Falar com uma pessoa"
         >
@@ -98,10 +99,12 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Speech toggle */}
         <button
           onClick={onToggleSpeech}
-          className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-            speechEnabled ? 'text-[#1FA37C] bg-[#1FA37C]/10' : 'text-gray-500 hover:text-gray-300'
+          className={`p-2.5 min-w-11 min-h-11 inline-flex items-center justify-center rounded-lg transition-colors cursor-pointer ${
+            speechEnabled ? 'text-[#1FA37C] bg-[#1FA37C]/10' : 'text-gray-300 hover:text-white'
           }`}
           title={speechEnabled ? 'Voz ativada (clique para silenciar)' : 'Ativar leitura por voz'}
+          aria-pressed={speechEnabled}
+          aria-label={speechEnabled ? 'Desativar leitura por voz' : 'Ativar leitura por voz'}
         >
           {speechEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
         </button>
@@ -109,8 +112,9 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Frame Toggle (Desktop helper) */}
         <button
           onClick={onToggleFrame}
-          className="hidden md:flex p-1.5 text-gray-500 hover:text-gray-300 hover:bg-gray-800/60 rounded-lg transition-colors cursor-pointer"
+          className="hidden md:inline-flex p-2.5 min-w-11 min-h-11 items-center justify-center text-gray-300 hover:text-white hover:bg-gray-800/60 rounded-lg transition-colors cursor-pointer"
           title={isMobileFrame ? 'Expandir para tela cheia' : 'Modo aplicativo móvel'}
+          aria-label={isMobileFrame ? 'Expandir para tela cheia' : 'Modo aplicativo móvel'}
         >
           {isMobileFrame ? <Monitor className="w-4 h-4" /> : <Smartphone className="w-4 h-4" />}
         </button>
@@ -118,7 +122,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Fechar button (Exact style from prompt) */}
         <button
           onClick={onReset}
-          className="text-[#1FA37C] hover:text-teal-400 text-sm font-medium px-2 py-1 rounded transition-colors ml-1 cursor-pointer"
+          className="text-[#1FA37C] hover:text-teal-400 text-sm font-medium px-3 min-h-11 rounded transition-colors ml-1 cursor-pointer"
         >
           Fechar
         </button>

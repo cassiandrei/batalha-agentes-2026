@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 # Sem isto, o alvo `data` colide com o diretório data/ e o make não faz nada.
-.PHONY: help setup data run test test-llm lint switch-project stage-data deploy deploy-web teardown smoke smoke-fatia seed-abertura cdi redteam event eval eval-report traffic-split load-bq agent-engine model-armor stage-evento
+.PHONY: help setup data run test test-llm lint switch-project stage-data deploy deploy-web teardown smoke smoke-fatia seed-abertura cdi redteam roteiro event eval eval-report traffic-split load-bq agent-engine model-armor stage-evento
 UV := uv
 ACLI := uvx google-agents-cli
 
@@ -59,7 +59,7 @@ deploy: stage-data ## deploy: make deploy PROJECT_ID=x AGENT_ENGINE_ID=y [PUBLIC
 	PROJECT_ID=$(PROJECT_ID) REGION=$(REGION) AGENT_ENGINE_ID=$(AGENT_ENGINE_ID) \
 	  MEMORY_LOCATION=$(MEMORY_LOCATION) PUBLIC=$(PUBLIC) MANAGED_IAM=$(MANAGED_IAM) RUNTIME_SA=$(RUNTIME_SA) \
 	  AR_REPO=$(AR_REPO) BUILD=$(BUILD) MODEL_KEY_SECRET=$(MODEL_KEY_SECRET) MAX_INSTANCES=$(MAX_INSTANCES) DATA_SOURCE=$(DATA_SOURCE) \
-	  USE_MODEL_ARMOR=$(USE_MODEL_ARMOR) MEMORY_BACKEND=$(MEMORY_BACKEND) DEMO_CUSTOMER_ID=$(DEMO_CUSTOMER_ID) TAG=$(TAG) MODEL_NAME_NORMAS=$(MODEL_NAME_NORMAS) \
+	  USE_MODEL_ARMOR=$(USE_MODEL_ARMOR) MEMORY_BACKEND=$(MEMORY_BACKEND) DEMO_CUSTOMER_ID=$(DEMO_CUSTOMER_ID) TAG=$(TAG) MODEL_NAME_NORMAS=$(MODEL_NAME_NORMAS) MODEL_NAME_REDATOR=$(MODEL_NAME_REDATOR) LLM_MODE=$(LLM_MODE) MIN_INSTANCES=$(MIN_INSTANCES) \
 	  bash infra/scripts/deploy.sh $(if $(DRY_RUN),--dry-run,)
 
 deploy-web: ## publica o front (web/) como vita-app no Cloud Run: make deploy-web PROJECT_ID=x AGENT_URL=https://... [TAG=fatia-s2b] [DRY_RUN=1]
@@ -90,6 +90,10 @@ smoke-fatia: ## smoke de uma fatia sem chamar o modelo: make smoke-fatia FATIA=s
 
 FATIA ?= s1
 CUSTOMER_ID ?= 36d74064-cc59-4ad2-9304-aeae46e660e4
+
+roteiro: ## roteiro ponta a ponta da demo (Bruno + Marcos): make roteiro BASE_URL=<vita-app> [SEM_CHAT=1]
+	@test -n "$(BASE_URL)" || (echo "BASE_URL é obrigatório"; exit 1)
+	python3 infra/scripts/roteiro_e2e.py --base-url "$(BASE_URL)" $(if $(SEM_CHAT),--sem-chat,)
 
 redteam: ## roda o red team sem chamar o modelo e grava docs/redteam/RELATORIO.md
 	cd agent && $(UV) run python ../infra/scripts/redteam.py

@@ -18,6 +18,13 @@ class Config:
     model_name: str
     # S8: o especialista roda em modelo diferente do orquestrador (isola custo e cota).
     model_name_normas: str
+    # S7: papéis em modelos diferentes; o redator da abertura tem o seu.
+    model_name_redator: str
+    # S7: "simulado" = LLM local sem rede (ensaio); "real" = Gemini.
+    llm_mode: str
+    # S7: quantas vezes a saída reprovada é regenerada antes da resposta segura.
+    regeneracoes_max: int
+    demo_customer_id_marcos: str
     prompt_version: str
     data_source: str
     data_dir: Path
@@ -35,6 +42,12 @@ def load_config() -> Config:
     return Config(
         model_name=os.getenv("MODEL_NAME", "gemini-3.8-flash"),
         model_name_normas=os.getenv("MODEL_NAME_NORMAS", "gemini-3.5-flash-lite"),
+        model_name_redator=os.getenv("MODEL_NAME_REDATOR", "gemini-3.5-flash"),
+        llm_mode=os.getenv("LLM_MODE", "real").strip().lower(),
+        regeneracoes_max=int(os.getenv("REGENERACOES_MAX", "1")),
+        demo_customer_id_marcos=os.getenv(
+            "DEMO_CUSTOMER_ID_MARCOS", "8fbc8ba3-7d20-4382-ba8d-ffd070e836a1"
+        ),
         prompt_version=os.getenv("PROMPT_VERSION", "v1"),
         data_source=os.getenv("DATA_SOURCE", "local"),
         data_dir=(_AGENT_ROOT / os.getenv("DATA_DIR", "../data")).resolve(),

@@ -139,6 +139,9 @@ class SecurityPlugin(BasePlugin):
         # Sob streaming, after_model roda por chunk. Acumulamos por invocação
         # para enxergar PII partida entre dois chunks.
         self._acumulado: dict[str, str] = {}
+        # S7: o último pedido ao modelo, para regenerar UMA vez a saída reprovada.
+        self._pedidos: dict[str, LlmRequest] = {}
+        self._regeneracoes: dict[str, int] = {}
 
     async def before_model_callback(
         self, *, callback_context: CallbackContext, llm_request: LlmRequest
@@ -146,6 +149,9 @@ class SecurityPlugin(BasePlugin):
         cfg = load_config()
         estado = callback_context.state
         conteudos = llm_request.contents or []
+        self._pedidos[getattr(callback_context, "invocation_id", "sem-invocacao")] = (
+            llm_request
+        )
 
         # Mascaramento PRIMEIRO, no histórico inteiro. Além de idempotente, é o que
         # garante residência: o que atravessa a fronteira já vai sem CPF, cartão,
@@ -266,6 +272,10 @@ class SecurityPlugin(BasePlugin):
                     self._acumulado.pop(inv, None)
                 if violacoes == ["pii_leak"]:
                     return _texto_resposta(texto)
+                if violacoes == ["termo_proibido"] and final:
+                    return await self._regenerar_ou_recusar(
+                        callback_context, inv, "termo_proibido", RECUSA_SAIDA, None
+                    )
                 return _texto_resposta(
                     RECUSA_SAIDA if "termo_proibido" in violacoes else RECUSA
                 )
@@ -279,7 +289,9 @@ class SecurityPlugin(BasePlugin):
                 _audit_guard(
                     "numero_inventado", camada="saida", quantos=len(inventados)
                 )
-                return _texto_resposta(RECUSA_NUMERO)
+                return await self._regenerar_ou_recusar(
+                    callback_context, inv, "numero_inventado", RECUSA_NUMERO, permitidos
+                )
             # CA-19: resposta apoiada em norma sem a fonte não sai.
             pendentes = callback_context.state.get("citacao_pendente") or []
             if pendentes and completo.strip():
@@ -317,3 +329,59 @@ class SecurityPlugin(BasePlugin):
                     )
                     return _texto_resposta(RECUSA)
         return None
+
+    async def _regenerar_ou_recusar(
+        self,
+        callback_context: CallbackContext,
+        inv: str,
+        motivo: str,
+        recusa: str,
+        permitidos: set[float] | None,
+    ) -> LlmResponse:
+        """CA-09: uma regeneração por resposta, pedindo ao mesmo modelo que reescreva
+        sem o problema; se falhar de novo (ou não houver como), resposta segura."""
+        cfg = load_config()
+        pedido = self._pedidos.get(inv)
+        feitas = self._regeneracoes.get(inv, 0)
+        try:
+            llm = callback_context._invocation_context.agent.canonical_model
+        except Exception:  # contexto sem agente (testes unitários com dublê)
+            llm = None
+        if pedido is None or llm is None or feitas >= cfg.regeneracoes_max:
+            self._regeneracoes.pop(inv, None)
+            return _texto_resposta(recusa)
+        self._regeneracoes[inv] = feitas + 1
+        instrucao = {
+            "numero_inventado": (
+                "Reescreva a resposta anterior citando SOMENTE valores em reais que "
+                "estejam no resultado das tools, copiados com centavos; se um valor "
+                "não estiver lá, não o cite."
+            ),
+            "termo_proibido": (
+                "Reescreva a resposta anterior sem as palavras 'garantido', "
+                "'aprovado', 'sem risco' e sem linguagem de culpa."
+            ),
+        }[motivo]
+        pedido.contents = [
+            *(pedido.contents or []),
+            types.Content(role="user", parts=[types.Part(text=instrucao)]),
+        ]
+        novo = ""
+        try:
+            async for resposta in llm.generate_content_async(pedido, stream=False):
+                partes = (resposta.content.parts if resposta.content else None) or []
+                novo = "".join(p.text for p in partes if p.text) or novo
+        except Exception:
+            novo = ""
+        _audit_guard(motivo, camada="saida", decisao="regenerado")
+        ok = bool(novo.strip())
+        if ok and permitidos is not None:
+            ok = not valores_fora_do_payload(novo, permitidos)
+        if ok:
+            suit = callback_context.state.get("suitability", "moderado")
+            ok = not check_output(novo, suit)[1]
+        self._regeneracoes.pop(inv, None)
+        if not ok:
+            _audit_guard(motivo, camada="saida", decisao="resposta_segura")
+            return _texto_resposta(recusa)
+        return _texto_resposta(novo)
