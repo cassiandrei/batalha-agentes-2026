@@ -7,7 +7,7 @@
 | `produto/DADOS_EVENTO.md` | dados, regras e decisões, uma seção por fatia |
 | `ARCHITECTURE.md` | o que está publicado (fonte do entregável 5) |
 | `entregaveis/3. Racional de prototipação.md` | entregável 3: experiência, jornada, roteiro de diálogo, tom, elementos e limites do protótipo |
-| `entregaveis/` | desenho de solução (drawio, entregável 4) e documento explicativo (entregável 5) |
+| `entregaveis/` | racional (3), desenho de solução em `.drawio` e `.svg` (4, gerados por `infra/scripts/desenho_solucao.py`) e documento explicativo (5) |
 | `SECURITY_LGPD.md`, `EXPERIMENTATION.md` | LGPD e estratégia de experimentação |
 | `SATURDAY_CHECKLIST.md` | preparação e roteiro do dia da banca |
 | `avaliacao.md`, `redteam/` | números medidos: conversas sintéticas, contrafactual e red team |
