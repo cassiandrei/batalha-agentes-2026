@@ -1,6 +1,6 @@
 # Fatias verticais — sessões do Claude Code
 
-Sete fatias, cada uma uma sessão do Claude Code que atravessa dados, back-end, front-end e testes e termina com um passo da demo funcionando na URL do Cloud Run. S1, S2, S4, S6 e S7 são o mínimo para a banca; S3 e S5 completam a jornada.
+Dez fatias (contando a S2b, do front, a S8, do especialista em normas, e a S10, de avaliação), cada uma uma sessão do Claude Code que atravessa dados, back-end, front-end e testes e termina com um passo da demo funcionando na URL do Cloud Run. S1, S2, S4, S6 e S7 são o mínimo para a banca; S3 e S5 completam a jornada.
 
 ## Mapa das fatias
 
@@ -15,6 +15,10 @@ S1 é a fundação; depois dela, S2, S3 e S4 podem correr em sessões paralelas,
 | S5 — Confirmação e memória | Confirmar com iToken, lembrar e esquecer, falar com uma pessoa | CA-14 | S3 ou S4 | 60 min | Importante |
 | S6 — Guardrails e cena do Marcos | Ataque bloqueado ao vivo, Marcos sem oferta, relatório do red team | CA-09 a CA-12, CA-15, CA-16 | S2 | 90 min | Obrigatória |
 | S7 — Pronto para a banca | Demo estável na URL, cota protegida, acessibilidade, vídeo de backup | Todos, em regressão | S1 a S6 | 60 min | Obrigatória |
+| S8 — Especialista em normas | Pergunta sobre o rotativo respondida com a norma citada | CA-17, CA-18, CA-19 | S2 e S2b | 60 min | Importante |
+| S10 — Avaliação de qualidade | Relatório de qualidade com números medidos no slide de experimentação | CA-21 | S6 e S8 | 60 min | Importante |
+
+**Ordem a partir da S5:** a trilha principal é S5 → S6 → S7. S8 e S10 entram se houver tempo, de preferência antes da S7, que fecha com a regressão completa.
 
 **S2b — Front no GCP** entrou entre a S2 e a S3 e está feita: o protótipo virou `web/`, o `vita-app` está publicado no Cloud Run e o chat passa pelo agente. A partir dela, a coluna "Entrega visível na demo" de cada fatia é verificada na URL do `vita-app`, não em patch.
 
@@ -148,7 +152,7 @@ Use o LLM simulado. Publique com --tag s3 --no-traffic e mostre os modais na URL
 
 **Pronto quando:** os dois modais na URL da tag mostram apenas valores do payload, e o validador bloqueia uma resposta de teste com número inventado.
 
-**Feito:** `simular_uso_reserva`, `get_posicao_investimentos` e o índice (`agent/app/indice.py`, fórmula na seção 14 do `DADOS_EVENTO.md`); CDI do SGS por `make cdi`; validador de números no `SecurityPlugin` (teste bloqueando "R$ 1.200,00" fora do payload); `FinancialOverviewModal` e `FlowAdjustmentModal` lendo o payload com "Por que recomendamos isso"; smoke `make smoke-fatia FATIA=s3`.
+**Feito:** `simular_uso_reserva`, `get_posicao_investimentos` e o índice (`agent/app/indice.py`, fórmula na seção 14 do `DADOS_EVENTO.md`); CDI do SGS por `make cdi`; validador de números no `SecurityPlugin`; `FinancialOverviewModal` e `FlowAdjustmentModal` lendo o payload com "Por que recomendamos isso"; smoke `make smoke-fatia FATIA=s3`.
 
 ## S4 — T02 com motor de decisão (feita em 27/09)
 
@@ -179,7 +183,7 @@ Use o LLM simulado. Publique com --tag s4 --no-traffic e mostre o modal na URL d
 
 **Pronto quando:** na URL da tag, o modal do Bruno mostra os quatro prazos com a decisão do motor, e a conversa do Marcos não exibe cards de oferta.
 
-**Feito:** `get_ofertas_elegiveis`, `simular_parcelamento_fatura` (Price, regra de atenção, `simulacao_id` com validade) e `agent/app/motor.py` (T01 primeiro quando custa menos; números na seção 15 do `DADOS_EVENTO.md`); perfil com `offers` e `treatments.t02/principal/ordem`; `InstallmentModal` e `PrescriptionFooter` lendo o payload, sem card para a faixa V; smoke `make smoke-fatia FATIA=s4` (inclui o Marcos).
+**Feito:** `get_ofertas_elegiveis`, `simular_parcelamento_fatura` (Price, regra de atenção, `simulacao_id` com validade) e `agent/app/motor.py` (T01 primeiro quando custa menos; seção 15 do `DADOS_EVENTO.md`); perfil com `offers` e `treatments.t02/principal/ordem`; `InstallmentModal` e `PrescriptionFooter` lendo o payload, sem card para a faixa V; smoke `make smoke-fatia FATIA=s4` (inclui o Marcos).
 
 ## S5 — Confirmação e memória (feita em 27/09)
 
@@ -211,7 +215,7 @@ Use o LLM simulado. Publique com --tag s5 --no-traffic e mostre o fluxo na URL d
 
 **Pronto quando:** na URL da tag, confirmar duas vezes gera uma só execução, e "esqueça tudo" faz "o que você lembra sobre mim" voltar vazio.
 
-**Feito:** `agent/app/confirmacoes.py` (idempotência, iToken mock, evento `tratamento_confirmado`), `agent/app/memory/politica.py` (o que pode ser lembrado; semente do Bruno em `data/seeds/`), endpoints `/confirmations`, `/memory`, `/memory/consent`, `/handoff`; no front, iToken no modal, pergunta de consentimento no chat, botões "O que você lembra?" e "Esqueça tudo" sem modelo, "Falar com uma pessoa" no cabeçalho; smoke `make smoke-fatia FATIA=s5`. Detalhes na seção 16 do `DADOS_EVENTO.md`.
+**Feito:** `agent/app/confirmacoes.py` (idempotência, iToken mock, evento `tratamento_confirmado`), `agent/app/memory/politica.py` (o que pode ser lembrado; semente do Bruno em `data/seeds/`), endpoints `/confirmations`, `/memory`, `/memory/consent`, `/handoff`; no front, iToken no modal, pergunta de consentimento no chat, botões "O que você lembra?" e "Esqueça tudo" sem modelo, "Falar com uma pessoa" no cabeçalho; smoke `make smoke-fatia FATIA=s5` (8 checks). Seção 16 do `DADOS_EVENTO.md`.
 
 ## S6 — Guardrails e cena do Marcos
 
@@ -275,3 +279,68 @@ tag e só então promova o tráfego.
 ```
 
 **Pronto quando:** o roteiro ponta a ponta passa na URL principal duas vezes seguidas, a latência está anotada no PRD e o vídeo de backup está gravado.
+
+## S8 — Especialista em normas (RAG)
+
+Ao fim da S8, uma pergunta normativa do Bruno ("posso ficar no rotativo por mais de um mês?") é respondida pelo especialista através do orquestrador, com a norma citada na tela, e um trecho malicioso plantado no corpus é barrado na indexação.
+
+| Camada | Escopo |
+| --- | --- |
+| Dados | Corpus curado de 20 a 40 documentos: regra do rotativo (Res. CMN 4.549/2017), teto de encargos (Lei 14.690/2023), mínimo existencial (Lei 14.181/2021 e Decreto 11.150/2022), CET, tabela regressiva do IR, material de educação financeira do BCB e o playbook de tom do time. Chunk por artigo ou seção, com fonte, link e data de coleta; vigência conferida; nenhuma página ou marca do Itaú (regra 3) |
+| Back-end | Índice BM25 local construído no build, sem gastar cota; especialista exposto como `AgentTool`, com modelo diferente do orquestrador, devolvendo trechos com citação; heurísticas de injeção aplicadas na indexação; trechos entram no contexto delimitados como dados; RAG Engine como desenho alvo pela mesma interface |
+| Front-end | `web/`: ChatArea.tsx mostra a citação (nome da norma e link) abaixo da resposta |
+| Testes | CA-17 (10 perguntas normativas com a fonte esperada), CA-18 (trecho malicioso barrado na indexação), CA-19 (nenhuma resposta normativa sem citação); categoria de injeção indireta acrescentada ao red team |
+
+**Prompt da sessão:**
+
+```text
+Implemente a fatia S8 do PRD do Vita: especialista em normas com RAG local. Leia as
+seções "Topologia de agentes", "Tools, contexto e memória" e "Guardrails" do PRD.
+1. Escreva primeiro os testes: CA-17 (10 perguntas normativas com a fonte esperada),
+   CA-18 (um trecho com instrução maliciosa plantado no corpus é barrado na indexação)
+   e CA-19 (resposta normativa sem citação é bloqueada).
+2. Monte o corpus com as fontes da tabela da S8, um chunk por artigo ou seção, com
+   fonte, link e data de coleta. Nada do Itaú (regra 3).
+3. Construa um índice BM25 local no build e exponha o especialista como AgentTool, com
+   modelo diferente do orquestrador, devolvendo trechos com citação.
+4. Em web/, mostre a citação abaixo da resposta no ChatArea.tsx.
+5. Acrescente a categoria de injeção indireta ao conjunto de red team.
+Use o LLM simulado. Publique o agente com --tag s8 --no-traffic, publique o vita-app
+apontando para a tag (make deploy-web AGENT_URL=<url da tag>) e rode
+make smoke-fatia FATIA=s8 na URL do vita-app.
+```
+
+**Pronto quando:** na URL do `vita-app`, a pergunta sobre o rotativo volta com a citação da Res. CMN 4.549/2017, e `make smoke-fatia FATIA=s8` passa.
+
+## S10 — Avaliação de qualidade
+
+Ao fim da S10, um conjunto de 20 a 30 conversas sintéticas roda contra o agente e gera um relatório com números medidos, que substituem as metas do slide de experimentação.
+
+| Camada | Escopo |
+| --- | --- |
+| Dados | Conversas sintéticas com resultado esperado (ação, número, fonte, tom): jornada comum do Bruno, dúvidas, recusa de oferta, "esqueça tudo", Marcos na faixa V, perguntas normativas e fora do escopo |
+| Back-end | Runner de avaliação com checagens determinísticas (números no payload, ações no catálogo, citação presente, termos proibidos) e LLM como juiz só para tom e clareza, com rubrica; rodado no projeto do evento pela squad-agent-sa (Vertex), nunca com a chave AI Studio e nunca no projeto pessoal (regra 8) |
+| Front-end | Nenhuma mudança |
+| Testes | CA-21 (relatório por critério, com 100% dos números fundamentados e nenhuma oferta à faixa V) |
+
+**Prompt da sessão:**
+
+```text
+Implemente a fatia S10 do PRD do Vita: avaliação de qualidade offline. Leia as seções
+"Experimentação", "Guardrails" e "Critérios de aceite" do PRD.
+1. Monte 20 a 30 conversas sintéticas com resultado esperado, cobrindo o Bruno, o
+   Marcos, perguntas normativas e pedidos fora do escopo.
+2. Crie o runner: checagens determinísticas primeiro (números no payload, ações no
+   catálogo, citação, termos proibidos); LLM como juiz só para tom e clareza, com rubrica.
+3. Rode no projeto do evento pela squad-agent-sa (Vertex); nunca com a chave AI Studio e nunca no projeto pessoal.
+4. Gere docs/avaliacao.md com a taxa por critério e atualize a seção "Experimentação"
+   do PRD com os números medidos.
+```
+
+**Pronto quando:** `docs/avaliacao.md` existe com números medidos e o PRD foi atualizado.
+
+## Fora do Claude Code
+
+- [ ] Proposta de negócio (entregável 1), a partir de problema, métrica norte e dimensionamento do PRD — Produto
+- [ ] Já atendido na noite de 26/09 pela squad-agent-sa; não pedir de novo (regra 7): `aiplatform.user` para a service account de runtime — Engenharia
+- [ ] Ensaio da sabatina com as cinco perguntas mais prováveis da banca — time todo
