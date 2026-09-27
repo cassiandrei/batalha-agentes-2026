@@ -51,6 +51,69 @@ def s1(base_url: str, customer_id: str) -> int:
 PUSH_NEUTRO = "O Vita tem uma análise nova para você"
 
 
+def s2b(base_url: str, customer_id: str) -> int:
+    """Front publicado: página carrega, abertura e perfil vêm do agente, chat passa
+    pelo agente (UMA chamada real ao modelo)."""
+    base = base_url.rstrip("/")
+    checks = []
+    with urllib.request.urlopen(base + "/", timeout=60) as r:
+        html = r.read().decode()
+    checks.append(
+        (
+            "página carrega (HTML com o app)",
+            r.status == 200 and '<div id="root"' in html,
+        )
+    )
+    with urllib.request.urlopen(base + "/api/abertura", timeout=60) as r:
+        abertura = json.loads(r.read().decode())
+    checks.append(
+        (
+            "/api/abertura: push neutro e texto com 127,96",
+            abertura.get("push") == PUSH_NEUTRO
+            and "127,96" in abertura.get("texto", ""),
+        )
+    )
+    checks.append(
+        ("/api/abertura: botões do catálogo", len(abertura.get("acoes", [])) == 3)
+    )
+    with urllib.request.urlopen(base + "/api/financial-profile", timeout=60) as r:
+        perfil = json.loads(r.read().decode())
+    checks.append(
+        (
+            "/api/financial-profile: fatura 853,07 do agente",
+            perfil["card"]["totalInvoice"] == 853.07,
+        )
+    )
+    req = urllib.request.Request(
+        base + "/api/chat",
+        data=json.dumps({"userMessage": "Quanto paguei de juros no ano?"}).encode(),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=240) as r:
+        chat = json.loads(r.read().decode())
+    checks.append(
+        (
+            "/api/chat: resposta veio do agente",
+            chat.get("source") == "agente" and bool(chat.get("reply")),
+        )
+    )
+    checks.append(
+        (
+            "/api/chat: número veio de tool (get_diagnostico/fatura)",
+            any(t.startswith("get_") for t in chat.get("tools", [])),
+        )
+    )
+    ok = 0
+    for nome, passou in checks:
+        ok += passou
+        print(f"{'✓' if passou else '✗'} {nome}")
+    print(f"\n{ok}/{len(checks)} verificacoes passaram — 1 chamada ao modelo (o chat)")
+    if chat.get("reply"):
+        print("resposta:", chat["reply"][:200].replace("\n", " "))
+    return 0 if ok == len(checks) else 1
+
+
 def s2(base_url: str, customer_id: str) -> int:
     url = f"{base_url.rstrip('/')}/customers/{customer_id}/opening"
     with urllib.request.urlopen(url, timeout=60) as r:
@@ -81,8 +144,10 @@ def s2(base_url: str, customer_id: str) -> int:
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("fatia", choices=["s1", "s2"])
+    ap.add_argument("fatia", choices=["s1", "s2", "s2b"])
     ap.add_argument("--base-url", required=True)
     ap.add_argument("--customer-id", required=True)
     args = ap.parse_args()
-    sys.exit({"s1": s1, "s2": s2}[args.fatia](args.base_url, args.customer_id))
+    sys.exit(
+        {"s1": s1, "s2": s2, "s2b": s2b}[args.fatia](args.base_url, args.customer_id)
+    )

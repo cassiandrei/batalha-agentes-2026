@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 # Sem isto, o alvo `data` colide com o diretório data/ e o make não faz nada.
-.PHONY: help setup data run test test-llm lint switch-project stage-data deploy teardown smoke smoke-fatia seed-abertura event eval eval-report traffic-split load-bq agent-engine model-armor stage-evento
+.PHONY: help setup data run test test-llm lint switch-project stage-data deploy deploy-web teardown smoke smoke-fatia seed-abertura event eval eval-report traffic-split load-bq agent-engine model-armor stage-evento
 UV := uv
 ACLI := uvx google-agents-cli
 
@@ -59,6 +59,13 @@ deploy: stage-data ## deploy: make deploy PROJECT_ID=x AGENT_ENGINE_ID=y [PUBLIC
 	  AR_REPO=$(AR_REPO) BUILD=$(BUILD) MODEL_KEY_SECRET=$(MODEL_KEY_SECRET) MAX_INSTANCES=$(MAX_INSTANCES) DATA_SOURCE=$(DATA_SOURCE) \
 	  USE_MODEL_ARMOR=$(USE_MODEL_ARMOR) MEMORY_BACKEND=$(MEMORY_BACKEND) DEMO_CUSTOMER_ID=$(DEMO_CUSTOMER_ID) TAG=$(TAG) \
 	  bash infra/scripts/deploy.sh $(if $(DRY_RUN),--dry-run,)
+
+deploy-web: ## publica o front (web/) como vita-app no Cloud Run: make deploy-web PROJECT_ID=x AGENT_URL=https://... [TAG=fatia-s2b] [DRY_RUN=1]
+	@test -n "$(PROJECT_ID)" || (echo "PROJECT_ID é obrigatório"; exit 1)
+	@test -n "$(AGENT_URL)" || (echo "AGENT_URL é obrigatório"; exit 1)
+	PROJECT_ID=$(PROJECT_ID) REGION=$(REGION) AGENT_URL=$(AGENT_URL) DEMO_CUSTOMER_ID=$(DEMO_CUSTOMER_ID) \
+	  RUNTIME_SA=$(RUNTIME_SA) AR_REPO=$(AR_REPO) TAG=$(TAG) \
+	  bash infra/scripts/deploy_web.sh $(if $(DRY_RUN),--dry-run,)
 
 MEMORY_LOCATION ?= southamerica-east1
 

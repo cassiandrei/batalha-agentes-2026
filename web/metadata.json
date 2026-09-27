@@ -1,0 +1,6 @@
+{
+  "name": "Vita",
+  "description": "Assistente de bem-estar financeiro com IA. O chat passa pelo agente ADK; nenhuma chave de modelo no front.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
