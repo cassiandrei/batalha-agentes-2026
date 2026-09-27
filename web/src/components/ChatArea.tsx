@@ -71,13 +71,21 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
   onForgetAll,
 }) => {
   const bottomRef = useRef<HTMLDivElement>(null);
+  const mainRef = useRef<HTMLElement>(null);
 
+  // A abertura começa pelo topo (a mensagem do agente e o Raio-X são a primeira tela);
+  // só as mensagens seguintes puxam a rolagem para o fim.
   useEffect(() => {
+    const ultima = messages[messages.length - 1];
+    if (ultima?.isInitial) {
+      mainRef.current?.scrollTo({ top: 0 });
+      return;
+    }
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
   return (
-    <main className="flex-1 overflow-y-auto px-3.5 py-3 space-y-3.5 bg-canvas" role="log" aria-live="polite" aria-label="Conversa com o Vita">
+    <main ref={mainRef} className="flex-1 overflow-y-auto px-3.5 py-3 space-y-3.5 bg-canvas" role="log" aria-live="polite" aria-label="Conversa com o Vita">
       {messages.map((message) => {
         if (message.role === 'user') {
           return (
