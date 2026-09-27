@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { Volume2, BarChart3, Receipt, Zap, Calendar, UserRound, BookOpen, ShieldCheck, Sparkles } from 'lucide-react';
+import { Volume2, BarChart3, Receipt, Zap, Calendar, UserRound, BookOpen, ShieldCheck, Sparkles, Eraser } from 'lucide-react';
 import { AcaoAgente, FinancialProfile, Message } from '../types';
 import { RaioXCard, TratamentosCard } from './Cards';
 import { Chip, VitaMark } from './ui';
@@ -20,6 +20,8 @@ interface ChatAreaProps {
   onAction: (acao: AcaoAgente) => void;
   // S5: resposta à pergunta de consentimento de memória (sem modelo)
   onConsent: (sim: boolean) => void;
+  // S5: direito de eliminação, oferecido dentro da resposta de "o que você lembra"
+  onForgetAll: () => void;
 }
 
 // Só **negrito** e parágrafos viram elementos; qualquer outra coisa é texto puro.
@@ -61,6 +63,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
   onSpeak,
   onAction,
   onConsent,
+  onForgetAll,
 }) => {
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -126,6 +129,14 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                         Sim, pode lembrar
                       </Chip>
                       <Chip onClick={() => onConsent(false)}>Agora não</Chip>
+                    </div>
+                  )}
+
+                  {message.forgetPrompt && (
+                    <div className="pt-2.5 border-t border-line flex flex-wrap gap-2">
+                      <Chip onClick={onForgetAll} icon={<Eraser className="w-4 h-4" />}>
+                        Apagar tudo o que você lembra
+                      </Chip>
                     </div>
                   )}
 

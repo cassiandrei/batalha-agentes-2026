@@ -32,6 +32,8 @@ export interface Message {
   consentPrompt?: boolean;
   // S8: fontes citadas pelo especialista em normas (vêm do agente, nunca do front)
   citacoes?: Citacao[];
+  // S5: oferta de apagar a memória, só na resposta de "o que você lembra" (sem modelo)
+  forgetPrompt?: boolean;
 }
 
 export interface Citacao {

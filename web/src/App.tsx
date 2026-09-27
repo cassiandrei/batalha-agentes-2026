@@ -275,6 +275,7 @@ export default function App() {
       itens.length
         ? `Isto é o que eu lembro sobre você:\n\n${itens.map(([k, v]) => `• ${k}: ${v}`).join('\n')}\n\nNunca guardo valores das suas transações, seus dados de cadastro nem o texto das mensagens.`
         : 'Não lembro nada sobre você entre conversas.' + (m.consentimento ? '' : ' Você ainda não autorizou que eu guardasse.'),
+      { forgetPrompt: itens.length > 0 },
     );
   };
 
@@ -282,6 +283,7 @@ export default function App() {
     const r = await fetch(api('/api/memoria'), { method: 'DELETE' });
     const d = (await r.json()) as { apagadas: number };
     setMemoriaConsentida(false);
+    setMessages((prev) => prev.map((msg) => (msg.forgetPrompt ? { ...msg, forgetPrompt: false } : msg)));
     addAssistant(`Pronto: apaguei ${d.apagadas} lembrança(s) e não vou mais guardar nada até você autorizar de novo.`);
   };
 
@@ -363,6 +365,7 @@ export default function App() {
           treatmentStatus={treatmentStatus}
           onAction={executarAcao}
           onConsent={handleConsent}
+          onForgetAll={handleForgetAll}
           onOpenFinancialOverview={() => setActiveModal('financial_overview')}
           onOpenInvoice={() => setActiveModal('invoice_details')}
           onSelectFlowAdjustment={() => setActiveModal('flow_adjustment')}
@@ -372,7 +375,7 @@ export default function App() {
           onSpeak={speakText}
         />
 
-        <PrescriptionFooter onSendMessage={handleSendMessage} isTyping={isTyping} onShowMemory={handleShowMemory} onForgetAll={handleForgetAll} />
+        <PrescriptionFooter onSendMessage={handleSendMessage} isTyping={isTyping} onShowMemory={handleShowMemory} />
 
         {/* S2: a cena do push, na tela de bloqueio. O texto vem do agente. */}
         {pushVisivel && <LockScreen push={abertura?.push ?? null} onOpen={abrirPeloPush} />}

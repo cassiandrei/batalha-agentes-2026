@@ -1,15 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { Send, Brain, Eraser, AlertTriangle } from 'lucide-react';
+import React, { useState } from 'react';
+import { Send, Brain } from 'lucide-react';
 import { Chip } from './ui';
 
 // Rodapé do chat no Vita-UI: chips acima, composer em pílula. Os cards de tratamento
-// vivem na conversa (Cards.tsx); aqui só entrada e atalhos, sem número.
+// vivem na conversa (Cards.tsx); aqui só entrada e atalhos, sem número. "Esqueça tudo"
+// não fica na fileira: aparece dentro da resposta de "O que você lembra sobre mim?".
 interface ComposerProps {
   onSendMessage: (text: string) => void;
   isTyping: boolean;
-  // S5: direitos de acesso e eliminação, sem passar pelo modelo
+  // S5: direito de acesso, sem passar pelo modelo
   onShowMemory: () => void;
-  onForgetAll: () => void;
 }
 
 // Ordem pensada para a demo: o que rende na apresentação vem primeiro; a memória depois.
@@ -20,31 +20,14 @@ const PERGUNTAS = [
   'Como recompor minha reserva?',
 ];
 
-export const PrescriptionFooter: React.FC<ComposerProps> = ({ onSendMessage, isTyping, onShowMemory, onForgetAll }) => {
+export const PrescriptionFooter: React.FC<ComposerProps> = ({ onSendMessage, isTyping, onShowMemory }) => {
   const [texto, setTexto] = useState('');
-  // "Esqueça tudo" apaga de verdade: pede um segundo toque, que expira sozinho.
-  const [confirmarEsquecer, setConfirmarEsquecer] = useState(false);
-
-  useEffect(() => {
-    if (!confirmarEsquecer) return;
-    const id = setTimeout(() => setConfirmarEsquecer(false), 5000);
-    return () => clearTimeout(id);
-  }, [confirmarEsquecer]);
 
   const enviar = (e: React.FormEvent) => {
     e.preventDefault();
     if (!texto.trim() || isTyping) return;
     onSendMessage(texto.trim());
     setTexto('');
-  };
-
-  const esquecer = () => {
-    if (!confirmarEsquecer) {
-      setConfirmarEsquecer(true);
-      return;
-    }
-    setConfirmarEsquecer(false);
-    onForgetAll();
   };
 
   return (
@@ -57,14 +40,6 @@ export const PrescriptionFooter: React.FC<ComposerProps> = ({ onSendMessage, isT
         ))}
         <Chip onClick={onShowMemory} icon={<Brain className="w-4 h-4" />}>
           O que você lembra sobre mim?
-        </Chip>
-        <Chip
-          onClick={esquecer}
-          icon={confirmarEsquecer ? <AlertTriangle className="w-4 h-4 text-alert" /> : <Eraser className="w-4 h-4" />}
-          className={confirmarEsquecer ? 'border-alert/40 bg-alert-soft text-alert-text' : ''}
-          aria-live="polite"
-        >
-          {confirmarEsquecer ? 'Toque de novo para apagar tudo' : 'Esqueça tudo'}
         </Chip>
       </div>
 
