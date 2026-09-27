@@ -515,7 +515,7 @@ porque um replace no código tinha falhado em silêncio e nada o exercitava.
 deploy no Cloud Run, Pub/Sub → endpoint `/events` (agente proativo), `traffic_split.sh`
 (90/10 em revisões com tag), `make eval`.
 
-**Sub-projeto 3 — documentação:** `ARCHITECTURE.md`, `architecture.drawio`,
+**Sub-projeto 3 — documentação:** `ARCHITECTURE.md`, `diagrams/*.svg`,
 `SECURITY_LGPD.md`, `EXPERIMENTATION.md`, `CLAUDE.md` do projeto,
 `SATURDAY_CHECKLIST.md`.
 

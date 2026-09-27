@@ -71,7 +71,9 @@ AuditPlugin ──► JSON sem conteúdo
 CANAL
 ```
 
-Diagrama visual: `docs/architecture.drawio`.
+Diagramas visuais: `docs/diagrams/arquitetura.svg`, `topologia_agentes.svg` e
+`motor_de_decisao.svg` (os mesmos do PRD). O entregável 4 da banca, em draw.io, vive na
+pasta do Drive "Batalha de Agentes – Templates dos entregáveis".
 
 ---
 
