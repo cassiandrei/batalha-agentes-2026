@@ -106,7 +106,7 @@ O cliente sempre sabe que fala com uma IA, sempre tem um caminho para uma pessoa
 
 A regra decide quais tratamentos o cliente vê; o LLM só explica. Limites e taxas ficam na tabela `parametros_modelo`, nunca no código nem no prompt.
 
-![Motor de decisão: a regra decide, o LLM explica](diagrams/motor_de_decisao.svg)
+![Motor de decisão: a regra decide, o LLM explica](../diagrams/motor_de_decisao.svg)
 
 Faixa V sai do fluxo antes de qualquer oferta; os demais clientes só veem tratamentos que passaram pela regra.
 
@@ -120,6 +120,8 @@ Faixa V sai do fluxo antes de qualquer oferta; os demais clientes só veem trata
 | V | Comprometimento ≥ 50% (182) ou sobra após parcelas abaixo do mínimo existencial de R$ 600 (100) | Nenhuma oferta de crédito; renegociação assistida | 282 |
 
 282 clientes (28% da base) ficam sem oferta de crédito por desenho; a tabela `perfil_risco` guarda o motivo de cada faixa.
+
+**Índice de Organização Financeira (S3, definido em 27/09).** De 0 a 100, por regra sobre a `vw_bioimpedancia`, quatro pilares de 25 pontos, lineares e com limites explícitos: poupança (`poupanca_sobre_entradas_pct`: ≤ −20% vale 0, ≥ +20% vale 25), dreno (`dreno_pct_renda`: 0% vale 25, ≥ 5% da renda vale 0), comprometimento (`comprometimento_credito_pct`: 0 vale 25, ≥ 50% vale 0) e cronicidade (`meses_pagando_juros`: 0 vale 25, 12 vale 0). Status: ≥ 75 organizado, 50 a 74 atenção, < 50 crítico. Bruno: 61, atenção (25 + 17,15 + 6,15 + 12,5). Fica em `agent/app/indice.py`, versão v1, com teste nos extremos; a tela mostra os quatro pilares, não só o número.
 
 **Tratamentos:**
 
@@ -173,7 +175,7 @@ A base real dos organizadores não é alterada; tudo que é gerado vive no datas
 
 O agente ADK no Cloud Run orquestra tools determinísticas; o Gemini recebe só o payload delas e nunca calcula nem decide. Contexto do cliente vem por tool, não por RAG; o RAG cobre apenas conhecimento externo.
 
-![Arquitetura do Vita no Google Cloud](diagrams/arquitetura.svg)
+![Arquitetura do Vita no Google Cloud](../diagrams/arquitetura.svg)
 
 A linha de cima é o fluxo proativo, que termina no app; tudo o que o agente sabe do cliente chega pelas tools, abaixo dele. O diagrama mostra o desenho alvo: no ambiente do evento, o Pub/Sub dá lugar a uma chamada HTTP ao endpoint /events, o RAG Engine a uma busca local e o Gemini é chamado com chave do AI Studio (ver Desenho alvo vs. ambiente do evento).
 
@@ -181,7 +183,7 @@ A linha de cima é o fluxo proativo, que termina no app; tudo o que o agente sab
 
 Três papéis usam LLM, cada um numa fronteira real de responsabilidade; o controle crítico (elegibilidade, números, bloqueio da faixa V) fica em código determinístico.
 
-![Topologia de agentes: três papéis com LLM, controle crítico em código](diagrams/topologia_agentes.svg)
+![Topologia de agentes: três papéis com LLM, controle crítico em código](../diagrams/topologia_agentes.svg)
 
 | Componente | Construção no ADK | Responsabilidade | Não faz |
 | --- | --- | --- | --- |
@@ -490,6 +492,8 @@ Cada funcionalidade central tem um critério verificável no snapshot do evento;
 > Detalhamento por fatia (aba "Fatias verticais" do doc): [fatias_verticais.md](fatias_verticais.md)
 
 Tudo precisa estar pronto antes da submissão, domingo 27/09 às 9h30. Os itens obrigatórios são o mínimo para a demo funcionar; os demais melhoram a nota.
+
+A implementação está organizada em fatias verticais, uma sessão do Claude Code por fatia: Fatias verticais. A lista abaixo acompanha o andamento.
 
 **Obrigatório**
 

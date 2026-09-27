@@ -23,25 +23,27 @@ const INITIAL_PROFILE: FinancialProfile = {
     rotaryInterestCharged: null,
     invoiceHistory: [],
   },
-  reserve: {
-    total: 0,
-    product: '',
-    monthlyYieldRate: 0,
-    monthsCoverage: 0,
-  },
+  reserve: null,
   financialOverview: {
     score: null,
-    status: '',
-    freeCashflowPercentage: 0,
-    emergencyReserve: 0,
-    variableExpensesPercentage: 0,
-    monthlyInterestCost: 0,
+    status: null,
+    componentes: null,
+    poupancaSobreEntradasPct: null,
+    drenoPctRenda: null,
+    comprometimentoCreditoPct: null,
+    mesesPagandoJuros: null,
+    jurosUltimoMes: null,
+    jurosEncargosAno: null,
+    essenciaisMediaMensal: null,
   },
+  t01: null,
 };
 
 // S2: a conversa começa vazia. A primeira mensagem vem da sessão pré-montada no
 // agente (/api/abertura), depois que o cliente toca no push. Nada escrito aqui.
 const INITIAL_MESSAGES: Message[] = [];
+
+const brlTxt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 export default function App() {
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
@@ -198,37 +200,28 @@ export default function App() {
   };
 
   // Execution: Option A - Flow Adjustment Treatment
+  // S3: o estado pós-confirmação deriva do T01 calculado pelo agente. A confirmação
+  // real (iToken, evento tratamento_confirmado) é da S5; aqui só a tela muda.
   const handleConfirmFlowAdjustment = () => {
+    const t01 = profile.t01;
+    if (!t01) return;
     setTreatmentStatus('flow_adjusted');
-    setProfile(prev => ({
+    setProfile((prev) => ({
       ...prev,
-      card: {
-        ...prev.card,
-        outstandingBalance: 0,
-        rotaryInterestCharged: 0,
-      },
-      reserve: {
-        ...prev.reserve,
-        total: 4280.00,
-        monthsCoverage: 3.2,
-      },
-      financialOverview: {
-        score: 94,
-        status: 'Orçamento Otimizado (Juros Zerados)',
-        freeCashflowPercentage: 84,
-        emergencyReserve: 4280.00,
-        variableExpensesPercentage: 18.4,
-        monthlyInterestCost: 0,
-      }
+      card: { ...prev.card, outstandingBalance: 0, rotaryInterestCharged: 0 },
+      reserve: prev.reserve ? { ...prev.reserve, saldo: t01.reserva_restante } : prev.reserve,
+      financialOverview: { ...prev.financialOverview, jurosUltimoMes: 0 },
     }));
-
     const confirmMsg: Message = {
       id: `treat_${Date.now()}`,
       role: 'assistant',
-      content: '✅ Excelente decisão, Bruno! Saldo devedor quitado com sucesso. Cobrimos os **R$ 1.200,00** da fatura com a sua reserva de emergência. Você eliminou a cobrança de **R$ 142,50** mensais em juros rotativos e sua reserva ainda conta com **R$ 4.280,00** seguros no CDB (protegendo 3,2 meses do seu custo de vida). Você pode salvar o resumo detalhado desta operação direto no seu Google Drive.',
+      content: `Feito. ${brlTxt(t01.saldo_quitado)} do saldo no rotativo foram quitados com a sua reserva. Você deixa de pagar ${brlTxt(t01.juros_evitados_mes)} de juros por mês e a reserva continua com ${brlTxt(t01.reserva_restante)}, ${t01.meses_cobertura_essenciais.toFixed(1)} meses das suas despesas essenciais.`,
       timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
       actionTaken: 'flow_adjusted',
     };
+    setMessages((prev) => [...prev, confirmMsg]);
+  };
+
 
     setMessages((prev) => [...prev, confirmMsg]);
   };
@@ -236,21 +229,11 @@ export default function App() {
   // Execution: Option B - Installment Treatment
   const handleConfirmInstallment = (plan: { count: number; value: number; total: number }) => {
     setTreatmentStatus('installment_active');
-    setProfile(prev => ({
+    // S4 vai derivar isto do T02 calculado; por ora só zera o rotativo na tela.
+    setProfile((prev) => ({
       ...prev,
-      card: {
-        ...prev.card,
-        outstandingBalance: 0,
-        rotaryInterestCharged: 0,
-      },
-      financialOverview: {
-        score: 88,
-        status: 'Parcelamento Pré-fixado Ativo',
-        freeCashflowPercentage: 78,
-        emergencyReserve: 5480.00,
-        variableExpensesPercentage: 18.4,
-        monthlyInterestCost: 0,
-      }
+      card: { ...prev.card, outstandingBalance: 0, rotaryInterestCharged: 0 },
+      financialOverview: { ...prev.financialOverview, jurosUltimoMes: 0 },
     }));
 
     const confirmMsg: Message = {
@@ -361,6 +344,7 @@ export default function App() {
           onClose={() => setActiveModal('none')}
           onConfirm={handleConfirmFlowAdjustment}
           isAlreadyAdjusted={treatmentStatus === 'flow_adjusted'}
+          t01={profile.t01}
         />
 
         <InstallmentModal

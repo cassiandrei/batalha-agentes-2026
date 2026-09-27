@@ -200,6 +200,10 @@ agente. O chat passa pelo `/run` do agente; nenhuma chave de modelo no front. Sm
 `make smoke-fatia FATIA=s2b BASE_URL=<url do vita-app>` (1 chamada real, no chat). Sem
 marca, nome ou cor do Itaú no front (regra 3): o protótipo tinha e foi limpo ao entrar em `web/`.
 
+**Fatia S3:** `make cdi` antes do deploy (grava `data/evento/cdi_sgs.json`); revisão `fatia-s3`;
+`make smoke-fatia FATIA=s3 BASE_URL=<url da tag>` (7 checks, sem modelo); depois
+`make deploy-web … AGENT_URL=<url da tag>` e `make smoke-fatia FATIA=s2b BASE_URL=<url do vita-app>`.
+
 **Fatias (protocolo do PRD):** `TAG=fatia-s1` publica a revisão com tag e **0% de tráfego**;
 o Cloud Run exige tag com 3+ caracteres. Smoke sem modelo: `make smoke-fatia FATIA=s1
 BASE_URL=<url da tag>`. Promover: `gcloud run services update-traffic batalha-agentes
