@@ -33,7 +33,7 @@ export const FinancialOverviewModal: React.FC<FinancialOverviewModalProps> = ({
         {/* Header */}
         <div className="p-5 border-b border-gray-800 flex items-center justify-between bg-[#1E1E1E]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#EC7000]/10 border border-[#EC7000]/30 flex items-center justify-center text-[#EC7000]">
+            <div className="w-10 h-10 rounded-xl bg-[#1FA37C]/10 border border-[#1FA37C]/30 flex items-center justify-center text-[#1FA37C]">
               <BarChart3 className="w-5 h-5" />
             </div>
             <div>
@@ -54,7 +54,7 @@ export const FinancialOverviewModal: React.FC<FinancialOverviewModalProps> = ({
         <div className="p-5 overflow-y-auto space-y-6">
           {/* Main Score Card */}
           <div className="bg-[#121212] border border-gray-800 rounded-xl p-5 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-[#EC7000]/10 rounded-full blur-2xl pointer-events-none" />
+            <div className="absolute top-0 right-0 w-32 h-32 bg-[#1FA37C]/10 rounded-full blur-2xl pointer-events-none" />
             
             <div className="flex items-center justify-between">
               <div>
@@ -80,7 +80,7 @@ export const FinancialOverviewModal: React.FC<FinancialOverviewModalProps> = ({
                     d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                   />
                   <path
-                    className={isAdjusted ? "text-emerald-500" : "text-[#EC7000]"}
+                    className={isAdjusted ? "text-emerald-500" : "text-[#1FA37C]"}
                     strokeDasharray={`${score}, 100`}
                     strokeWidth="3.5"
                     strokeLinecap="round"
@@ -131,7 +131,7 @@ export const FinancialOverviewModal: React.FC<FinancialOverviewModalProps> = ({
               <div className="p-4 rounded-xl bg-[#141414] border border-gray-800">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-medium text-gray-300">Reserva de Emergência</span>
-                  <ShieldCheck className="w-4 h-4 text-[#EC7000]" />
+                  <ShieldCheck className="w-4 h-4 text-[#1FA37C]" />
                 </div>
                 <div className="text-lg font-bold text-white">
                   {treatmentStatus === 'flow_adjusted' ? 'R$ 4.280,00' : 'R$ 5.480,00'}
@@ -171,13 +171,13 @@ export const FinancialOverviewModal: React.FC<FinancialOverviewModalProps> = ({
 
           {/* Quick Action Prompt if not adjusted */}
           {!isAdjusted && (
-            <div className="p-4 bg-orange-950/20 border border-[#EC7000]/40 rounded-xl space-y-3">
-              <div className="flex items-center gap-2 text-xs font-semibold text-[#EC7000]">
+            <div className="p-4 bg-teal-950/20 border border-[#1FA37C]/40 rounded-xl space-y-3">
+              <div className="flex items-center gap-2 text-xs font-semibold text-[#1FA37C]">
                 <BarChart3 className="w-4 h-4" />
                 <span>Opções de Ajuste Recomendadas</span>
               </div>
               <p className="text-xs text-gray-200">
-                Zere a cobrança de <strong>R$ 142,50</strong> agora escolhendo uma das soluções fechadas calculadas pela ia.i:
+                Zere a cobrança de <strong>R$ 142,50</strong> agora escolhendo uma das soluções fechadas calculadas pela Vita:
               </p>
               <div className="grid grid-cols-2 gap-2 pt-1">
                 <button
@@ -185,7 +185,7 @@ export const FinancialOverviewModal: React.FC<FinancialOverviewModalProps> = ({
                     onClose();
                     onSelectOption('flow');
                   }}
-                  className="bg-[#EC7000] hover:bg-[#d96600] text-white text-xs font-semibold py-2.5 px-3 rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="bg-[#1FA37C] hover:bg-[#d96600] text-white text-xs font-semibold py-2.5 px-3 rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <span>Opção A: Ajuste de Fluxo</span>
                   <ArrowRight className="w-3.5 h-3.5" />
@@ -195,7 +195,7 @@ export const FinancialOverviewModal: React.FC<FinancialOverviewModalProps> = ({
                     onClose();
                     onSelectOption('installment');
                   }}
-                  className="border border-[#EC7000] text-[#EC7000] hover:bg-gray-800 text-xs font-semibold py-2.5 px-3 rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="border border-[#1FA37C] text-[#1FA37C] hover:bg-gray-800 text-xs font-semibold py-2.5 px-3 rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <span>Opção B: Parcelar Fatura</span>
                   <ArrowRight className="w-3.5 h-3.5" />

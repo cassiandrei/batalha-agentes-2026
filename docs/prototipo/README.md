@@ -1,4 +1,9 @@
-# Patches para o protótipo (repositório `danmarcello/Vita`)
+# Patches para o protótipo — HISTÓRICO
+
+**Desde a fatia S2b o front vive em `web/` neste repositório.** Os patches abaixo foram a
+ponte enquanto o código estava só em `danmarcello/Vita`; não precisam mais ser aplicados.
+Edite `web/` diretamente e publique com `make deploy-web`.
+
 
 O protótipo vive em outro repositório. Cada fatia deixa aqui o diff que liga as telas
 ao agente, para o dono do protótipo aplicar:

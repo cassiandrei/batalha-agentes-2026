@@ -31,7 +31,7 @@ export const FlowAdjustmentModal: React.FC<FlowAdjustmentModalProps> = ({
           particleCount: 80,
           spread: 70,
           origin: { y: 0.6 },
-          colors: ['#EC7000', '#FFFFFF', '#FFA726', '#4CAF50']
+          colors: ['#1FA37C', '#FFFFFF', '#FFA726', '#4CAF50']
         });
       } catch {
         // ignore
@@ -55,12 +55,12 @@ export const FlowAdjustmentModal: React.FC<FlowAdjustmentModalProps> = ({
         {/* Header */}
         <div className="p-5 border-b border-gray-800 flex items-center justify-between bg-[#1E1E1E]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#EC7000] text-white flex items-center justify-center font-bold shadow-md shadow-orange-950/50">
+            <div className="w-10 h-10 rounded-xl bg-[#1FA37C] text-white flex items-center justify-center font-bold shadow-md shadow-teal-950/50">
               <Zap className="w-5 h-5 text-white" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#EC7000] bg-[#EC7000]/10 px-2 py-0.5 rounded border border-[#EC7000]/20">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#1FA37C] bg-[#1FA37C]/10 px-2 py-0.5 rounded border border-[#1FA37C]/20">
                   Opção A
                 </span>
                 <h2 className="text-base font-semibold text-white">Ajuste de Fluxo com Reserva</h2>
@@ -81,7 +81,7 @@ export const FlowAdjustmentModal: React.FC<FlowAdjustmentModalProps> = ({
         {!successView ? (
           <div className="p-5 overflow-y-auto space-y-5">
             {/* Value Callout */}
-            <div className="p-4 bg-gradient-to-br from-[#EC7000]/15 to-[#181818] border border-[#EC7000]/30 rounded-xl flex items-center justify-between">
+            <div className="p-4 bg-gradient-to-br from-[#1FA37C]/15 to-[#181818] border border-[#1FA37C]/30 rounded-xl flex items-center justify-between">
               <div>
                 <span className="text-xs text-gray-400 block">Saldo devedor a quitar</span>
                 <span className="text-2xl font-bold text-white tracking-tight">R$ 1.200,00</span>
@@ -92,7 +92,7 @@ export const FlowAdjustmentModal: React.FC<FlowAdjustmentModalProps> = ({
               </div>
               <div className="text-right">
                 <span className="text-[11px] text-gray-400 block">Origem do recurso</span>
-                <span className="text-xs font-semibold text-orange-200">CDB DI Liquidez Diária</span>
+                <span className="text-xs font-semibold text-teal-200">CDB DI Liquidez Diária</span>
               </div>
             </div>
 
@@ -137,7 +137,7 @@ export const FlowAdjustmentModal: React.FC<FlowAdjustmentModalProps> = ({
 
               <div className="flex items-center justify-between text-xs py-1.5 border-b border-gray-800/80">
                 <span className="text-gray-400">Quitação do saldo devedor:</span>
-                <span className="font-semibold text-[#EC7000]">- R$ 1.200,00</span>
+                <span className="font-semibold text-[#1FA37C]">- R$ 1.200,00</span>
               </div>
 
               <div className="flex items-center justify-between text-xs py-1.5">
@@ -155,8 +155,8 @@ export const FlowAdjustmentModal: React.FC<FlowAdjustmentModalProps> = ({
 
             {/* Security note */}
             <div className="flex items-center gap-2 text-[11px] text-gray-400 px-1">
-              <Lock className="w-3.5 h-3.5 text-[#EC7000]" />
-              <span>Transação segura e validada via iToken Itaú no aplicativo</span>
+              <Lock className="w-3.5 h-3.5 text-[#1FA37C]" />
+              <span>Transação segura e validada via token no aplicativo</span>
             </div>
           </div>
         ) : (
@@ -207,7 +207,7 @@ export const FlowAdjustmentModal: React.FC<FlowAdjustmentModalProps> = ({
               <button
                 onClick={handleApply}
                 disabled={isSubmitting}
-                className="bg-[#EC7000] hover:bg-[#d96600] text-white text-xs font-semibold px-5 py-2.5 rounded-lg transition-colors flex items-center gap-2 shadow-md shadow-orange-950/40 cursor-pointer"
+                className="bg-[#1FA37C] hover:bg-[#d96600] text-white text-xs font-semibold px-5 py-2.5 rounded-lg transition-colors flex items-center gap-2 shadow-md shadow-teal-950/40 cursor-pointer"
               >
                 {isSubmitting ? (
                   <>
@@ -225,9 +225,9 @@ export const FlowAdjustmentModal: React.FC<FlowAdjustmentModalProps> = ({
           ) : (
             <button
               onClick={handleFinish}
-              className="bg-[#EC7000] hover:bg-[#d96600] text-white text-xs font-semibold px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 w-full justify-center cursor-pointer"
+              className="bg-[#1FA37C] hover:bg-[#d96600] text-white text-xs font-semibold px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 w-full justify-center cursor-pointer"
             >
-              <span>Ver conversa com ia.i</span>
+              <span>Ver conversa com Vita</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           )}

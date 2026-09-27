@@ -31,11 +31,11 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="flex items-center justify-between px-4 py-3.5 border-b border-gray-800 bg-[#1E1E1E] shrink-0 sticky top-0 z-30 select-none">
       {/* Brand Identity */}
       <div className="flex items-center gap-2.5">
-        <div className="bg-[#EC7000] text-white font-bold px-2.5 py-1 rounded text-sm tracking-wide shadow-sm shadow-orange-900/30">
-          Itaú
+        <div className="bg-[#1FA37C] text-white font-bold px-2.5 py-1 rounded text-sm tracking-wide shadow-sm shadow-teal-900/30">
+          Vita
         </div>
         <div className="flex items-baseline gap-1.5">
-          <span className="text-gray-200 font-light text-xl tracking-tight">ia.i</span>
+          <span className="text-gray-200 font-light text-xl tracking-tight">Vita</span>
           <span className="hidden sm:inline text-[11px] text-gray-500 font-normal">
             organização financeira
           </span>
@@ -50,11 +50,11 @@ export const Header: React.FC<HeaderProps> = ({
           className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
             isHealthy
               ? 'bg-emerald-950/30 text-emerald-400 border border-emerald-900/40 hover:bg-emerald-900/30'
-              : 'bg-orange-950/30 text-[#EC7000] border border-[#EC7000]/30 hover:bg-[#EC7000]/20'
+              : 'bg-teal-950/30 text-[#1FA37C] border border-[#1FA37C]/30 hover:bg-[#1FA37C]/20'
           }`}
           title="Ver Visão Financeira"
         >
-          <BarChart3 className={`w-3.5 h-3.5 ${!isHealthy ? 'text-[#EC7000]' : 'text-emerald-400'}`} />
+          <BarChart3 className={`w-3.5 h-3.5 ${!isHealthy ? 'text-[#1FA37C]' : 'text-emerald-400'}`} />
           <span className="hidden xs:inline">Visão Financeira</span>
           {score !== null && (
             <span className="text-[10px] font-bold opacity-80">{score}%</span>
@@ -74,7 +74,7 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           onClick={onToggleSpeech}
           className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-            speechEnabled ? 'text-[#EC7000] bg-[#EC7000]/10' : 'text-gray-500 hover:text-gray-300'
+            speechEnabled ? 'text-[#1FA37C] bg-[#1FA37C]/10' : 'text-gray-500 hover:text-gray-300'
           }`}
           title={speechEnabled ? 'Voz ativada (clique para silenciar)' : 'Ativar leitura por voz'}
         >
@@ -93,7 +93,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Fechar button (Exact style from prompt) */}
         <button
           onClick={onReset}
-          className="text-[#EC7000] hover:text-orange-400 text-sm font-medium px-2 py-1 rounded transition-colors ml-1 cursor-pointer"
+          className="text-[#1FA37C] hover:text-teal-400 text-sm font-medium px-2 py-1 rounded transition-colors ml-1 cursor-pointer"
         >
           Fechar
         </button>

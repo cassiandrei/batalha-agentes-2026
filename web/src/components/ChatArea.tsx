@@ -31,7 +31,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
       {/* Date Pill / Conversation Start */}
       <div className="flex justify-center my-1">
         <span className="text-[11px] text-gray-500 bg-gray-900/60 px-3 py-1 rounded-full border border-gray-800">
-          Hoje · Itaú Organização e Bem-Estar Financeiro
+          Hoje · Vita
         </span>
       </div>
 
@@ -41,8 +41,8 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
         if (isAssistant) {
           return (
             <div key={message.id} className="flex flex-col items-start max-w-[88%] sm:max-w-[85%] group animate-fade-in">
-              {/* ia.i Assistant Message - Exact styling from prompt */}
-              <div className="bg-gray-800/50 border-l-2 border-[#EC7000] p-4 rounded-r-xl rounded-bl-xl text-sm leading-relaxed text-gray-200 shadow-sm relative">
+              {/* Vita Assistant Message - Exact styling from prompt */}
+              <div className="bg-gray-800/50 border-l-2 border-[#1FA37C] p-4 rounded-r-xl rounded-bl-xl text-sm leading-relaxed text-gray-200 shadow-sm relative">
                 {/* Format markdown bold if present */}
                 <div 
                   className="space-y-1.5"
@@ -62,7 +62,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                         onClick={() => onAction(acao)}
                         className={
                           i === 0
-                            ? 'inline-flex items-center gap-1.5 text-xs text-[#EC7000] hover:text-orange-300 font-semibold bg-[#EC7000]/10 hover:bg-[#EC7000]/20 px-2.5 py-1 rounded-md transition-colors cursor-pointer'
+                            ? 'inline-flex items-center gap-1.5 text-xs text-[#1FA37C] hover:text-teal-300 font-semibold bg-[#1FA37C]/10 hover:bg-[#1FA37C]/20 px-2.5 py-1 rounded-md transition-colors cursor-pointer'
                             : 'inline-flex items-center gap-1.5 text-xs text-gray-300 hover:text-white font-medium bg-gray-700/50 hover:bg-gray-700 px-2.5 py-1 rounded-md transition-colors cursor-pointer'
                         }
                       >
@@ -78,15 +78,15 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                   <div className="mt-3 p-2.5 bg-emerald-950/30 border border-emerald-800/40 rounded-lg space-y-2">
                     <div className="flex items-center gap-2 text-xs text-emerald-300">
                       <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span>Cobrança de R$ 142,50/mês eliminada com a Reserva Itaú</span>
+                      <span>Cobrança de R$ 142,50/mês eliminada com a sua reserva</span>
                     </div>
                   </div>
                 )}
 
                 {message.actionTaken === 'installment_active' && (
-                  <div className="mt-3 p-2.5 bg-orange-950/30 border border-[#EC7000]/40 rounded-lg space-y-2">
-                    <div className="flex items-center gap-2 text-xs text-orange-200">
-                      <Sparkles className="w-4 h-4 text-[#EC7000] shrink-0" />
+                  <div className="mt-3 p-2.5 bg-teal-950/30 border border-[#1FA37C]/40 rounded-lg space-y-2">
+                    <div className="flex items-center gap-2 text-xs text-teal-200">
+                      <Sparkles className="w-4 h-4 text-[#1FA37C] shrink-0" />
                       <span>Taxa congelada em parcelas fixas sem novos juros rotativos</span>
                     </div>
                   </div>
@@ -100,7 +100,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                 <span>{message.timestamp}</span>
                 <button
                   onClick={() => onSpeak(message.content)}
-                  className="opacity-0 group-hover:opacity-100 hover:text-[#EC7000] transition-opacity p-0.5 cursor-pointer"
+                  className="opacity-0 group-hover:opacity-100 hover:text-[#1FA37C] transition-opacity p-0.5 cursor-pointer"
                   title="Ouvir mensagem"
                 >
                   <Volume2 className="w-3 h-3" />
@@ -118,7 +118,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
             </div>
             <div className="flex items-center gap-1 mt-1 px-1 text-[10px] text-gray-500">
               <span>{message.timestamp}</span>
-              <CheckCheck className="w-3 h-3 text-[#EC7000]" />
+              <CheckCheck className="w-3 h-3 text-[#1FA37C]" />
             </div>
           </div>
         );
@@ -127,13 +127,13 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
       {/* Typing indicator */}
       {isTyping && (
         <div className="flex flex-col items-start max-w-[85%] animate-fade-in">
-          <div className="bg-gray-800/50 border-l-2 border-[#EC7000] p-3.5 rounded-r-xl rounded-bl-xl text-sm text-gray-400 flex items-center gap-2">
+          <div className="bg-gray-800/50 border-l-2 border-[#1FA37C] p-3.5 rounded-r-xl rounded-bl-xl text-sm text-gray-400 flex items-center gap-2">
             <div className="flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#EC7000] animate-bounce" style={{ animationDelay: '0ms' }} />
-              <span className="w-1.5 h-1.5 rounded-full bg-[#EC7000] animate-bounce" style={{ animationDelay: '150ms' }} />
-              <span className="w-1.5 h-1.5 rounded-full bg-[#EC7000] animate-bounce" style={{ animationDelay: '300ms' }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#1FA37C] animate-bounce" style={{ animationDelay: '0ms' }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#1FA37C] animate-bounce" style={{ animationDelay: '150ms' }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#1FA37C] animate-bounce" style={{ animationDelay: '300ms' }} />
             </div>
-            <span className="text-xs text-gray-400">ia.i está calculando as opções...</span>
+            <span className="text-xs text-gray-400">Vita está calculando as opções...</span>
           </div>
         </div>
       )}

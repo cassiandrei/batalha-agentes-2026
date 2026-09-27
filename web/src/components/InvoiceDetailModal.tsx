@@ -42,7 +42,7 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
         <div className="p-5 border-b border-gray-800 flex items-center justify-between bg-[#1E1E1E]">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gray-800 border border-gray-700 flex items-center justify-center text-white">
-              <Receipt className="w-5 h-5 text-[#EC7000]" />
+              <Receipt className="w-5 h-5 text-[#1FA37C]" />
             </div>
             <div>
               <h2 className="text-base font-semibold text-white">Detalhamento da Fatura</h2>

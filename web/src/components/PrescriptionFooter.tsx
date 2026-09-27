@@ -59,15 +59,15 @@ export const PrescriptionFooter: React.FC<PrescriptionFooterProps> = ({
           <button 
             type="button"
             onClick={onSelectFlowAdjustment}
-            className="w-full bg-[#EC7000] hover:bg-orange-600 text-white p-4 rounded-lg flex flex-col items-start transition-colors cursor-pointer group shadow-sm"
+            className="w-full bg-[#1FA37C] hover:bg-teal-600 text-white p-4 rounded-lg flex flex-col items-start transition-colors cursor-pointer group shadow-sm"
           >
             <span className="font-bold text-base mb-1 group-hover:translate-x-0.5 transition-transform flex items-center justify-between w-full">
               <span>Opção A: Ajuste de Fluxo</span>
-              <span className="text-[11px] bg-orange-700/60 font-semibold px-2 py-0.5 rounded text-orange-100">
+              <span className="text-[11px] bg-teal-700/60 font-semibold px-2 py-0.5 rounded text-teal-100">
                 Zerar juros imediatamente
               </span>
             </span>
-            <span className="text-xs text-orange-100 text-left">
+            <span className="text-xs text-teal-100 text-left">
               Usar o dinheiro da Reserva de Emergência para quitar o saldo e zerar os juros.
             </span>
           </button>
@@ -76,11 +76,11 @@ export const PrescriptionFooter: React.FC<PrescriptionFooterProps> = ({
           <button 
             type="button"
             onClick={onSelectInstallment}
-            className="w-full bg-transparent border border-[#EC7000] hover:bg-gray-800 text-[#EC7000] p-4 rounded-lg flex flex-col items-start transition-colors cursor-pointer group"
+            className="w-full bg-transparent border border-[#1FA37C] hover:bg-gray-800 text-[#1FA37C] p-4 rounded-lg flex flex-col items-start transition-colors cursor-pointer group"
           >
             <span className="font-bold text-base mb-1 group-hover:translate-x-0.5 transition-transform flex items-center justify-between w-full">
               <span>Opção B: Parcelar Fatura</span>
-              <span className="text-[11px] bg-orange-950/40 border border-[#EC7000]/40 font-semibold px-2 py-0.5 rounded text-[#EC7000]">
+              <span className="text-[11px] bg-teal-950/40 border border-[#1FA37C]/40 font-semibold px-2 py-0.5 rounded text-[#1FA37C]">
                 Taxas menores
               </span>
             </span>
@@ -124,15 +124,15 @@ export const PrescriptionFooter: React.FC<PrescriptionFooterProps> = ({
             type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
-            placeholder="Tire dúvidas sobre seu orçamento com a ia.i..."
-            className="w-full bg-[#1E1E1E] border border-gray-700 focus:border-[#EC7000] focus:ring-1 focus:ring-[#EC7000] rounded-xl px-4 py-2.5 text-xs text-white placeholder-gray-500 outline-none transition-colors"
+            placeholder="Tire dúvidas sobre seu orçamento com o Vita..."
+            className="w-full bg-[#1E1E1E] border border-gray-700 focus:border-[#1FA37C] focus:ring-1 focus:ring-[#1FA37C] rounded-xl px-4 py-2.5 text-xs text-white placeholder-gray-500 outline-none transition-colors"
           />
         </div>
         <button
           type="submit"
           disabled={!inputText.trim() || isTyping}
-          className="bg-[#EC7000] hover:bg-orange-600 disabled:bg-gray-800 disabled:text-gray-600 text-white p-2.5 rounded-xl transition-colors cursor-pointer shrink-0"
-          aria-label="Enviar mensagem para ia.i"
+          className="bg-[#1FA37C] hover:bg-teal-600 disabled:bg-gray-800 disabled:text-gray-600 text-white p-2.5 rounded-xl transition-colors cursor-pointer shrink-0"
+          aria-label="Enviar mensagem para Vita"
         >
           <Send className="w-4 h-4" />
         </button>

@@ -21,7 +21,7 @@ export const InstallmentModal: React.FC<InstallmentModalProps> = ({
 
   const plans = [
     { count: 3, value: 412.00, total: 1236.00, tag: 'Menor Custo Total' },
-    { count: 6, value: 214.00, total: 1284.00, tag: 'Recomendado pela ia.i' },
+    { count: 6, value: 214.00, total: 1284.00, tag: 'Recomendado pela Vita' },
     { count: 12, value: 112.00, total: 1344.00, tag: 'Menor Parcela Mensal' },
   ];
 
@@ -38,7 +38,7 @@ export const InstallmentModal: React.FC<InstallmentModalProps> = ({
           particleCount: 70,
           spread: 60,
           origin: { y: 0.6 },
-          colors: ['#EC7000', '#FF8F00', '#FFFFFF']
+          colors: ['#1FA37C', '#FF8F00', '#FFFFFF']
         });
       } catch {
         // ignore
@@ -62,12 +62,12 @@ export const InstallmentModal: React.FC<InstallmentModalProps> = ({
         {/* Header */}
         <div className="p-5 border-b border-gray-800 flex items-center justify-between bg-[#1E1E1E]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl border border-[#EC7000] text-[#EC7000] flex items-center justify-center font-bold bg-[#EC7000]/10">
+            <div className="w-10 h-10 rounded-xl border border-[#1FA37C] text-[#1FA37C] flex items-center justify-center font-bold bg-[#1FA37C]/10">
               <Calendar className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#EC7000] bg-[#EC7000]/10 px-2 py-0.5 rounded border border-[#EC7000]/20">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#1FA37C] bg-[#1FA37C]/10 px-2 py-0.5 rounded border border-[#1FA37C]/20">
                   Opção B
                 </span>
                 <h2 className="text-base font-semibold text-white">Parcelar Saldo da Fatura</h2>
@@ -119,7 +119,7 @@ export const InstallmentModal: React.FC<InstallmentModalProps> = ({
                       onClick={() => setSelectedPlan(p.count)}
                       className={`w-full text-left p-4 rounded-xl border transition-all flex items-center justify-between cursor-pointer ${
                         isSelected
-                          ? 'bg-[#EC7000]/15 border-[#EC7000] ring-1 ring-[#EC7000]'
+                          ? 'bg-[#1FA37C]/15 border-[#1FA37C] ring-1 ring-[#1FA37C]'
                           : 'bg-[#141414] border-gray-800 hover:border-gray-700'
                       }`}
                     >
@@ -129,7 +129,7 @@ export const InstallmentModal: React.FC<InstallmentModalProps> = ({
                             {p.count}x de R$ {p.value.toFixed(2).replace('.', ',')}
                           </span>
                           <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${
-                            isSelected ? 'bg-[#EC7000] text-white' : 'bg-gray-800 text-gray-300'
+                            isSelected ? 'bg-[#1FA37C] text-white' : 'bg-gray-800 text-gray-300'
                           }`}>
                             {p.tag}
                           </span>
@@ -140,7 +140,7 @@ export const InstallmentModal: React.FC<InstallmentModalProps> = ({
                       </div>
 
                       <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${
-                        isSelected ? 'border-[#EC7000] bg-[#EC7000]' : 'border-gray-600'
+                        isSelected ? 'border-[#1FA37C] bg-[#1FA37C]' : 'border-gray-600'
                       }`}>
                         {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
                       </div>
@@ -157,13 +157,13 @@ export const InstallmentModal: React.FC<InstallmentModalProps> = ({
                 <span>Primeira parcela apenas no próximo vencimento</span>
               </div>
               <p className="text-[11px] text-gray-400 leading-relaxed">
-                As parcelas virão fixas nas próximas faturas. Você não precisa desembolsar nada hoje e mantém 100% da sua reserva de emergência intacta no CDB Itaú.
+                As parcelas virão fixas nas próximas faturas. Você não precisa desembolsar nada hoje e mantém 100% da sua reserva de emergência intacta no CDB.
               </p>
             </div>
           </div>
         ) : (
           <div className="p-8 text-center space-y-4">
-            <div className="w-16 h-16 bg-[#EC7000]/10 border-2 border-[#EC7000] rounded-full flex items-center justify-center mx-auto text-[#EC7000] animate-bounce">
+            <div className="w-16 h-16 bg-[#1FA37C]/10 border-2 border-[#1FA37C] rounded-full flex items-center justify-center mx-auto text-[#1FA37C] animate-bounce">
               <CheckCircle2 className="w-8 h-8" />
             </div>
 
@@ -181,7 +181,7 @@ export const InstallmentModal: React.FC<InstallmentModalProps> = ({
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-400">Valor da parcela:</span>
-                <span className="font-bold text-[#EC7000]">R$ {currentChoice.value.toFixed(2).replace('.', ',')}</span>
+                <span className="font-bold text-[#1FA37C]">R$ {currentChoice.value.toFixed(2).replace('.', ',')}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-400">1º Vencimento:</span>
@@ -209,7 +209,7 @@ export const InstallmentModal: React.FC<InstallmentModalProps> = ({
               <button
                 onClick={handleApply}
                 disabled={isSubmitting}
-                className="bg-[#EC7000] hover:bg-[#d96600] text-white text-xs font-semibold px-5 py-2.5 rounded-lg transition-colors flex items-center gap-2 cursor-pointer"
+                className="bg-[#1FA37C] hover:bg-[#d96600] text-white text-xs font-semibold px-5 py-2.5 rounded-lg transition-colors flex items-center gap-2 cursor-pointer"
               >
                 {isSubmitting ? (
                   <>
@@ -227,9 +227,9 @@ export const InstallmentModal: React.FC<InstallmentModalProps> = ({
           ) : (
             <button
               onClick={handleFinish}
-              className="bg-[#EC7000] hover:bg-[#d96600] text-white text-xs font-semibold px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 w-full justify-center cursor-pointer"
+              className="bg-[#1FA37C] hover:bg-[#d96600] text-white text-xs font-semibold px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 w-full justify-center cursor-pointer"
             >
-              <span>Ver conversa com ia.i</span>
+              <span>Ver conversa com Vita</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           )}

@@ -225,7 +225,7 @@ export default function App() {
     const confirmMsg: Message = {
       id: `treat_${Date.now()}`,
       role: 'assistant',
-      content: '✅ Excelente decisão, Bruno! Saldo devedor quitado com sucesso. Cobrimos os **R$ 1.200,00** da fatura com a sua reserva de emergência. Você eliminou a cobrança de **R$ 142,50** mensais em juros rotativos e sua reserva ainda conta com **R$ 4.280,00** seguros no CDB Itaú (protegendo 3,2 meses do seu custo de vida). Você pode salvar o resumo detalhado desta operação direto no seu Google Drive.',
+      content: '✅ Excelente decisão, Bruno! Saldo devedor quitado com sucesso. Cobrimos os **R$ 1.200,00** da fatura com a sua reserva de emergência. Você eliminou a cobrança de **R$ 142,50** mensais em juros rotativos e sua reserva ainda conta com **R$ 4.280,00** seguros no CDB (protegendo 3,2 meses do seu custo de vida). Você pode salvar o resumo detalhado desta operação direto no seu Google Drive.',
       timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
       actionTaken: 'flow_adjusted',
     };
@@ -274,7 +274,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#121212] flex flex-col items-center justify-center font-sans antialiased text-white selection:bg-[#EC7000]/30 selection:text-[#EC7000]">
+    <div className="min-h-screen bg-[#121212] flex flex-col items-center justify-center font-sans antialiased text-white selection:bg-[#1FA37C]/30 selection:text-[#1FA37C]">
       {/* Container: Either mobile frame or responsive full width */}
       <div 
         className={`w-full h-screen transition-all flex flex-col bg-[#1E1E1E] shadow-2xl relative overflow-hidden ${
@@ -314,7 +314,7 @@ export default function App() {
         {pushVisivel && (
           <button
             onClick={abrirPeloPush}
-            className="mx-4 mt-3 text-left bg-[#1E1E1E] border border-gray-700 rounded-xl p-3.5 shadow-lg hover:border-[#EC7000]/60 transition-colors cursor-pointer"
+            className="mx-4 mt-3 text-left bg-[#1E1E1E] border border-gray-700 rounded-xl p-3.5 shadow-lg hover:border-[#1FA37C]/60 transition-colors cursor-pointer"
             title="Abrir a análise"
           >
             <div className="text-[11px] text-gray-500 mb-1">Notificação · agora</div>
