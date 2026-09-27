@@ -184,7 +184,15 @@ make deploy PROJECT_ID=batalha-time-06-1t82 REGION=us-central1 MEMORY_LOCATION=u
 ```
 
 Se os organizadores derem `aiplatform.user` à SA: acrescente `AGENT_ENGINE_ID=6089108039007207424
-MEMORY_BACKEND=agent_engine MAX_INSTANCES=5` e o restante não muda.
+MEMORY_BACKEND=agent_engine MAX_INSTANCES=5` e o restante não muda. **Já deram:** a SA
+`squad-agent-sa@batalha-time-06-1t82.iam.gserviceaccount.com` tem `aiplatform.user`, BigQuery
+e Secret Manager (testado). Use-a como `RUNTIME_SA` e tire o `MODEL_KEY_SECRET`.
+
+**Fatias (protocolo do PRD):** `TAG=fatia-s1` publica a revisão com tag e **0% de tráfego**;
+o Cloud Run exige tag com 3+ caracteres. Smoke sem modelo: `make smoke-fatia FATIA=s1
+BASE_URL=<url da tag>`. Promover: `gcloud run services update-traffic batalha-agentes
+--region=us-central1 --to-tags=fatia-s1=100`. Build local: Docker Desktop precisa ficar
+aberto; em rede ruim o `uv sync` do Dockerfile já repete e usa cache.
 
 ---
 

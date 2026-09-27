@@ -22,7 +22,7 @@ cd Vita && git apply caminho/para/s1_front.patch
 Variáveis de ambiente do protótipo:
 
 ```
-AGENT_URL=https://<url-da-revisao-ou-tag-do-cloud-run>
+AGENT_URL=https://fatia-s1---batalha-agentes-277ilp3dyq-uc.a.run.app   # revisão da S1 (tag, 0% de tráfego)
 DEMO_CUSTOMER_ID=36d74064-cc59-4ad2-9304-aeae46e660e4
 ```
 

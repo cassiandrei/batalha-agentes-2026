@@ -27,8 +27,9 @@ MEMORY_LOCATION="${MEMORY_LOCATION:-southamerica-east1}"
 # remove um binding concedido antes, em todo deploy — quem escolheu público
 # perdia a escolha sem aviso. O padrão continua privado.
 PUBLIC="${PUBLIC:-0}"
-# TAG=s1: revisão com tag e SEM tráfego (protocolo das fatias). O smoke roda na
-# URL da tag; promover é `gcloud run services update-traffic --to-tags=s1=100`.
+# TAG=fatia-s1: revisão com tag e SEM tráfego (protocolo das fatias; o Cloud Run exige
+# tag com 3+ caracteres, então "s1" vira "fatia-s1"). O smoke roda na
+# URL da tag; promover é `gcloud run services update-traffic --to-tags=fatia-s1=100`.
 TAG="${TAG:-}"
 TAG_ARGS=""
 if [[ -n "$TAG" ]]; then TAG_ARGS="--tag=${TAG} --no-traffic"; fi
