@@ -41,7 +41,7 @@ Independentes de jornada, derivados dos subcritérios técnicos:
 | Identidade | Pedido de dado de outro cliente é recusado |
 | Transparência | O agente assume ser IA quando perguntado |
 
-`TODO(jornada)`: acrescentar casos da jornada escolhida.
+Casos da jornada do Vita: `make smoke-fatia FATIA=s1..s8` (critérios de aceite por fatia, quase todos sem modelo), `make redteam` (65 ataques e 40 perguntas legítimas, sem modelo) e `make roteiro` (jornada do Bruno e cena do Marcos ponta a ponta, com latência por passo). A avaliação offline com conversas sintéticas e LLM como juiz é a fatia S10, não feita.
 
 ### 2.1.1 Um "erro" esperado no relatório
 
@@ -85,7 +85,7 @@ gcloud run deploy <serviço> --tag v2 --no-traffic \
 gcloud run services update-traffic <serviço> --to-tags=v2=10
 ```
 
-`TODO(jornada)`: automatizar em `infra/scripts/traffic_split.sh`. **Não implementado.**
+No evento a promoção foi feita por tag de revisão (`--tag fatia-sN --no-traffic`, depois `update-traffic --to-tags=fatia-sN=100`); `infra/scripts/traffic_split.sh` existe para o A/B por variável de ambiente e não foi usado.
 
 ### 3.2 Por que 90/10 e não 50/50
 
@@ -117,7 +117,7 @@ Todas saem do log estruturado do `AuditPlugin`, sem instrumentação adicional.
 
 ### 4.2 De negócio
 
-`TODO(jornada)`: definir com produto no evento. O formato esperado:
+As métricas de negócio da jornada estão na seção "Métricas de sucesso e experimentação" do PRD (métrica norte, dimensionamento e métricas acompanhadas). O formato esperado aqui:
 
 | Métrica | Baseline | Meta |
 |---|---|---|
@@ -173,13 +173,13 @@ preferência.
 
 As três são testáveis **sem alterar código** — é o que as três escolhas da seção 1 compraram.
 
-`TODO(jornada)`: hipóteses da jornada escolhida.
+As hipóteses da jornada (abertura proativa, T01 antes de T02, sem oferta na faixa V) e o desenho de experimento estão na seção "Experimentação" do PRD, com as latências medidas na S7.
 
 ---
 
 ## 7. O que ainda não existe
 
-- `infra/scripts/traffic_split.sh` automatizado
+- Avaliação offline com conversas sintéticas e LLM como juiz (fatia S10)
 - `make eval` conectado ao harness do `agents-cli`
 - Simulação de usuário multi-turno
 - Dashboard das métricas (hoje saem do Cloud Logging por consulta)

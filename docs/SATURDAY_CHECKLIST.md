@@ -6,6 +6,10 @@
 
 ---
 
+> **Estado em 27/09:** os Blocos 0 a 4 são da preparação e do sábado (a jornada foi
+> escolhida: rotativo do cartão, PRD em `docs/produto/PRD.md`; as fatias S1–S8 estão
+> publicadas). Para o dia da banca, vá direto a **"Dia da banca (S7)"** no fim.
+
 ## Bloco 0 — Antes de qualquer código (10 min)
 
 ### 0.1 Peça os papéis IAM, por escrito, assim que tiver contato
@@ -89,6 +93,8 @@ trial do GCP não cobre.
 ---
 
 ## Bloco 2 — Adaptar à jornada (~30 min)
+
+> Feito no sábado: a jornada é a do rotativo do cartão (PRD). Os marcadores `TODO(jornada)` nos prompts ficaram de propósito (há teste que os procura); o que é da jornada está listado na regra 1 do `CLAUDE.md`.
 
 Procure os marcadores: `grep -rn "TODO(jornada)" agent/ data/`
 
@@ -382,7 +388,7 @@ o teardown imprime o comando para listá-la.
 |---|---|
 | `make setup` | venv 3.12 + dependências + `.env` |
 | `make data` | gera os dados sintéticos |
-| `make test` | 145 testes, **sem credencial** |
+| `make test` | 361 testes, **sem credencial** |
 | `make test-llm` | inclui os que chamam o modelo |
 | `make lint` | ruff |
 | `make run` | playground local |
@@ -391,7 +397,11 @@ o teardown imprime o comando para listá-la.
 | `make deploy PROJECT_ID=x AGENT_ENGINE_ID=y [DRY_RUN=1]` | deploy no Cloud Run |
 | `make load-bq PROJECT_ID=x [DRY_RUN=1]` | carrega os CSVs no BigQuery |
 | `make eval-report` | abre o HTML da última avaliação |
-| `make smoke BASE_URL=x [TOKEN=y]` | 13 verificações de arquitetura |
+| `make smoke BASE_URL=x [TOKEN=y]` | verificações de arquitetura contra o agente vivo |
+| `make smoke-fatia FATIA=sN BASE_URL=x` | smoke de uma fatia (s1–s8) |
+| `make roteiro BASE_URL=<vita-app> [SEM_CHAT=1]` | roteiro ponta a ponta da demo com latência por passo |
+| `make redteam` | red team sem modelo; grava `docs/redteam/RELATORIO.md` |
+| `make deploy-web PROJECT_ID=x AGENT_URL=y` | publica o front como `vita-app` |
 | `make teardown PROJECT_ID=x [DRY_RUN=1]` | apaga o que o deploy criou |
 
 ---

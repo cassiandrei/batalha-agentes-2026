@@ -15,8 +15,13 @@
   pertencem a pessoa alguma.
 - Nomes vêm de gerador (`Faker`, locale `pt_BR`), com semente fixa.
 
-`TODO(jornada)`: se a jornada exigir categorias adicionais de dado, liste-as aqui e
-reavalie a base legal.
+**Dados da jornada do Vita (S1–S8):** extrato e fatura reconstruída, perfil de risco
+(faixa, comprometimento), posição de investimentos e parâmetros do modelo, todos do
+snapshot sintético do evento (`data/evento/`, seção 11 a 13 do `DADOS_EVENTO.md`); memória
+de longo prazo só com consentimento e só nas chaves da política (`objetivo`,
+`oferta_recusada`, `tratamento`, `canal_preferido`), sem valor de transação nem payload
+(seção 16). O resumo enviado no encaminhamento a uma pessoa leva faixa, mês, gatilho e
+recomendação — nunca valor, nome ou identificador.
 
 ---
 
@@ -196,7 +201,10 @@ A revogação junto com a exclusão é deliberada: apagar os registros e manter 
 ativo faria a próxima preferência ser gravada sem perguntar nada, logo depois de o agente
 confirmar a exclusão.
 
-`TODO(jornada)`: portabilidade e correção, se a jornada exigir.
+Acesso e eliminação estão na demo (`GET`/`DELETE /customers/{id}/memory` e os botões "O que
+você lembra sobre mim?" e "Esqueça tudo", sem passar pelo modelo). Portabilidade e
+correção não foram implementadas: a memória guarda poucas chaves curtas e o cliente pode
+apagá-las e refazê-las na conversa.
 
 ---
 
@@ -298,6 +306,14 @@ não seriam registrados.
 direta e indireta, autorização com defesa em profundidade, consentimento, TTL, direito de
 exclusão com revogação, confirmação de ação, logs sem PII, menor privilégio, serviço
 privado.
+
+**Acrescentado nas fatias S5 a S8 (27/09):** camada de entrada com normalização,
+identificador de outro cliente e filtro de escopo bloqueados sem chamar o modelo; termos
+proibidos, token canário e lista de URLs na saída; faixa V barrada antes da tool de
+crédito; configurações de segurança do Gemini explícitas; log `guard` com camada, decisão
+e hash; red team de 65 ataques e 40 perguntas legítimas com todas as metas atingidas
+(`docs/redteam/RELATORIO.md`); confirmação idempotente com iToken; resposta sobre norma
+sempre com a fonte. Detalhe nas seções 16 a 18 do `docs/produto/DADOS_EVENTO.md`.
 
 **Declarado como não implementado:** Vertex AI RAG Engine, residência estrita do modelo,
 mitigação completa de PII partida em streaming. Cada uma

@@ -36,7 +36,7 @@ que ele mostra ou responde passa pelo agente.
 |---|---|---|---|
 | API e runtime do agente | Cloud Run `batalha-agentes`, FastAPI, ADK 2.8, Gemini pelo Vertex AI | Recebe conversa e eventos, executa os agentes | Publicado, revisão `fatia-s2` |
 | Front | Cloud Run `vita-app`, Vite/React + Express | Telas do cliente; proxy para o agente (`/api/abertura`, `/api/financial-profile`, `/api/chat`) | Publicado |
-| Orquestrador | `LlmAgent` raiz | Conduz a conversa e roteia para `analyst` e `educator` | Implementado; prompt ainda genérico (S3) |
+| Orquestrador | `LlmAgent` raiz | Conduz a conversa, roteia para `analyst` e `educator` e chama o `especialista_normas` como tool; canário no prompt | Implementado (S2–S8) |
 | Analista | `LlmAgent` com as tools de dados e cálculo | Situação financeira concreta, só via tools | Implementado, com as tools do Vita |
 | Educador | `LlmAgent` + busca local em `data/knowledge` | Conceitos financeiros com fonte | Implementado; RAG Engine é caminho de produção |
 | Especialista em normas | `LlmAgent` exposto como `AgentTool`, modelo próprio, BM25 local em `data/normas` | Regra, lei ou norma sempre com a fonte citada (CA-17 a CA-19) | Implementado (S8); RAG Engine é o alvo pela mesma interface |

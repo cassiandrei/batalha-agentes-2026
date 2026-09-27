@@ -15,8 +15,10 @@ código vive aqui; os patches em `docs/prototipo/` são históricos.
   chave web no repositório não cabem na entrega.
 - Rótulo do assistente: "Vita · IA"; a apresentação como IA vem no texto do agente.
 
-Ainda contam a história da v1 (fatias S3 a S5): cards A e B, Visão Financeira,
-parcelamento, mensagens de confirmação.
+As fatias S3 a S7 ligaram o resto às tools: Visão Financeira e índice (S3), cards e
+parcelamento pelo motor (S4), confirmação com iToken, consentimento e memória (S5),
+cena do Marcos e markdown sem HTML (S6), acessibilidade e citação de normas (S7, S8).
+Nenhum número da v1 sobrou.
 
 ## Rodar
 
