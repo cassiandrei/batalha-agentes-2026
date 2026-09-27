@@ -14,6 +14,6 @@
 | `rai/` | system card, política de conteúdo e ciclo purple (IA Responsável) |
 | `design/` | `PRODUCT.md` e `DESIGN.md` do front (artefatos do impeccable; a skill os procura na raiz, copie para lá se for regenerar) |
 | `diagrams/` | SVGs usados no PRD |
-| `historico/` | blueprint e handoff do template, patches do protótipo, specs e planos antigos |
+| `historico/` | blueprint do template, patches do protótipo, specs e planos antigos |
 
 Regra: nenhum documento solto na raiz do repositório, exceto o `README.md` (porta de entrada: os cinco entregáveis obrigatórios e a URL pública do protótipo) e o `CLAUDE.md`.

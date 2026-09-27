@@ -9,7 +9,7 @@
 
 O **Vita**, agente de bem-estar financeiro em **ADK 2.8** sobre **GCP** para a Batalha de
 Agentes (26–27/09/2026). Nasceu de um template genérico (histórico em
-`docs/historico/BLUEPRINT.md` e `docs/historico/HANDOFF.md`) e foi construído em fatias verticais S1–S8
+`docs/historico/BLUEPRINT.md`) e foi construído em fatias verticais S1–S8
 sobre a jornada do rotativo do cartão (persona Bruno; cena do Marcos na faixa V).
 
 Leitura na primeira vez, nesta ordem: `docs/produto/PRD.md` (o produto),
