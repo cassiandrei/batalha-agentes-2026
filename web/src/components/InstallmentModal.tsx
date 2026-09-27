@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { ArrowRight, Calendar, CheckCircle2, XCircle, ShieldCheck } from 'lucide-react';
+import { ArrowRight, Calendar, ShieldCheck } from 'lucide-react';
 import { OpcaoT02, SimulacaoT02 } from '../types';
 import { brl, Botao, CampoIToken, HeroSucesso, Linha, Sheet } from './ui';
 
 // S4: todo número desta tela vem de t02 (simular_parcelamento_fatura, no agente).
-// Cabe e não cabe na regra aparecem em texto e ícone, não só em cor.
+// Só os prazos que cabem na regra são listados; os outros viram uma linha de motivo.
 interface InstallmentModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -122,12 +122,8 @@ export const InstallmentModal: React.FC<InstallmentModalProps> = ({ isOpen, onCl
                   <div className="space-y-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-[14px] font-bold text-ink">{o.prazo}x de {brl(o.parcela)}</span>
-                      <span className={`text-[10.5px] px-2 py-0.5 rounded-full font-semibold inline-flex items-center gap-1 ${o.aprovado ? 'bg-success-soft text-success-text' : 'bg-alert-soft text-alert-text'}`}>
-                        {o.aprovado ? <CheckCircle2 className="w-3 h-3" aria-hidden="true" /> : <XCircle className="w-3 h-3" aria-hidden="true" />}
-                        {o.aprovado ? 'Cabe na regra' : 'Não cabe na regra'}
-                      </span>
                     </div>
-                    <div className="text-[11.5px] text-mid leading-snug">{brl(o.juros_totais)} de juros no total · {o.motivo}</div>
+                    <div className="text-[11.5px] text-mid leading-snug">{brl(o.juros_totais)} de juros no total</div>
                   </div>
                   <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${selecionada ? 'border-accent bg-accent' : 'border-line-strong'}`} aria-hidden="true">
                     {selecionada && <div className="w-2 h-2 rounded-full bg-white" />}
