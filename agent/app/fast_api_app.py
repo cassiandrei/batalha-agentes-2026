@@ -26,6 +26,7 @@ from google.adk.runners import Runner
 from app.app_utils import services
 from app.app_utils.a2a import attach_a2a_routes
 from app.events import EventRequest, build_event_prompt
+from app.financial_profile import build_financial_profile
 
 load_dotenv()
 allow_origins = (
@@ -112,6 +113,19 @@ async def receber_evento(evento: EventRequest, request: Request) -> dict:
         "event_type": evento.event_type,
         "message": " ".join(partes).strip(),
     }
+
+
+@app.get("/customers/{customer_id}/financial-profile")
+def perfil_financeiro(customer_id: str) -> dict:
+    """Perfil financeiro para as telas do protótipo, montado só pelas tools.
+
+    Chamador esperado: o servidor do protótipo (sistema), como no /events. O id
+    vem da URL e nunca passa pelo modelo. Não chama o LLM: custo zero de cota.
+    """
+    perfil = build_financial_profile(customer_id)
+    if perfil is None:
+        raise HTTPException(status_code=404, detail="cliente não encontrado")
+    return perfil
 
 
 # Main execution

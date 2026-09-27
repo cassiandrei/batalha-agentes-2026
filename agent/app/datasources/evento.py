@@ -19,7 +19,16 @@ from collections.abc import Iterable
 from functools import lru_cache
 from pathlib import Path
 
-from app.datasources.projections import project_transaction
+from app.datasources.projections import (
+    project_diagnostico,
+    project_fatura,
+    project_perfil_risco,
+    project_transaction,
+)
+
+# Tabelas do time exportadas por `make stage-evento`, além do extrato. Opcionais:
+# um snapshot antigo (só extrato) continua servindo o que tem.
+TABELAS_DO_TIME = ("vw_fatura_mensal", "perfil_risco", "vw_bioimpedancia")
 
 # Vocabulário do agente (prompts, eval) ← categorias do evento.
 _MAPA = {
@@ -53,13 +62,26 @@ def _f(v: str | None) -> float | None:
 
 
 class EventoDataSource:
-    def __init__(self, linhas: Iterable[dict]) -> None:
+    def __init__(
+        self,
+        linhas: Iterable[dict],
+        tabelas: dict[str, Iterable[dict]] | None = None,
+    ) -> None:
         por_usuario: dict[str, list[dict]] = defaultdict(list)
         for r in linhas:
             por_usuario[r["id_usuario"]].append(r)
         for rs in por_usuario.values():
             rs.sort(key=lambda r: r["data"])
         self._por_usuario = dict(por_usuario)
+        self._tabelas: dict[str, dict[str, list[dict]]] = {}
+        for nome, rows in (tabelas or {}).items():
+            idx: dict[str, list[dict]] = defaultdict(list)
+            for r in rows:
+                idx[r["id_usuario"]].append(r)
+            self._tabelas[nome] = dict(idx)
+
+    def _linhas_do_time(self, tabela: str, customer_id: str) -> list[dict]:
+        return self._tabelas.get(tabela, {}).get(customer_id, [])
 
     def _rows(self, customer_id: str) -> list[dict]:
         return self._por_usuario.get(customer_id, [])
@@ -144,8 +166,25 @@ class EventoDataSource:
     def get_goals(self, customer_id: str) -> list[dict]:
         return []  # o dado do evento não tem metas
 
+    # --- tabelas do time (vita_sintetico) ---
 
-@lru_cache(maxsize=2)
+    def get_fatura_rotativo(self, customer_id: str) -> list[dict]:
+        meses = [
+            project_fatura(r)
+            for r in self._linhas_do_time("vw_fatura_mensal", customer_id)
+        ]
+        return sorted(meses, key=lambda m: m["anomes"])
+
+    def get_perfil_risco(self, customer_id: str) -> dict | None:
+        rs = self._linhas_do_time("perfil_risco", customer_id)
+        return project_perfil_risco(rs[0]) if rs else None
+
+    def get_diagnostico(self, customer_id: str) -> dict | None:
+        rs = self._linhas_do_time("vw_bioimpedancia", customer_id)
+        return project_diagnostico(rs[0]) if rs else None
+
+
+@lru_cache(maxsize=8)
 def _carregar_snapshot(caminho: str) -> tuple[dict, ...]:
     p = Path(caminho)
     if not p.exists():
@@ -157,6 +196,12 @@ def _carregar_snapshot(caminho: str) -> tuple[dict, ...]:
 
 
 def from_snapshot(data_dir: Path) -> EventoDataSource:
+    pasta = data_dir / "evento"
+    tabelas = {
+        nome: _carregar_snapshot(str(pasta / f"{nome}.csv"))
+        for nome in TABELAS_DO_TIME
+        if (pasta / f"{nome}.csv").exists()
+    }
     return EventoDataSource(
-        _carregar_snapshot(str(data_dir / "evento" / "extrato.csv"))
+        _carregar_snapshot(str(pasta / "extrato.csv")), tabelas=tabelas
     )

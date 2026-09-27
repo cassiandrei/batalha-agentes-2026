@@ -57,7 +57,7 @@ deploy: stage-data ## deploy: make deploy PROJECT_ID=x AGENT_ENGINE_ID=y [PUBLIC
 	PROJECT_ID=$(PROJECT_ID) REGION=$(REGION) AGENT_ENGINE_ID=$(AGENT_ENGINE_ID) \
 	  MEMORY_LOCATION=$(MEMORY_LOCATION) PUBLIC=$(PUBLIC) MANAGED_IAM=$(MANAGED_IAM) RUNTIME_SA=$(RUNTIME_SA) \
 	  AR_REPO=$(AR_REPO) BUILD=$(BUILD) MODEL_KEY_SECRET=$(MODEL_KEY_SECRET) MAX_INSTANCES=$(MAX_INSTANCES) DATA_SOURCE=$(DATA_SOURCE) \
-	  USE_MODEL_ARMOR=$(USE_MODEL_ARMOR) MEMORY_BACKEND=$(MEMORY_BACKEND) DEMO_CUSTOMER_ID=$(DEMO_CUSTOMER_ID) \
+	  USE_MODEL_ARMOR=$(USE_MODEL_ARMOR) MEMORY_BACKEND=$(MEMORY_BACKEND) DEMO_CUSTOMER_ID=$(DEMO_CUSTOMER_ID) TAG=$(TAG) \
 	  bash infra/scripts/deploy.sh $(if $(DRY_RUN),--dry-run,)
 
 MEMORY_LOCATION ?= southamerica-east1
@@ -103,9 +103,14 @@ model-armor: ## cria/atualiza o template do Model Armor: make model-armor PROJEC
 	@test -n "$(PROJECT_ID)" || (echo "PROJECT_ID é obrigatório"; exit 1)
 	cd agent && $(UV) run python ../infra/scripts/model_armor_setup.py --project "$(PROJECT_ID)"
 
-EVENTO_USUARIOS ?= 200
+EVENTO_USUARIOS ?= 1000
+# Tabelas do time (vita_sintetico) e views que viram tools. cadastro_personas fica
+# FORA de propósito: é só do front-end, o agente nunca a recebe.
+EVENTO_TABELAS = vita_sintetico.perfil_risco vita_sintetico.contrato_cheque_especial \
+  vita_sintetico.posicao_investimentos vita_sintetico.catalogo_ofertas \
+  vita_sintetico.parametros_modelo vita_sintetico.vw_fatura_mensal hackathon_dados.vw_bioimpedancia
 
-stage-evento: ## exporta um recorte de hackathon_dados.extrato_sintetico para data/evento/: make stage-evento PROJECT_ID=x
+stage-evento: ## exporta extrato_sintetico + tabelas vita_sintetico para data/evento/: make stage-evento PROJECT_ID=x
 	@test -n "$(PROJECT_ID)" || (echo "PROJECT_ID é obrigatório"; exit 1)
 	@mkdir -p data/evento
 	bq --project_id=$(PROJECT_ID) query --nouse_legacy_sql --format=csv --max_rows=1000000 \
@@ -114,3 +119,9 @@ stage-evento: ## exporta um recorte de hackathon_dados.extrato_sintetico para da
 	   WHERE id_usuario IN (SELECT id_usuario FROM (SELECT DISTINCT id_usuario FROM \`$(PROJECT_ID).hackathon_dados.extrato_sintetico\` ORDER BY id_usuario LIMIT $(EVENTO_USUARIOS))) \
 	   ORDER BY id_usuario, anomesdia" > data/evento/extrato.csv
 	@echo "linhas: $$(($$(wc -l < data/evento/extrato.csv) - 1)) em data/evento/extrato.csv"
+	@for t in $(EVENTO_TABELAS); do \
+	  nome=$${t#*.}; \
+	  bq --project_id=$(PROJECT_ID) query --nouse_legacy_sql --format=csv --max_rows=1000000 \
+	    "SELECT * FROM \`$(PROJECT_ID).$$t\`" > data/evento/$$nome.csv || exit 1; \
+	  echo "linhas: $$(($$(wc -l < data/evento/$$nome.csv) - 1)) em data/evento/$$nome.csv"; \
+	done

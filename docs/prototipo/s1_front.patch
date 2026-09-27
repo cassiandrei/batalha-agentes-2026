@@ -1,0 +1,384 @@
+diff --git a/server.ts b/server.ts
+index 767c752..6f1073c 100644
+--- a/server.ts
++++ b/server.ts
+@@ -112,35 +112,55 @@ app.post('/api/chat', async (req: Request, res: Response) => {
+   }
+ });
+ 
+-// Financial Profile Data endpoint
+-app.get('/api/financial-profile', (req: Request, res: Response) => {
+-  res.json({
+-    user: 'Bruno',
+-    card: {
+-      brand: 'Itaú Black',
+-      lastFour: '8834',
+-      totalInvoice: 3842.50,
+-      paidAmount: 2642.50,
+-      outstandingBalance: 1200.00,
+-      rotaryInterestCharged: 142.50,
+-      dueDate: '10/10/2026',
+-      closingDate: '03/10/2026',
+-    },
+-    reserve: {
+-      total: 5480.00,
+-      product: 'CDB DI Liquidez Diária',
+-      monthlyYieldRate: 0.88,
+-      monthsCoverage: 4.1,
+-    },
+-    financialOverview: {
+-      score: 72,
+-      status: 'Alerta: Cobrança de Juros Rotativos',
+-      freeCashflowPercentage: 68,
+-      emergencyReserve: 5480.00,
+-      variableExpensesPercentage: 18.4,
+-      monthlyInterestCost: 142.50,
++// Financial Profile Data endpoint — S1: o bloco `card` vem do agente (tools),
++// nunca daqui. AGENT_URL e DEMO_CUSTOMER_ID vêm do ambiente.
++const AGENT_URL = (process.env.AGENT_URL || '').replace(/\/$/, '');
++const DEMO_CUSTOMER_ID = process.env.DEMO_CUSTOMER_ID || '';
++
++app.get('/api/financial-profile', async (_req: Request, res: Response) => {
++  if (!AGENT_URL || !DEMO_CUSTOMER_ID) {
++    res.status(503).json({ error: 'AGENT_URL e DEMO_CUSTOMER_ID precisam estar no ambiente' });
++    return;
++  }
++  try {
++    const r = await fetch(`${AGENT_URL}/customers/${DEMO_CUSTOMER_ID}/financial-profile`);
++    if (!r.ok) {
++      res.status(r.status).json({ error: `agente respondeu ${r.status}` });
++      return;
+     }
+-  });
++    const agente = await r.json();
++    res.json({
++      user: 'Bruno',
++      card: {
++        brand: 'Cartão de crédito',
++        lastFour: '',
++        referenceMonth: agente.reference_month,
++        paymentMode: agente.card.payment_mode,
++        totalInvoice: agente.card.total_invoice,
++        paidAmount: agente.card.paid_amount,
++        outstandingBalance: agente.card.outstanding_balance,
++        rotaryInterestCharged: agente.card.revolving_interest_charged,
++        invoiceHistory: agente.invoice_history,
++      },
++      // TODO(S3): reserve e financialOverview saem das tools de investimento e do índice.
++      reserve: {
++        total: 0,
++        product: '',
++        monthlyYieldRate: 0,
++        monthsCoverage: 0,
++      },
++      financialOverview: {
++        score: null,
++        status: '',
++        freeCashflowPercentage: 0,
++        emergencyReserve: 0,
++        variableExpensesPercentage: 0,
++        monthlyInterestCost: agente.card.revolving_interest_charged ?? 0,
++      },
++    });
++  } catch (e) {
++    res.status(502).json({ error: `falha ao consultar o agente: ${(e as Error).message}` });
++  }
+ });
+ 
+ async function startServer() {
+diff --git a/src/App.tsx b/src/App.tsx
+index 95555c0..8584a66 100644
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -11,31 +11,34 @@ import { GoogleDriveModal } from './components/GoogleDriveModal';
+ import { initAuth } from './services/googleDriveService';
+ import { User } from 'firebase/auth';
+ 
++// S1: nenhum número escrito aqui. O card é preenchido pelo /api/financial-profile,
++// que busca no agente. Até chegar, referenceMonth fica null e a tela diz "carregando".
+ const INITIAL_PROFILE: FinancialProfile = {
+   user: 'Bruno',
+   card: {
+-    brand: 'Itaú Black',
+-    lastFour: '8834',
+-    totalInvoice: 3842.50,
+-    paidAmount: 2642.50,
+-    outstandingBalance: 1200.00,
+-    rotaryInterestCharged: 142.50,
+-    dueDate: '10/10/2026',
+-    closingDate: '03/10/2026',
++    brand: 'Cartão de crédito',
++    lastFour: '',
++    referenceMonth: null,
++    paymentMode: null,
++    totalInvoice: null,
++    paidAmount: null,
++    outstandingBalance: null,
++    rotaryInterestCharged: null,
++    invoiceHistory: [],
+   },
+   reserve: {
+-    total: 5480.00,
+-    product: 'CDB DI Liquidez Diária',
+-    monthlyYieldRate: 0.88,
+-    monthsCoverage: 4.1,
++    total: 0,
++    product: '',
++    monthlyYieldRate: 0,
++    monthsCoverage: 0,
+   },
+   financialOverview: {
+-    score: 72,
+-    status: 'Alerta: Cobrança de Juros Rotativos',
+-    freeCashflowPercentage: 68,
+-    emergencyReserve: 5480.00,
+-    variableExpensesPercentage: 18.4,
+-    monthlyInterestCost: 142.50,
++    score: null,
++    status: '',
++    freeCashflowPercentage: 0,
++    emergencyReserve: 0,
++    variableExpensesPercentage: 0,
++    monthlyInterestCost: 0,
+   },
+ };
+ 
+@@ -76,6 +79,20 @@ export default function App() {
+   const [googleUser, setGoogleUser] = useState<User | null>(null);
+   const [driveToken, setDriveToken] = useState<string | null>(null);
+ 
++  // S1: o perfil vem do agente; nenhum valor fixo sobra no card.
++  useEffect(() => {
++    let ativo = true;
++    fetch('/api/financial-profile')
++      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
++      .then((p: FinancialProfile) => {
++        if (ativo) setProfile(p);
++      })
++      .catch((e) => console.error('perfil financeiro indisponível', e));
++    return () => {
++      ativo = false;
++    };
++  }, []);
++
+   useEffect(() => {
+     const unsubscribe = initAuth(
+       (user, token) => {
+@@ -281,6 +298,7 @@ export default function App() {
+           treatmentStatus={treatmentStatus}
+           isMobileFrame={isMobileFrame}
+           onToggleFrame={() => setIsMobileFrame(!isMobileFrame)}
++          score={profile.financialOverview.score}
+         />
+ 
+         {/* Chat Area - Faithfully renders the 3 initial messages and dynamic responses */}
+diff --git a/src/components/Header.tsx b/src/components/Header.tsx
+index 7406f39..32e9896 100644
+--- a/src/components/Header.tsx
++++ b/src/components/Header.tsx
+@@ -12,6 +12,8 @@ interface HeaderProps {
+   treatmentStatus: 'pending' | 'flow_adjusted' | 'installment_active';
+   isMobileFrame: boolean;
+   onToggleFrame: () => void;
++  // S1: vem do perfil; null até a S3 definir o índice. Nada de número fixo aqui.
++  score: number | null;
+ }
+ 
+ export const Header: React.FC<HeaderProps> = ({
+@@ -25,6 +27,7 @@ export const Header: React.FC<HeaderProps> = ({
+   treatmentStatus,
+   isMobileFrame,
+   onToggleFrame,
++  score,
+ }) => {
+   const isHealthy = treatmentStatus !== 'pending';
+ 
+@@ -57,9 +60,9 @@ export const Header: React.FC<HeaderProps> = ({
+         >
+           <BarChart3 className={`w-3.5 h-3.5 ${!isHealthy ? 'text-[#EC7000]' : 'text-emerald-400'}`} />
+           <span className="hidden xs:inline">Visão Financeira</span>
+-          <span className="text-[10px] font-bold opacity-80">
+-            {isHealthy ? '94%' : '72%'}
+-          </span>
++          {score !== null && (
++            <span className="text-[10px] font-bold opacity-80">{score}%</span>
++          )}
+         </button>
+ 
+         {/* Invoice trigger */}
+diff --git a/src/components/InvoiceDetailModal.tsx b/src/components/InvoiceDetailModal.tsx
+index ae58ce3..4bae03c 100644
+--- a/src/components/InvoiceDetailModal.tsx
++++ b/src/components/InvoiceDetailModal.tsx
+@@ -1,6 +1,19 @@
+ import React from 'react';
+-import { X, CreditCard, AlertCircle, ShoppingCart, Tv, Laptop, HeartPulse, Receipt } from 'lucide-react';
+-import { FinancialProfile } from '../types';
++import { X, AlertCircle, Receipt, CheckCircle2, MinusCircle } from 'lucide-react';
++import { FinancialProfile, InvoiceMonth } from '../types';
++
++// S1: todo número desta tela vem de profile.card (agente). Nada escrito à mão.
++const brl = (v: number | null | undefined) =>
++  v === null || v === undefined
++    ? '—'
++    : v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
++const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
++const rotuloMes = (anomes: number) => `${MESES[(anomes % 100) - 1]}/${Math.floor(anomes / 100)}`;
++const MODO: Record<InvoiceMonth['modo'], string> = {
++  integral: 'Pagamento integral',
++  parcial: 'Pagamento parcial',
++  minimo: 'Pagamento mínimo',
++};
+ 
+ interface InvoiceDetailModalProps {
+   isOpen: boolean;
+@@ -15,13 +28,9 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
+ }) => {
+   if (!isOpen) return null;
+ 
+-  const transactions = [
+-    { title: 'Supermercado Pão de Açúcar', date: '28 Set', category: 'Alimentação', value: 580.40, icon: ShoppingCart },
+-    { title: 'Fast Shop Informática', date: '24 Set', category: 'Eletrônicos', value: 812.50, icon: Laptop },
+-    { title: 'Droga Raia Farmácia', date: '20 Set', category: 'Saúde & Bem-estar', value: 230.00, icon: HeartPulse },
+-    { title: 'Netflix & Spotify Assinaturas', date: '15 Set', category: 'Streaming', value: 89.90, icon: Tv },
+-    { title: 'Juros de Financiamento Rotativo', date: '03 Out', category: 'Encargos Financeiros', value: 142.50, isInterestExpense: true, icon: AlertCircle },
+-  ];
++  const { card } = profile;
++  const carregando = card.referenceMonth === null;
++  const historico = [...card.invoiceHistory].sort((a, b) => b.anomes - a.anomes);
+ 
+   return (
+     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+@@ -37,7 +46,9 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
+             </div>
+             <div>
+               <h2 className="text-base font-semibold text-white">Detalhamento da Fatura</h2>
+-              <p className="text-xs text-gray-400">Cartão Itaú Black final 8834</p>
++              <p className="text-xs text-gray-400">
++                {carregando ? 'Carregando…' : `Fatura de ${rotuloMes(card.referenceMonth as number)}`}
++              </p>
+             </div>
+           </div>
+           <button 
+@@ -54,50 +65,54 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
+           <div className="bg-[#121212] border border-gray-800 rounded-xl p-4 space-y-3">
+             <div className="flex items-center justify-between">
+               <span className="text-xs text-gray-400">Total da Fatura</span>
+-              <span className="text-lg font-bold text-white">R$ 3.842,50</span>
++              <span className="text-lg font-bold text-white">{brl(card.totalInvoice)}</span>
+             </div>
+             <div className="flex items-center justify-between text-xs">
+-              <span className="text-gray-400">Pagamento parcial realizado:</span>
+-              <span className="text-emerald-400 font-semibold">- R$ 2.642,50</span>
++              <span className="text-gray-400">
++                {card.paymentMode ? `${MODO[card.paymentMode]} realizado:` : 'Pagamento realizado:'}
++              </span>
++              <span className="text-emerald-400 font-semibold">- {brl(card.paidAmount)}</span>
+             </div>
+             <div className="flex items-center justify-between text-xs pt-2 border-t border-gray-800">
+               <span className="text-red-400 font-medium">Saldo no Rotativo:</span>
+-              <span className="text-red-400 font-bold text-sm">R$ 1.200,00</span>
++              <span className="text-red-400 font-bold text-sm">{brl(card.outstandingBalance)}</span>
+             </div>
+             <div className="flex items-center justify-between text-xs bg-red-950/20 p-2.5 rounded-lg border border-red-900/30">
+               <span className="text-red-300 font-medium">Encargo rotativo deste ciclo:</span>
+-              <span className="text-red-400 font-bold">+ R$ 142,50</span>
++              <span className="text-red-400 font-bold">+ {brl(card.rotaryInterestCharged)}</span>
+             </div>
+           </div>
+ 
+-          {/* Transactions List */}
++          {/* Histórico da fatura, mês a mês (vw_fatura_mensal via agente) */}
+           <div className="space-y-2">
+             <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider block px-1">
+-              Lançamentos Relevantes
++              Como você pagou a fatura em 2025
+             </span>
+ 
+             <div className="divide-y divide-gray-800/80 bg-[#141414] border border-gray-800 rounded-xl overflow-hidden">
+-              {transactions.map((tx, idx) => {
+-                const Icon = tx.icon;
++              {historico.map((m) => {
++                const comJuros = m.juros_rotativo > 0;
++                const Icon = m.modo === 'integral' ? CheckCircle2 : comJuros ? AlertCircle : MinusCircle;
+                 return (
+-                  <div key={idx} className="p-3.5 flex items-center justify-between hover:bg-gray-800/30 transition-colors">
++                  <div key={m.anomes} className="p-3.5 flex items-center justify-between hover:bg-gray-800/30 transition-colors">
+                     <div className="flex items-center gap-3">
+                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+-                        tx.isInterestExpense ? 'bg-red-500/20 text-red-400' : 'bg-gray-800 text-gray-300'
++                        comJuros ? 'bg-red-500/20 text-red-400' : 'bg-gray-800 text-gray-300'
+                       }`}>
+                         <Icon className="w-4 h-4" />
+                       </div>
+                       <div>
+-                        <div className={`text-xs font-semibold ${tx.isInterestExpense ? 'text-red-300' : 'text-gray-200'}`}>
+-                          {tx.title}
++                        <div className={`text-xs font-semibold ${comJuros ? 'text-red-300' : 'text-gray-200'}`}>
++                          {rotuloMes(m.anomes)} · {MODO[m.modo]}
+                         </div>
+                         <div className="text-[11px] text-gray-500">
+-                          {tx.date} · {tx.category}
++                          pago {brl(m.pago)}
++                          {m.fatura_total_reconstruida !== null && ` de ${brl(m.fatura_total_reconstruida)}`}
+                         </div>
+                       </div>
+                     </div>
+-                    <div className={`text-xs font-bold ${tx.isInterestExpense ? 'text-red-400' : 'text-white'}`}>
+-                      R$ {tx.value.toFixed(2).replace('.', ',')}
++                    <div className={`text-xs font-bold ${comJuros ? 'text-red-400' : 'text-gray-500'}`}>
++                      {comJuros ? `juros ${brl(m.juros_rotativo)}` : 'sem juros'}
+                     </div>
+                   </div>
+                 );
+diff --git a/src/types.ts b/src/types.ts
+index b85b0a7..62f8d20 100644
+--- a/src/types.ts
++++ b/src/types.ts
+@@ -7,17 +7,30 @@ export interface Message {
+   actionTaken?: 'flow_adjusted' | 'installment_active';
+ }
+ 
++export interface InvoiceMonth {
++  anomes: number;
++  mes: number;
++  modo: 'integral' | 'parcial' | 'minimo';
++  pago: number;
++  juros_rotativo: number;
++  fatura_total_reconstruida: number | null;
++  saldo_rotativo_reconstruido: number | null;
++}
++
+ export interface FinancialProfile {
+   user: string;
++  // S1: tudo do bloco card vem do agente (GET /customers/{id}/financial-profile).
++  // Nenhum número é escrito aqui; até a resposta chegar, referenceMonth é null.
+   card: {
+     brand: string;
+     lastFour: string;
+-    totalInvoice: number;
+-    paidAmount: number;
+-    outstandingBalance: number;
+-    rotaryInterestCharged: number;
+-    dueDate: string;
+-    closingDate: string;
++    referenceMonth: number | null;
++    paymentMode: 'integral' | 'parcial' | 'minimo' | null;
++    totalInvoice: number | null;
++    paidAmount: number | null;
++    outstandingBalance: number | null;
++    rotaryInterestCharged: number | null;
++    invoiceHistory: InvoiceMonth[];
+   };
+   reserve: {
+     total: number;
+@@ -26,7 +39,8 @@ export interface FinancialProfile {
+     monthsCoverage: number;
+   };
+   financialOverview: {
+-    score: number;
++    // null até a S3 definir a fórmula do índice sobre a vw_bioimpedancia
++    score: number | null;
+     status: string;
+     freeCashflowPercentage: number;
+     emergencyReserve: number;

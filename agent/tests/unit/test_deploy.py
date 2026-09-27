@@ -250,3 +250,13 @@ def test_build_local_nao_usa_cloud_build():
     assert "docker build --platform linux/amd64" in saida
     assert "docker push us-central1-docker.pkg.dev/proj-teste/agentes/batalha-agentes" in saida
     assert "--image=us-central1-docker.pkg.dev/proj-teste/agentes/batalha-agentes" in saida
+
+
+def test_tag_sem_trafego_publica_revisao_de_fatia():
+    """Protocolo das fatias: `--tag s<N> --no-traffic`, smoke na URL da tag,
+    promoção só depois. Sem TAG, o deploy continua indo direto para o tráfego."""
+    saida = _dry(MANAGED_IAM="0", RUNTIME_SA="x@y", TAG="s1")
+    assert "--tag=s1" in saida
+    assert "--no-traffic" in saida
+    assert "--no-traffic" not in _dry(MANAGED_IAM="0", RUNTIME_SA="x@y")
+

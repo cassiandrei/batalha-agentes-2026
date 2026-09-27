@@ -27,6 +27,11 @@ MEMORY_LOCATION="${MEMORY_LOCATION:-southamerica-east1}"
 # remove um binding concedido antes, em todo deploy — quem escolheu público
 # perdia a escolha sem aviso. O padrão continua privado.
 PUBLIC="${PUBLIC:-0}"
+# TAG=s1: revisão com tag e SEM tráfego (protocolo das fatias). O smoke roda na
+# URL da tag; promover é `gcloud run services update-traffic --to-tags=s1=100`.
+TAG="${TAG:-}"
+TAG_ARGS=""
+if [[ -n "$TAG" ]]; then TAG_ARGS="--tag=${TAG} --no-traffic"; fi
 # MANAGED_IAM=0: projeto sem permissão para criar SA nem alterar IAM (o do
 # evento). Pula os passos de identidade e usa a SA existente em RUNTIME_SA.
 MANAGED_IAM="${MANAGED_IAM:-1}"
@@ -156,7 +161,7 @@ if [[ "$MANAGED_IAM" == "0" ]]; then
     --service-account="$SA_EMAIL" \
     --no-allow-unauthenticated --port=8080 --memory=2Gi --cpu=1 \
     --min-instances=0 --max-instances="$MAX_INSTANCES" \
-    --set-env-vars="$ENV_VARS"
+    --set-env-vars="$ENV_VARS" $TAG_ARGS
 else
 echo "# 5. Deploy a partir do fonte (Cloud Build monta a imagem)"
 run gcloud run deploy "$SERVICE" \
@@ -170,7 +175,7 @@ run gcloud run deploy "$SERVICE" \
   --cpu=1 \
   --min-instances=0 \
   --max-instances="$MAX_INSTANCES" \
-  --set-env-vars="$ENV_VARS"
+  --set-env-vars="$ENV_VARS" $TAG_ARGS
 fi  # MANAGED_IAM
 
 if [[ "$PUBLIC" == "1" ]]; then
