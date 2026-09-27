@@ -264,7 +264,7 @@ export default function App() {
     const r = await fetch(api('/api/memoria/consentimento'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ consentimento: sim }) });
     setMemoriaConsentida(sim && r.ok);
     setMessages((prev) => prev.map((m) => (m.consentPrompt ? { ...m, consentPrompt: false } : m)));
-    addAssistant(sim ? 'Combinado. Vou lembrar seus objetivos e tratamentos. Para ver ou apagar, use "O que você lembra?" e "Esqueça tudo".' : 'Tudo bem, não vou guardar nada entre conversas.');
+    addAssistant(sim ? 'Combinado. Vou lembrar seus objetivos e tratamentos. Para ver o que guardei, toque em "O que você lembra sobre mim?"; lá você também pode apagar tudo.' : 'Tudo bem, não vou guardar nada entre conversas.');
   };
 
   const handleShowMemory = async () => {
