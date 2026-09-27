@@ -31,6 +31,7 @@ def dados_sinteticos(tmp_path_factory):
     generate_all(raiz / "synthetic", seed=42)
     # knowledge/ é versionado no repo; só o synthetic/ é gerado.
     (raiz / "knowledge").symlink_to(_REPO_DATA / "knowledge")
+    (raiz / "normas").symlink_to(_REPO_DATA / "normas")
     anterior = os.environ.get("DATA_DIR")
     os.environ["DATA_DIR"] = str(raiz)
     yield raiz

@@ -9,6 +9,7 @@ from google.adk.agents import Agent
 from google.adk.apps import App
 from google.adk.apps.app import EventsCompactionConfig
 from google.adk.models import Gemini
+from google.adk.tools.agent_tool import AgentTool
 from google.genai import types
 
 from app.config import assert_flags_coerentes, load_config
@@ -36,6 +37,7 @@ from app.tools.memory_tools import (
     recall_profile,
     remember_preference,
 )
+from app.tools.normas import buscar_normas
 from app.tools.vita import (
     get_diagnostico,
     get_fatura_rotativo,
@@ -52,9 +54,10 @@ assert_flags_coerentes()
 _cfg = load_config()
 
 
-def _model() -> Gemini:
+def _model(nome: str | None = None) -> Gemini:
     return Gemini(
-        model=_cfg.model_name, retry_options=types.HttpRetryOptions(attempts=3)
+        model=nome or _cfg.model_name,
+        retry_options=types.HttpRetryOptions(attempts=3),
     )
 
 
@@ -91,13 +94,37 @@ educator = Agent(
     tools=[search_knowledge],
 )
 
+# S8: especialista em normas como AgentTool, não como transferência: devolve um trecho
+# com citação e o orquestrador continua falando com o cliente. include_contents="none"
+# isola o RAG (porta de entrada de conteúdo externo) do histórico da conversa.
+# O ADK 2.8 sugere mode="single_turn" em sub_agents; AgentTool continua suportado e
+# mantém o especialista fora da lista de transferência.
+especialista_normas = Agent(
+    name="especialista_normas",
+    description=(
+        "Responde perguntas sobre regras, leis e normas de crédito e cartão (rotativo, "
+        "teto de juros, parcelamento, superendividamento, CET, IOF, imposto de renda) "
+        "com a fonte citada. Passe a pergunta do cliente em `request`."
+    ),
+    model=_model(_cfg.model_name_normas),
+    instruction=load_prompt("normas"),
+    include_contents="none",
+    tools=[buscar_normas],
+)
+
 root_agent = Agent(
     # Mantenha em sincronia com agents-cli-manifest.yaml.
     name="orchestrator",
     model=_model(),
     instruction=load_prompt("orchestrator"),
     sub_agents=[analyst, educator],
-    tools=[give_consent, remember_preference, recall_profile, forget_me],
+    tools=[
+        give_consent,
+        remember_preference,
+        recall_profile,
+        forget_me,
+        AgentTool(agent=especialista_normas),
+    ],
     before_agent_callback=seed_demo_identity,
 )
 

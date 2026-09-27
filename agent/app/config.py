@@ -16,6 +16,8 @@ def _flag(nome: str, padrao: bool) -> bool:
 @dataclass(frozen=True)
 class Config:
     model_name: str
+    # S8: o especialista roda em modelo diferente do orquestrador (isola custo e cota).
+    model_name_normas: str
     prompt_version: str
     data_source: str
     data_dir: Path
@@ -32,6 +34,7 @@ def load_config() -> Config:
     """Lê o ambiente a cada chamada, para que os testes possam variá-lo."""
     return Config(
         model_name=os.getenv("MODEL_NAME", "gemini-3.8-flash"),
+        model_name_normas=os.getenv("MODEL_NAME_NORMAS", "gemini-3.5-flash-lite"),
         prompt_version=os.getenv("PROMPT_VERSION", "v1"),
         data_source=os.getenv("DATA_SOURCE", "local"),
         data_dir=(_AGENT_ROOT / os.getenv("DATA_DIR", "../data")).resolve(),

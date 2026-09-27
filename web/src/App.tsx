@@ -202,6 +202,7 @@ export default function App() {
         role: 'assistant',
         content: replyText,
         timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        citacoes: Array.isArray(data.citacoes) ? data.citacoes : undefined,
       };
 
       setMessages((prev) => [...prev, assistantMsg]);

@@ -725,3 +725,48 @@ nome ou identificador.
 
 Limitação declarada: registro de confirmações e SQLite vivem na instância; em produção
 viram tabela com a chave de idempotência como chave primária e Memory Bank.
+
+## 17. S8: especialista em normas com RAG local (27/09)
+
+**Corpus (`data/normas/`).** Oito arquivos, 24 trechos: Res. CMN 4.549/2017 (rotativo
+só até a fatura seguinte; parcelamento em condições melhores), Lei 14.690/2023 e Res. CMN
+5.112/2023 (juros e encargos limitados a 100% do principal; portabilidade da dívida do
+cartão), Lei 14.181/2021 (superendividamento, oferta de crédito, dever de informar,
+repactuação), Decreto 11.150/2022 com o Decreto 11.567/2023 (mínimo existencial de
+R$ 600), Res. CMN 3.517/2007 e Decreto 6.306/2007 (CET e IOF), Lei 11.033/2004 (tabela
+regressiva do IR e IOF de resgate), perguntas frequentes do Banco Central sobre cartão e
+o playbook de tom do time. Cada arquivo tem `fonte`, `chave`, `link`, `coleta` e
+`vigencia`; cada `## ` é um trecho. São resumos para a demo, não o texto oficial; nada do
+Itaú (regra 3).
+
+**Busca (`agent/app/tools/normas.py`).** BM25 em memória, sem dependência nova, com o
+título do trecho pesando em dobro; carregado no primeiro uso a partir de `DATA_DIR/normas`.
+Na indexação, todo trecho passa pelo mesmo detector de injeção das mensagens: trecho com
+instrução ao modelo é descartado e vira `guard=corpus_injection` no log, sem o conteúdo
+(CA-18). A tool `buscar_normas` devolve até 3 trechos com fonte, artigo, texto, link,
+coleta e vigência, registra os valores em reais dos trechos (para o validador de números)
+e grava no estado `citacao_pendente` (chaves) e `citacoes` (fonte + link, lidas pelo
+front no `stateDelta`). O RAG Engine é o desenho alvo pela mesma interface.
+
+**Especialista (`especialista_normas`, `AgentTool`).** Sub-agente com prompt próprio
+(`prompts/v1/normas.md`), `include_contents="none"` (não vê o histórico: isola a porta de
+conteúdo externo) e modelo diferente do orquestrador (`MODEL_NAME_NORMAS`, padrão
+`gemini-3.5-flash-lite`; o `gemini-3.8-flash-lite` não existe no Vertex do projeto, 404). Devolve até três frases e termina com "Fonte: …"; o orquestrador
+repassa ao cliente mantendo a fonte. Não entra na lista de transferência de conversa.
+
+**Porta de citação (CA-19, `SecurityPlugin`).** Depois de `buscar_normas` (no especialista)
+ou do resultado do `especialista_normas` (no orquestrador), a resposta final precisa conter
+uma das chaves pendentes ("4.549" ou "4549", "Banco Central"…); senão sai
+`RECUSA_CITACAO` e `guard=resposta_sem_citacao`. A porta é rearmada a cada uso e limpa ao
+passar.
+
+**Front.** `POST /api/chat` devolve `citacoes` só com as fontes que a resposta realmente
+cita; o `ChatArea` mostra "Fonte: <nome>" com link abaixo da mensagem.
+
+**Testes.** `tests/unit/test_s8_normas.py`: dez perguntas normativas com a fonte esperada
+(CA-17), trecho malicioso barrado na indexação (CA-18), resposta sem citação bloqueada e
+com citação liberada (CA-19), especialista como `AgentTool` com modelo diferente. Smoke:
+`make smoke-fatia FATIA=s8 BASE_URL=<vita-app>` (uma chamada de chat).
+
+Limitações declaradas: o corpus é curado à mão e resumido; a categoria "injeção indireta
+pelo corpus" entra no conjunto de red team quando a S6 o criar.

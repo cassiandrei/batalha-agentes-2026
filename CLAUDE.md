@@ -59,6 +59,7 @@ Quebrar qualquer um destes invalida o argumento técnico do projeto. Há teste p
 | **Consentimento é porta.** Sem ele, não grava | `app/memory/local.py` |
 | **Ação financeira exige confirmação** | `app/tools/actions.py` |
 | **Log nunca tem conteúdo de conversa** | `app/plugins/audit_plugin.py` |
+| **Resposta sobre norma sempre cita a fonte** | `app/tools/normas.py`, porta em `app/plugins/security_plugin.py` |
 
 ---
 
@@ -78,6 +79,7 @@ agent/app/
 data/
   generator/       gerador sintético, seed fixa
   knowledge/       textos de educação financeira
+  normas/          corpus do especialista em normas (uma fonte por arquivo)
 infra/scripts/     switch_project, deploy, teardown, smoke
 docs/              blueprint, arquitetura, LGPD, experimentação, checklist
 ```

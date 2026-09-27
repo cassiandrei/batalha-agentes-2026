@@ -280,7 +280,7 @@ tag e só então promova o tráfego.
 
 **Pronto quando:** o roteiro ponta a ponta passa na URL principal duas vezes seguidas, a latência está anotada no PRD e o vídeo de backup está gravado.
 
-## S8 — Especialista em normas (RAG)
+## S8 — Especialista em normas (RAG) (feita em 27/09)
 
 Ao fim da S8, uma pergunta normativa do Bruno ("posso ficar no rotativo por mais de um mês?") é respondida pelo especialista através do orquestrador, com a norma citada na tela, e um trecho malicioso plantado no corpus é barrado na indexação.
 
@@ -311,6 +311,8 @@ make smoke-fatia FATIA=s8 na URL do vita-app.
 ```
 
 **Pronto quando:** na URL do `vita-app`, a pergunta sobre o rotativo volta com a citação da Res. CMN 4.549/2017, e `make smoke-fatia FATIA=s8` passa.
+
+**Feito:** corpus em `data/normas/` (8 fontes, 24 trechos, com `fonte`, `chave`, `link`, `coleta`, `vigencia`), `agent/app/tools/normas.py` (BM25 em memória; trecho com injeção barrado na indexação), `especialista_normas` como `AgentTool` com `include_contents="none"` e `MODEL_NAME_NORMAS`, porta de citação no `SecurityPlugin` (`RECUSA_CITACAO`), `citacoes` no `/api/chat` e "Fonte:" com link no `ChatArea`; smoke `make smoke-fatia FATIA=s8`. Seção 17 do `DADOS_EVENTO.md`. A categoria de injeção indireta no red team fica para a S6, que cria o conjunto.
 
 ## S10 — Avaliação de qualidade
 

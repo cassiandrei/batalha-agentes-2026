@@ -45,4 +45,4 @@ agente.
 |---|---|---|
 | `GET /api/abertura` | push neutro + primeira mensagem + botões, da sessão pré-montada | não |
 | `GET /api/financial-profile` | fatura de dezembro reconstruída, histórico, perfil de risco | não |
-| `POST /api/chat` | conversa na sessão do cliente, pelo agente | sim (pelo agente, com guardrails) |
+| `POST /api/chat` | conversa na sessão do cliente, pelo agente; devolve `citacoes` (fonte + link) quando a resposta veio do especialista em normas (S8) | sim (pelo agente, com guardrails) |

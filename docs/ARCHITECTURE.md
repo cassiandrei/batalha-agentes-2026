@@ -39,6 +39,7 @@ que ele mostra ou responde passa pelo agente.
 | Orquestrador | `LlmAgent` raiz | Conduz a conversa e roteia para `analyst` e `educator` | Implementado; prompt ainda genérico (S3) |
 | Analista | `LlmAgent` com as tools de dados e cálculo | Situação financeira concreta, só via tools | Implementado, com as tools do Vita |
 | Educador | `LlmAgent` + busca local em `data/knowledge` | Conceitos financeiros com fonte | Implementado; RAG Engine é caminho de produção |
+| Especialista em normas | `LlmAgent` exposto como `AgentTool`, modelo próprio, BM25 local em `data/normas` | Regra, lei ou norma sempre com a fonte citada (CA-17 a CA-19) | Implementado (S8); RAG Engine é o alvo pela mesma interface |
 | Pipeline de abertura | `SequentialAgent`: `DiagnosticoAgent` (sem LLM) → `redator` (`LlmAgent` com `output_schema`) | Gatilho → payload no estado → mensagem de abertura com ações do catálogo | Implementado (S2) |
 | Tools | Python tipado: `get_fatura_rotativo`, `get_perfil_risco`, `get_diagnostico`, `get_posicao_investimentos`, `simular_uso_reserva` (T01), `get_ofertas_elegiveis` e `simular_parcelamento_fatura` (T02), transações, conta, cartão, três calculadoras, memória, `propose_action` | Dados, cálculo, memória e ação | Implementadas |
 | Dados do cliente | Snapshot da `extrato_sintetico` (1.000 clientes, 467 mil linhas) e das tabelas do time em `vita_sintetico`, embarcado na imagem | Fonte de toda tool de dados | Implementado; BigQuery ao vivo é opção com a `squad-agent-sa` |
@@ -204,6 +205,6 @@ Cloud Run com `min-instances=0`; modelo da linha Flash. A abertura não gasta in
 1. Canal autenticado do banco criando a sessão com identidade validada.
 2. Agent Engine Sessions e Memory Bank no lugar da sessão na instância e do SQLite.
 3. BigQuery ao vivo pela `squad-agent-sa` (`DATA_SOURCE=bigquery`).
-4. Model Armor como segunda camada; RAG Engine para o educador.
+4. Model Armor como segunda camada; RAG Engine para o educador e para o especialista em normas.
 5. Pub/Sub autenticado por OIDC no `/events`, com a rotina do gatilho agendada.
 6. Piloto A/B por hash do cliente, com os critérios de promoção do PRD.

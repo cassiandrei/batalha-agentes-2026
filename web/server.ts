@@ -60,24 +60,38 @@ app.post('/api/chat', async (req: Request, res: Response) => {
       res.status(502).json({ error: `agente respondeu ${r.status}` });
       return;
     }
+    type Citacao = { fonte: string; chave: string; link: string };
     const eventos = (await r.json()) as Array<{
       author?: string;
       content?: { parts?: Array<{ text?: string; functionCall?: { name: string } }> };
+      actions?: { stateDelta?: { citacoes?: Citacao[] }; state_delta?: { citacoes?: Citacao[] } };
     }>;
     const textos: string[] = [];
     const tools: string[] = [];
+    let citacoes: Citacao[] = [];
     for (const ev of eventos) {
       for (const parte of ev.content?.parts ?? []) {
         if (parte.text) textos.push(parte.text);
         if (parte.functionCall) tools.push(parte.functionCall.name);
       }
+      // S8: a tool buscar_normas grava as fontes no estado; o AgentTool repassa o delta.
+      const delta = ev.actions?.stateDelta ?? ev.actions?.state_delta;
+      if (delta?.citacoes) citacoes = delta.citacoes;
     }
     const reply = textos.join(' ').trim();
     if (!reply) {
       res.status(502).json({ error: 'o agente não devolveu texto' });
       return;
     }
-    res.json({ reply, source: 'agente', tools });
+    // Só a fonte que a resposta realmente cita vira link; sem citação, sem link.
+    const compacta = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\./g, '');
+    const vistas = new Set<string>();
+    const citadas = citacoes.filter((c) => {
+      if (!compacta(reply).includes(compacta(c.chave)) || vistas.has(c.fonte)) return false;
+      vistas.add(c.fonte);
+      return true;
+    });
+    res.json({ reply, source: 'agente', tools, citacoes: citadas.map(({ fonte, link }) => ({ fonte, link })) });
   } catch (e) {
     console.error('falha ao falar com o agente:', e);
     res.status(502).json({ error: `falha ao consultar o agente: ${(e as Error).message}` });

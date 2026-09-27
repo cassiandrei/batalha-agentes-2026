@@ -348,6 +348,47 @@ def s2b(base_url: str, customer_id: str) -> int:
     return 0 if ok == len(checks) else 1
 
 
+def s8(base_url: str, customer_id: str) -> int:
+    """Front publicado: a pergunta normativa passa pelo especialista (AgentTool), volta com
+    a Res. CMN 4.549/2017 citada no texto e a citação com link (UMA chamada de chat, que
+    custa até 3 chamadas ao modelo: orquestrador, especialista, orquestrador)."""
+    base = base_url.rstrip("/")
+    codigo, chat = _req(
+        base + "/api/chat",
+        "POST",
+        {"userMessage": "Posso ficar no rotativo por mais de um mês?"},
+    )
+    reply = chat.get("reply", "")
+    citacoes = chat.get("citacoes") or []
+    checks = [
+        (
+            "/api/chat respondeu pelo agente",
+            codigo == 200 and chat.get("source") == "agente",
+        ),
+        (
+            "o orquestrador chamou o especialista_normas",
+            "especialista_normas" in chat.get("tools", []),
+        ),
+        ("a resposta cita a Res. CMN 4.549/2017", "4549" in reply.replace(".", "")),
+        (
+            "citação com link oficial abaixo da resposta",
+            any(
+                c.get("link", "").startswith("https://")
+                and "4.549" in c.get("fonte", "")
+                for c in citacoes
+            ),
+        ),
+    ]
+    ok = 0
+    for nome, passou in checks:
+        ok += passou
+        print(f"{'✓' if passou else '✗'} {nome}")
+    print(f"\n{ok}/{len(checks)} verificacoes passaram — 1 chamada de chat")
+    if reply:
+        print("resposta:", reply[:240].replace("\n", " "))
+    return 0 if ok == len(checks) else 1
+
+
 def s2(base_url: str, customer_id: str) -> int:
     url = f"{base_url.rstrip('/')}/customers/{customer_id}/opening"
     with urllib.request.urlopen(url, timeout=60) as r:
@@ -378,12 +419,12 @@ def s2(base_url: str, customer_id: str) -> int:
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("fatia", choices=["s1", "s2", "s2b", "s3", "s4", "s5"])
+    ap.add_argument("fatia", choices=["s1", "s2", "s2b", "s3", "s4", "s5", "s8"])
     ap.add_argument("--base-url", required=True)
     ap.add_argument("--customer-id", required=True)
     args = ap.parse_args()
     sys.exit(
-        {"s1": s1, "s2": s2, "s2b": s2b, "s3": s3, "s4": s4, "s5": s5}[args.fatia](
-            args.base_url, args.customer_id
-        )
+        {"s1": s1, "s2": s2, "s2b": s2b, "s3": s3, "s4": s4, "s5": s5, "s8": s8}[
+            args.fatia
+        ](args.base_url, args.customer_id)
     )

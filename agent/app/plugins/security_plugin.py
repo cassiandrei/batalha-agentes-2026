@@ -35,7 +35,13 @@ RECUSA_NUMERO = (
     "Prefiro não citar um valor que não veio dos seus dados. Posso mostrar os números "
     "exatos da sua fatura e da sua reserva, ou explicar como eles foram calculados."
 )
+RECUSA_CITACAO = (
+    "Não consigo afirmar isso sem citar a norma. Posso buscar de novo a regra com a "
+    "fonte, ou você pode falar com uma pessoa."
+)
 _MAX_NUMEROS_NO_ESTADO = 400
+# S8: resultado do especialista (AgentTool) — texto livre que deve carregar a fonte.
+NORMAS_TOOL = "especialista_normas"
 # Campos de texto livre vindos dos dados: escritos por terceiros, nunca confiáveis.
 FREE_TEXT_KEYS = {"description", "name", "merchant", "title", "excerpt"}
 SANITIZED = "[conteúdo removido: instrução suspeita nos dados]"
@@ -162,6 +168,17 @@ class SecurityPlugin(BasePlugin):
                 -_MAX_NUMEROS_NO_ESTADO:
             ]
             tool_context.state["numeros_tools"] = juntos
+        if tool.name == NORMAS_TOOL:
+            # A resposta do orquestrador que usa o especialista tem de manter a fonte.
+            from app.tools.normas import chaves_do_corpus, cita
+
+            texto = (
+                result
+                if isinstance(result, str)
+                else json.dumps(result, ensure_ascii=False)
+            )
+            citadas = [c for c in chaves_do_corpus() if cita(c, texto)]
+            tool_context.state["citacao_pendente"] = citadas or None
         limpo, mexeu = _limpar(result)
         if mexeu:
             _audit_guard("indirect_injection", tool=tool.name)
@@ -200,6 +217,15 @@ class SecurityPlugin(BasePlugin):
             if inventados:
                 _audit_guard("numero_inventado", quantos=len(inventados))
                 return _texto_resposta(RECUSA_NUMERO)
+            # CA-19: resposta apoiada em norma sem a fonte não sai.
+            pendentes = callback_context.state.get("citacao_pendente") or []
+            if pendentes and completo.strip():
+                from app.tools.normas import cita
+
+                callback_context.state["citacao_pendente"] = None
+                if not any(cita(c, completo) for c in pendentes):
+                    _audit_guard("resposta_sem_citacao", fontes=len(pendentes))
+                    return _texto_resposta(RECUSA_CITACAO)
             _, violacoes = check_output(completo, suitability)
             if violacoes:
                 # Chegou aqui = a PII estava partida entre chunks, e os chunks

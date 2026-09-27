@@ -30,6 +30,13 @@ export interface Message {
   actions?: AcaoAgente[];
   // S5: pergunta de consentimento de memória, respondida por botões (sem modelo)
   consentPrompt?: boolean;
+  // S8: fontes citadas pelo especialista em normas (vêm do agente, nunca do front)
+  citacoes?: Citacao[];
+}
+
+export interface Citacao {
+  fonte: string;
+  link: string;
 }
 
 export interface Confirmacao {

@@ -48,6 +48,7 @@ stage-data: ## copia data/ para dentro do contexto de build (agent/data/)
 	rm -rf agent/data
 	mkdir -p agent/data
 	cp -R data/knowledge agent/data/knowledge
+	cp -R data/normas agent/data/normas
 	cp -R data/synthetic agent/data/synthetic
 	@test -d data/evento && cp -R data/evento agent/data/evento || true
 	@test -d data/seeds && cp -R data/seeds agent/data/seeds || true
@@ -58,7 +59,7 @@ deploy: stage-data ## deploy: make deploy PROJECT_ID=x AGENT_ENGINE_ID=y [PUBLIC
 	PROJECT_ID=$(PROJECT_ID) REGION=$(REGION) AGENT_ENGINE_ID=$(AGENT_ENGINE_ID) \
 	  MEMORY_LOCATION=$(MEMORY_LOCATION) PUBLIC=$(PUBLIC) MANAGED_IAM=$(MANAGED_IAM) RUNTIME_SA=$(RUNTIME_SA) \
 	  AR_REPO=$(AR_REPO) BUILD=$(BUILD) MODEL_KEY_SECRET=$(MODEL_KEY_SECRET) MAX_INSTANCES=$(MAX_INSTANCES) DATA_SOURCE=$(DATA_SOURCE) \
-	  USE_MODEL_ARMOR=$(USE_MODEL_ARMOR) MEMORY_BACKEND=$(MEMORY_BACKEND) DEMO_CUSTOMER_ID=$(DEMO_CUSTOMER_ID) TAG=$(TAG) \
+	  USE_MODEL_ARMOR=$(USE_MODEL_ARMOR) MEMORY_BACKEND=$(MEMORY_BACKEND) DEMO_CUSTOMER_ID=$(DEMO_CUSTOMER_ID) TAG=$(TAG) MODEL_NAME_NORMAS=$(MODEL_NAME_NORMAS) \
 	  bash infra/scripts/deploy.sh $(if $(DRY_RUN),--dry-run,)
 
 deploy-web: ## publica o front (web/) como vita-app no Cloud Run: make deploy-web PROJECT_ID=x AGENT_URL=https://... [TAG=fatia-s2b] [DRY_RUN=1]

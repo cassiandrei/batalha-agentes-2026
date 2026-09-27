@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { Volume2, CheckCheck, Sparkles, BarChart3, ShieldCheck } from 'lucide-react';
+import { Volume2, CheckCheck, Sparkles, BarChart3, ShieldCheck, BookOpen } from 'lucide-react';
 import { AcaoAgente, Message } from '../types';
 
 interface ChatAreaProps {
@@ -55,6 +55,25 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                       .replace(/\n\n/g, '<br/><br/>')
                   }}
                 />
+
+                {/* S8: fonte citada pelo especialista em normas, com link */}
+                {message.citacoes && message.citacoes.length > 0 && (
+                  <div className="mt-3 pt-2.5 border-t border-gray-700/60 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-gray-400">
+                    {message.citacoes.map((c) => (
+                      <span key={c.fonte} className="inline-flex items-center gap-1">
+                        <BookOpen className="w-3 h-3 text-[#1FA37C]" aria-hidden="true" />
+                        <span>Fonte:</span>
+                        {/^https?:\/\//.test(c.link) ? (
+                          <a href={c.link} target="_blank" rel="noopener noreferrer" className="text-[#1FA37C] hover:underline">
+                            {c.fonte}
+                          </a>
+                        ) : (
+                          <span className="text-gray-300">{c.fonte}</span>
+                        )}
+                      </span>
+                    ))}
+                  </div>
+                )}
 
                 {/* S5: consentimento de memória — "sim" explícito, ou nada é guardado */}
                 {message.consentPrompt && (
