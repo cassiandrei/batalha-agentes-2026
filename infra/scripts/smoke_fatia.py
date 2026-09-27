@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import urllib.error
 import urllib.request
 
 ESPERADO_S1 = {
@@ -49,6 +50,105 @@ def s1(base_url: str, customer_id: str) -> int:
 
 
 PUSH_NEUTRO = "O Vita tem uma análise nova para você"
+
+
+def _req(url: str, metodo: str = "GET", corpo: dict | None = None) -> tuple[int, dict]:
+    req = urllib.request.Request(
+        url,
+        data=None if corpo is None else json.dumps(corpo).encode(),
+        headers={"Content-Type": "application/json"},
+        method=metodo,
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:
+            return r.status, json.loads(r.read().decode() or "{}")
+    except urllib.error.HTTPError as e:
+        return e.code, json.loads(e.read().decode() or "{}")
+
+
+def s5(base_url: str, customer_id: str) -> int:
+    """Confirmação idempotente com iToken, memória com consentimento, esquecer tudo,
+    falar com uma pessoa. Sem modelo."""
+    base = f"{base_url.rstrip('/')}/customers/{customer_id}"
+    import uuid
+
+    _, p = _req(f"{base}/financial-profile")
+    sid = ((p.get("treatments") or {}).get("t01") or {}).get("simulacao_id")
+    chave = f"smoke-{uuid.uuid4().hex[:6]}"
+    c1 = _req(
+        f"{base}/confirmations",
+        "POST",
+        {"simulacao_id": sid, "itoken": "123456", "idempotency_key": chave},
+    )
+    c2 = _req(
+        f"{base}/confirmations",
+        "POST",
+        {"simulacao_id": sid, "itoken": "123456", "idempotency_key": chave},
+    )
+    ruim = _req(
+        f"{base}/confirmations",
+        "POST",
+        {"simulacao_id": sid, "itoken": "000000", "idempotency_key": chave + "x"},
+    )
+    _req(f"{base}/memory", "DELETE")
+    _, m0 = _req(f"{base}/memory")
+    _req(f"{base}/memory/consent", "POST", {"consentimento": True})
+    _, p2 = _req(f"{base}/financial-profile")
+    sid2 = ((p2.get("treatments") or {}).get("t01") or {}).get("simulacao_id")
+    _req(
+        f"{base}/confirmations",
+        "POST",
+        {"simulacao_id": sid2, "itoken": "123456", "idempotency_key": chave + "y"},
+    )
+    _, m1 = _req(f"{base}/memory")
+    _, d = _req(f"{base}/memory", "DELETE")
+    _, m2 = _req(f"{base}/memory")
+    _, h = _req(f"{base}/handoff", "POST", {"consentimento": True, "motivo": "smoke"})
+    texto_h = json.dumps(h.get("resumo") or {})
+    checks = [
+        (
+            "CA-14: duplo clique = uma execucao (mesmo execucao_id)",
+            c1[0] == 200
+            and c2[0] == 200
+            and c1[1].get("status") == "confirmada"
+            and c2[1].get("status") == "ja_confirmada"
+            and c1[1].get("execucao_id") == c2[1].get("execucao_id"),
+        ),
+        (
+            "CA-14: evento tratamento_confirmado",
+            c1[1].get("evento") == "tratamento_confirmado",
+        ),
+        ("iToken invalido nao executa (401)", ruim[0] == 401),
+        (
+            "sem consentimento, memoria vazia",
+            m0.get("consentimento") is False and m0.get("lembrancas") == {},
+        ),
+        (
+            "com consentimento, tratamento vai para a memoria sem valores",
+            bool(m1.get("lembrancas"))
+            and all("R$" not in v for v in m1["lembrancas"].values()),
+        ),
+        (
+            "esqueca tudo apaga e revoga",
+            d.get("apagadas", 0) >= 1
+            and m2.get("lembrancas") == {}
+            and m2.get("consentimento") is False,
+        ),
+        (
+            "falar com uma pessoa: protocolo e resumo sem valor nem id",
+            str(h.get("protocolo", "")).startswith("VITA-")
+            and "R$" not in texto_h
+            and customer_id not in texto_h,
+        ),
+    ]
+    ok = 0
+    for nome, passou in checks:
+        ok += passou
+        print(f"{'✓' if passou else '✗'} {nome}")
+    print(f"\n{ok}/{len(checks)} verificacoes passaram — sem nenhuma chamada ao modelo")
+    return 0 if ok == len(checks) else 1
+
+
 MARCOS = "8fbc8ba3-7d20-4382-ba8d-ffd070e836a1"
 
 
@@ -251,12 +351,12 @@ def s2(base_url: str, customer_id: str) -> int:
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("fatia", choices=["s1", "s2", "s2b", "s3", "s4"])
+    ap.add_argument("fatia", choices=["s1", "s2", "s2b", "s3", "s4", "s5"])
     ap.add_argument("--base-url", required=True)
     ap.add_argument("--customer-id", required=True)
     args = ap.parse_args()
     sys.exit(
-        {"s1": s1, "s2": s2, "s2b": s2b, "s3": s3, "s4": s4}[args.fatia](
+        {"s1": s1, "s2": s2, "s2b": s2b, "s3": s3, "s4": s4, "s5": s5}[args.fatia](
             args.base_url, args.customer_id
         )
     )

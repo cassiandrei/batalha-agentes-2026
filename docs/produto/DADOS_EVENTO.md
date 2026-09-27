@@ -695,3 +695,33 @@ nada aprovado, não recomenda.
 **Marcos (`8fbc8ba3`)**: faixa V, `offers.elegivel = false`, `t02 = null`, `t01 = null`
 (sem aplicação). A tela não mostra card de oferta; mostra o custo do rotativo e "Falar
 com uma pessoa".
+
+---
+
+## 16. S5: confirmação, memória com consentimento e "falar com uma pessoa" (27/09)
+
+**Confirmação (`POST /customers/{id}/confirmations`, `agent/app/confirmacoes.py`).** Só
+uma simulação que foi mostrada pode ser confirmada (o endpoint do perfil registra os
+`simulacao_id`). Exige iToken de 6 dígitos (mock; `000000` é o inválido de teste) e uma
+chave de idempotência: a mesma chave devolve a mesma execução; a mesma simulação com outra
+chave devolve `ja_confirmada`, sem executar de novo (CA-14). Cada execução registra o
+evento `tratamento_confirmado` (execução, cliente, simulação, tipo, instante) no log de
+auditoria, sem valores.
+
+**Memória.** Consentimento é gravado no **estado da sessão** do chat (`consent_given_at`),
+onde as tools de memória o leem, e revogado por "esqueça tudo". Política em
+`agent/app/memory/politica.py`: chaves permitidas `objetivo`, `oferta_recusada`,
+`tratamento`, `canal_preferido`; valor de até 160 caracteres, sem "R$", sem número com
+decimais, sem chave/valor de payload. Um tratamento confirmado com consentimento vira
+`tratamento:AAAA-MM-DD = "T01 confirmado em AAAA-MM-DD"`. `GET /memory` lista;
+`DELETE /memory` apaga e revoga. Semente do Bruno em `data/seeds/seed_memory.json`: o
+T01 de junho e o objetivo "manter a fatura no pagamento integral", com o consentimento
+daquela conversa; carregada no boot só se não houver memória viva.
+
+**Falar com uma pessoa (`POST /handoff`).** Devolve protocolo `VITA-…` e a fila
+(`renegociacao_assistida` para C e V). O resumo só vai com consentimento e leva faixa,
+mês de referência, gatilho, tratamento confirmado e recomendação principal — nunca valor,
+nome ou identificador.
+
+Limitação declarada: registro de confirmações e SQLite vivem na instância; em produção
+viram tabela com a chave de idempotência como chave primária e Memory Bank.

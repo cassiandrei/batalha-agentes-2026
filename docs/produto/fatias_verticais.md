@@ -181,7 +181,7 @@ Use o LLM simulado. Publique com --tag s4 --no-traffic e mostre o modal na URL d
 
 **Feito:** `get_ofertas_elegiveis`, `simular_parcelamento_fatura` (Price, regra de atenção, `simulacao_id` com validade) e `agent/app/motor.py` (T01 primeiro quando custa menos; números na seção 15 do `DADOS_EVENTO.md`); perfil com `offers` e `treatments.t02/principal/ordem`; `InstallmentModal` e `PrescriptionFooter` lendo o payload, sem card para a faixa V; smoke `make smoke-fatia FATIA=s4` (inclui o Marcos).
 
-## S5 — Confirmação e memória
+## S5 — Confirmação e memória (feita em 27/09)
 
 Ao fim da S5, o Bruno confirma um tratamento com iToken simulado, o Vita pede consentimento antes de lembrar algo, mostra o que lembra, esquece quando pedido e oferece falar com uma pessoa.
 
@@ -210,6 +210,8 @@ Use o LLM simulado. Publique com --tag s5 --no-traffic e mostre o fluxo na URL d
 ```
 
 **Pronto quando:** na URL da tag, confirmar duas vezes gera uma só execução, e "esqueça tudo" faz "o que você lembra sobre mim" voltar vazio.
+
+**Feito:** `agent/app/confirmacoes.py` (idempotência, iToken mock, evento `tratamento_confirmado`), `agent/app/memory/politica.py` (o que pode ser lembrado; semente do Bruno em `data/seeds/`), endpoints `/confirmations`, `/memory`, `/memory/consent`, `/handoff`; no front, iToken no modal, pergunta de consentimento no chat, botões "O que você lembra?" e "Esqueça tudo" sem modelo, "Falar com uma pessoa" no cabeçalho; smoke `make smoke-fatia FATIA=s5`. Detalhes na seção 16 do `DADOS_EVENTO.md`.
 
 ## S6 — Guardrails e cena do Marcos
 
