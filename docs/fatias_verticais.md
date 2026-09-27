@@ -16,11 +16,13 @@ S1 é a fundação; depois dela, S2, S3 e S4 podem correr em sessões paralelas,
 | S6 — Guardrails e cena do Marcos | Ataque bloqueado ao vivo, Marcos sem oferta, relatório do red team | CA-09 a CA-12, CA-15, CA-16 | S2 | 90 min | Obrigatória |
 | S7 — Pronto para a banca | Demo estável na URL, cota protegida, acessibilidade, vídeo de backup | Todos, em regressão | S1 a S6 | 60 min | Obrigatória |
 
+**S2b — Front no GCP** entrou entre a S2 e a S3 e está feita: o protótipo virou `web/`, o `vita-app` está publicado no Cloud Run e o chat passa pelo agente. A partir dela, a coluna "Entrega visível na demo" de cada fatia é verificada na URL do `vita-app`, não em patch.
+
 ## Como cada sessão funciona
 
 Uma sessão do Claude Code implementa uma fatia inteira, das tabelas à tela, e só termina quando o passo da demo funciona numa revisão do Cloud Run.
 
-**Contexto que toda sessão recebe:** o PRD salvo no repositório (baixe esta doc e salve em `docs/`), o `docs/DADOS_EVENTO.md`, os scripts em `infra/sql/` e as regras do projeto já existentes.
+**Contexto que toda sessão recebe:** o PRD salvo no repositório (baixe esta doc e salve em `docs/`), o `docs/DADOS_EVENTO.md`, os scripts em `infra/sql/` e as regras do projeto já existentes; o web/README.md (desde a S2b o front vive em web/ neste repositório) e a regra 3 do projeto, que vale para as telas: nenhuma marca, nome ou cor do Itaú.
 
 **Protocolo:**
 
@@ -28,8 +30,10 @@ Uma sessão do Claude Code implementa uma fatia inteira, das tabelas à tela, e 
 2. Escrever primeiro os testes dos critérios de aceite da fatia, falhando.
 3. Implementar nas quatro camadas (dados, back-end, front-end, testes) até os testes passarem.
 4. Rodar a suíte inteira, para garantir que nenhuma fatia anterior quebrou.
-5. Publicar uma revisão sem tráfego (`gcloud run deploy --tag s<N> --no-traffic`) e rodar o smoke test na URL da tag.
+5. Publicar uma revisão sem tráfego (`gcloud run deploy --tag s<N> --no-traffic`) e rodar o smoke test na URL da tag; depois publicar o vita-app apontando para essa tag (make deploy-web AGENT\_URL=\<url da tag>) e rodar make smoke-fatia FATIA=s\<N> na URL do vita-app.
 6. Promover o tráfego só depois de ver o passo da demo funcionando.
+
+**Telas:** vivem em `web/` neste repositório (protótipo trazido na S2b). Cada fatia edita os componentes direto, roda `npm run lint` (o `tsc` também roda dentro do build da imagem) e publica com `make deploy-web`. Não gere patch. Todo número na tela vem de `/api/*`, que só repassa o agente.
 
 **Cota do modelo:** testes e desenvolvimento usam o LLM simulado. Cada sessão gasta no máximo 2 chamadas reais, no smoke test final.
 
@@ -101,6 +105,20 @@ Use o LLM simulado; no smoke test final, no máximo 2 chamadas reais. Publique c
 
 **Pronto quando:** na URL da tag, tocar no push abre o chat com a mensagem de abertura e os botões, e reiniciar a instância não apaga essa sessão.
 
+## S2b — Front no GCP (feita em 26/09)
+
+Ao fim da S2b, as telas têm URL própria no projeto do evento e nenhuma chamada de modelo sai do front: o chat passa pelo agente, com os guardrails dele.
+
+| Camada | Entrega |
+| --- | --- |
+| Código | Protótipo (`danmarcello/Vita`, `f7d9d34`) com S1 e S2 aplicadas vira `web/` neste repositório; marca, nome e cor do Itaú removidos (regra 3) |
+| Deploy | `make deploy-web PROJECT_ID=... AGENT_URL=<url do agente>`: build local, Cloud Run `vita-app`, público, `squad-agent-sa`, `AGENT_URL` e `DEMO_CUSTOMER_ID` no ambiente |
+| Chat | `POST /api/chat` chama `POST /run` do agente na sessão `abertura-<cliente>`; saem o Gemini direto, o system prompt da v1 e o fallback com números inventados |
+| Removido | Google Drive e Firebase (decisão do time no PRD) |
+| Testes | `make smoke-fatia FATIA=s2b BASE_URL=<url do vita-app>`: página, `/api/abertura`, `/api/financial-profile` e `/api/chat` pelo agente (1 chamada real) |
+
+**Pronto quando:** abrir a URL do `vita-app`, tocar no push, ver a abertura com os botões, abrir a fatura com os números reais e mandar uma mensagem respondida pelo agente. Verificado: `https://vita-app-996610300787.us-central1.run.app`, 6/6 no smoke.
+
 ## S3 — Visão financeira e T01
 
 Ao fim da S3, a visão financeira e a simulação de "usar a reserva" mostram o CDB de R$ 41.270 do Bruno, o saldo de R$ 725,07 quitado e quanto sobra, tudo calculado por tool e com "Por que recomendamos isso".
@@ -109,7 +127,7 @@ Ao fim da S3, a visão financeira e a simulação de "usar a reserva" mostram o 
 | --- | --- |
 | Dados | Indicadores da bioimpedância no snapshot; CDI da série do SGS como parâmetro (ou valor fixo declarado, se não der tempo) |
 | Back-end | Tools `get_diagnostico`, `get_posicao_investimentos` e `simular_uso_reserva` (saldo quitado, juros evitados, rendimento perdido, IR regressivo, reserva restante); fórmula documentada do Índice de Organização Financeira; `simulacao_id` com validade |
-| Front-end | Modais de visão financeira e de ajuste com reserva lendo o payload; bloco "Por que recomendamos isso"; T01 como recomendação principal quando for o mais barato |
+| Front-end | web/: FinancialOverviewModal.tsx e FlowAdjustmentModal.tsx lendo o payload; bloco "Por que recomendamos isso"; T01 como recomendação principal quando for o mais barato |
 | Testes | CA-08; teste da fórmula do índice; validador de números sobre uma resposta que cita o T01 |
 
 **Prompt da sessão:**
@@ -138,7 +156,7 @@ Ao fim da S4, o modal de parcelamento mostra os prazos do Bruno calculados pelo 
 | --- | --- |
 | Dados | `perfil_risco` e `catalogo_ofertas` do snapshot |
 | Back-end | Tool de política `get_ofertas_elegiveis` (faixa de `perfil_risco` + catálogo; lista vazia com motivo para a faixa V); tool de cálculo `simular_parcelamento_fatura` (Price, regra de atenção, aprovado/rejeitado); ordenação que põe o T01 primeiro quando ele custa menos |
-| Front-end | Modal de parcelamento com prazos aprovados e rejeitados em texto e ícone; aviso de valores sem IOF e CET; nenhum valor da v1 (1,49%, 6x de R$ 214) |
+| Front-end | web/: InstallmentModal.tsx e PrescriptionFooter.tsx com prazos aprovados e rejeitados em texto e ícone; aviso de valores sem IOF e CET; nenhum valor da v1 (1,49%, 6x de R$ 214) |
 | Testes | CA-05 (Marcos), CA-06, CA-07 (12x = R$ 98,72, com tolerância de R$ 0,01; 9x rejeitado a R$ 118,49) |
 
 **Prompt da sessão:**
@@ -167,7 +185,7 @@ Ao fim da S5, o Bruno confirma um tratamento com iToken simulado, o Vita pede co
 | --- | --- |
 | Dados | Memória de longo prazo em SQLite, com semente do Bruno no boot (só o que a política permite guardar) |
 | Back-end | Endpoint de confirmação com chave de idempotência e iToken simulado; evento `tratamento_confirmado`; consentimento de memória; comandos "o que você lembra sobre mim" e "esqueça tudo"; encaminhamento para humano simulado, levando resumo sem dados sensíveis |
-| Front-end | Resumo antes de confirmar; estado pós-confirmação vindo do evento; pergunta de consentimento; botão "Falar com uma pessoa" sempre visível |
+| Front-end | web/: ChatArea.tsx e FlowAdjustmentModal.tsx; resumo antes de confirmar; estado pós-confirmação vindo do evento; pergunta de consentimento; botão "Falar com uma pessoa" sempre visível |
 | Testes | CA-14 (duplo clique gera uma execução); sem "sim", nada vai para a memória; "esqueça tudo" apaga; memória nunca contém valores de transação nem payload |
 
 **Prompt da sessão:**
@@ -197,7 +215,7 @@ Ao fim da S6, os 12 controles da seção Guardrails do PRD rodam na revisão, um
 | --- | --- |
 | Dados | Conjunto de red team versionado: cerca de 60 ataques em PT-BR e 40 perguntas legítimas, com a categoria e a camada esperada de cada um |
 | Back-end | Normalização; detector de dados sensíveis com validação (CPF, Luhn) e mascaramento; heurísticas de injeção em PT-BR (classificador local só se sobrar tempo); filtro de escopo; configurações de segurança do Gemini; token canário; lista de URLs permitidas; `id_usuario` sempre da sessão; `before_tool_callback` da faixa V; `after_model_callback` com os validadores; log `event=guard` com hash |
-| Front-end | Markdown sanitizado no lugar de `dangerouslySetInnerHTML`; respostas padrão de bloqueio; alternar para o Marcos na demo |
+| Front-end | web/: markdown sanitizado no lugar de `dangerouslySetInnerHTML`; respostas padrão de bloqueio; alternar para o Marcos na demo |
 | Testes | CA-09 a CA-12, CA-15, CA-16; execução do red team gerando relatório por categoria (taxa de bloqueio e falso positivo), sem chamar o modelo nas camadas de entrada |
 
 **Prompt da sessão:**
@@ -228,7 +246,7 @@ Ao fim da S7, a jornada completa roda de ponta a ponta na URL principal, sem dep
 | --- | --- |
 | Dados | Sementes de sessão e memória do Bruno e do Marcos conferidas no boot |
 | Back-end | Modo de ensaio com LLM simulado; papéis distribuídos entre modelos diferentes; no máximo uma regeneração por resposta; uma instância sempre ativa durante a apresentação; latência e chamadas ao modelo por conversa registradas nos logs |
-| Front-end | Remover o recurso do Google Drive; passada de acessibilidade (contraste, `aria-live`, áreas de toque, zoom de 200%); textos sem "garantida" |
+| Front-end | web/: Google Drive já removido na S2b; passada de acessibilidade (contraste, `aria-live`, áreas de toque, zoom de 200%); textos sem "garantida" |
 | Testes | Regressão de todos os critérios de aceite; roteiro ponta a ponta automatizado da jornada do Bruno e da cena do Marcos contra a URL |
 | Operação | Restringir a chave web do Firebase por domínio; gravar o vídeo de backup da demo |
 
@@ -241,7 +259,7 @@ seções "Desenho alvo vs. ambiente do evento", "Experiência" e "Plano de imple
    T01, T02, confirmação) e da cena do Marcos, rodando contra a URL, com LLM simulado.
 2. Adicione o modo de ensaio com LLM simulado, distribua orquestrador, especialista e
    redator entre modelos diferentes e limite a uma regeneração por resposta.
-3. Registre nos logs a latência por turno e as chamadas ao modelo por conversa; meça
+3. Registre nos logs a latência por turno e as chamadas ao modelo por conversa; meaça
    uma conversa completa e anote os números no PRD.
 4. Remova o recurso do Google Drive e faça a passada de acessibilidade da seção
    "Experiência" do PRD.
