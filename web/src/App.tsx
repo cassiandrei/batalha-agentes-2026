@@ -159,6 +159,12 @@ export default function App() {
     window.speechSynthesis.speak(utterance);
   };
 
+  // Desligar a voz também interrompe a fala em andamento.
+  const alternarVoz = () => {
+    if (speechEnabled && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+    setSpeechEnabled(!speechEnabled);
+  };
+
   useEffect(() => {
     if (!speechEnabled) return;
     const lastMsg = messages[messages.length - 1];
@@ -351,7 +357,7 @@ export default function App() {
         <Header
           onReset={handleReset}
           speechEnabled={speechEnabled}
-          onToggleSpeech={() => setSpeechEnabled(!speechEnabled)}
+          onToggleSpeech={alternarVoz}
           isMobileFrame={isMobileFrame}
           onToggleFrame={() => setIsMobileFrame(!isMobileFrame)}
           onTalkToHuman={() => setActiveModal('handoff')}
