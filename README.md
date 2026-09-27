@@ -66,6 +66,8 @@ sobre a base sintética do evento; nenhum foi escrito na tela.
 | --- | --- | --- |
 | ![Negociação assistida: chat ou ligação, o que vai junto](docs/images/jornada/12-pessoa.png) | ![Pedido registrado com protocolo e fila](docs/images/jornada/13-pessoa-protocolo.png) | ![Sem oferta de crédito por regra e caminho humano](docs/images/jornada/15-marcos-faixa-v.png) |
 
+O que cada tela faz — push, Raio-X, tratamentos, confirmação, faixa V, conversa e estados de erro — está em [`docs/design/DESIGN_SPEC.md`](docs/design/DESIGN_SPEC.md). O porquê das decisões de experiência (conceito visual, jornada, acessibilidade e limites do protótipo) está em [`docs/design/RACIONAL_PROTOTIPACAO.md`](docs/design/RACIONAL_PROTOTIPACAO.md). O processo de prototipação está no [board Vita UI no Figma](https://www.figma.com/board/Q7AT7ixAWbHOCdK62QAQYq/Vita-UI---prototipa%C3%A7%C3%A3o?node-id=0-1&t=IWzzhY5ypC7wMkV8-1). O entregável 3 oficial continua em [`docs/entregaveis/3. Racional de prototipação.md`](docs/entregaveis/3.%20Racional%20de%20prototipa%C3%A7%C3%A3o.md).
+
 ---
 
 ## O problema

@@ -13,7 +13,10 @@
 | `produto/avaliacao.md`, `redteam/` | números medidos: conversas sintéticas, contrafactual e red team |
 | `banca/` | relatórios da banca simulada (skill `banca-batalha-agentes`) |
 | `rai/` | system card, política de conteúdo e ciclo purple (IA Responsável) |
-| `design/` | `PRODUCT.md`, `DESIGN.md` e `RACIONAL_PROTOTIPACAO.md` do front (artefatos do impeccable; a skill os procura na raiz, copie para lá se for regenerar); `DESIGN_SPEC.md` registra as jornadas, telas e estados do `web/` |
+| `design/PRODUCT.md`, `design/DESIGN.md` | artefatos do impeccable do front (a skill os procura na raiz; copie para lá se for regenerar) |
+| `design/DESIGN_SPEC.md` | jornadas, telas e estados do `vita-app` |
+| `design/RACIONAL_PROTOTIPACAO.md` | racional de experiência do protótipo: conceito visual, decisões da jornada, acessibilidade e limites |
+| board de prototipação | [Vita UI no Figma](https://www.figma.com/board/Q7AT7ixAWbHOCdK62QAQYq/Vita-UI---prototipa%C3%A7%C3%A3o?node-id=0-1&t=IWzzhY5ypC7wMkV8-1): processo de prototipação da interface |
 | `diagrams/` | SVGs usados no PRD |
 | `historico/` | blueprint do template, patches do protótipo, specs e planos antigos |
 
