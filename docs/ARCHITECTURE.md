@@ -1,6 +1,6 @@
 # Documento explicativo da arquitetura: Vita
 
-> Estado em 27/09/2026, 04h. Descreve o que está publicado no projeto do evento
+> Estado em 27/09/2026, 05h. Descreve o que está publicado no projeto do evento
 > (`batalha-time-06-1t82`, `us-central1`), não o desenho ideal. Onde o ambiente do evento
 > impôs um contorno, o texto diz qual e por quê. Este arquivo é a fonte do entregável 5;
 > os diagramas estão em `docs/diagrams/` e no PRD (`docs/produto/PRD.md`).
@@ -40,11 +40,12 @@ que ele mostra ou responde passa pelo agente.
 | Analista | `LlmAgent` com as tools de dados e cálculo | Situação financeira concreta, só via tools | Implementado, com as tools do Vita |
 | Educador | `LlmAgent` + busca local em `data/knowledge` | Conceitos financeiros com fonte | Implementado; RAG Engine é caminho de produção |
 | Pipeline de abertura | `SequentialAgent`: `DiagnosticoAgent` (sem LLM) → `redator` (`LlmAgent` com `output_schema`) | Gatilho → payload no estado → mensagem de abertura com ações do catálogo | Implementado (S2) |
-| Tools | Python tipado: `get_fatura_rotativo`, `get_perfil_risco`, `get_diagnostico`, `get_posicao_investimentos`, `simular_uso_reserva` (T01), transações, conta, cartão, três calculadoras, memória, `propose_action` | Dados, cálculo, memória e ação | Implementadas |
+| Tools | Python tipado: `get_fatura_rotativo`, `get_perfil_risco`, `get_diagnostico`, `get_posicao_investimentos`, `simular_uso_reserva` (T01), `get_ofertas_elegiveis` e `simular_parcelamento_fatura` (T02), transações, conta, cartão, três calculadoras, memória, `propose_action` | Dados, cálculo, memória e ação | Implementadas |
 | Dados do cliente | Snapshot da `extrato_sintetico` (1.000 clientes, 467 mil linhas) e das tabelas do time em `vita_sintetico`, embarcado na imagem | Fonte de toda tool de dados | Implementado; BigQuery ao vivo é opção com a `squad-agent-sa` |
 | Prompts | Arquivos em `app/prompts/v1/` (`orchestrator`, `analyst`, `educator`, `redator`), selecionados por `PROMPT_VERSION` | Experimento sem mudar código | Implementado |
 | Guardrails | `SecurityPlugin` (PII, injection direta e indireta, autorização de tools, checagem de saída) | Cobre orquestrador, subagentes e redator | Implementado; Model Armor **indisponível** no projeto do evento |
 | Índice e T01 | `agent/app/indice.py` (4 pilares × 25, sobre a `vw_bioimpedancia`) e `simular_uso_reserva` (CDI do SGS série 4389, IR na alíquota mais alta, `simulacao_id` com validade) | Visão financeira e recomendação principal, por regra | Implementado (S3) |
+| Motor de decisão | `agent/app/motor.py`: política por faixa (`perfil_risco` + `catalogo_ofertas`, faixa V sem oferta), regra de atenção, tabela Price, ordenação pelo custo mensal | Decide quais tratamentos o cliente vê e qual é o principal; o LLM só explica | Implementado (S4) |
 | Auditoria | `AuditPlugin` → Cloud Logging, JSON sem conteúdo | Rastreabilidade sem PII | Implementado |
 | Eventos proativos | `POST /events`; tipo `dreno_rotativo` dispara o pipeline de abertura | Agente age no momento certo | Implementado; Pub/Sub é caminho de produção |
 | Sessão | ADK em memória + semente (`seed_sessions.json`) carregada no boot | Abertura pré-montada sobrevive a reinício | Implementado; Agent Engine Sessions é o próximo passo (engine já criado) |
@@ -132,11 +133,11 @@ risco (faixas A, B, C, V com motivo) e bioimpedância anual. Tudo em
 | Número inventado pelo modelo | Tools determinísticas; redator com `output_schema`; validador de ações; validador de números na saída (S3); fallback calculado | Testes do schema, do fallback e do validador (bloqueia "R$ 1.200,00" fora do payload); smoke confere os números na URL |
 | Vazamento de PII | Mascaramento na entrada (CPF com dígito verificador, Luhn, e-mail, telefone), projeções, checagem de saída | Testes de mascaramento e projeção |
 | Ação indevida | `require_confirmation` | Teste de que a tool não executa sem confirmação |
-| Oferta a cliente vulnerável | Faixa V no `perfil_risco`; catálogo sem linha para V | Gerador com assert; tool de ofertas na S4 |
+| Oferta a cliente vulnerável | Faixa V no `perfil_risco`; catálogo sem linha para V; `get_ofertas_elegiveis` e `simular_parcelamento_fatura` recusam por regra | Gerador com assert; teste CA-05 com o Marcos; smoke S4 |
 | Chave de modelo exposta | Nenhuma: tudo roda pela `squad-agent-sa` | Teste do deploy que falha se `GEMINI_API_KEY` aparecer |
 
-Números: 290 testes automatizados sem credencial; smokes por fatia contra o serviço vivo
-(S1 5/5, S2 7/7, S2b 6/6, S3 7/7).
+Números: 300 testes automatizados sem credencial; smokes por fatia contra o serviço vivo
+(S1 5/5, S2 7/7, S2b 6/6, S3 7/7, S4 7/7).
 
 ## 8. LGPD
 
@@ -191,8 +192,8 @@ Cloud Run com `min-instances=0`; modelo da linha Flash. A abertura não gasta in
 - Streaming desligado; PII partida entre trechos escaparia da checagem.
 - O orquestrador ainda responde em texto livre no chat; o schema de ações vale hoje para a
   abertura. Estender ao chat é a fatia de confirmação.
-- No front, o card B e o parcelamento ainda mostram a história inicial do protótipo;
-  entram na S4. Visão financeira e T01 já leem o payload (S3).
+- No front, só as mensagens de confirmação ainda são simuladas na tela; a confirmação real
+  (iToken, evento `tratamento_confirmado`) é a S5.
 - Três recursos do ADK 2.8 em uso são experimentais: confirmação de ação, compactação de
   eventos e declaração de função por JSON Schema. Estão cobertos por testes.
 

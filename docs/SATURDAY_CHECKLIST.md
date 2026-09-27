@@ -183,6 +183,16 @@ make deploy PROJECT_ID=batalha-time-06-1t82 REGION=us-central1 MEMORY_LOCATION=u
   PUBLIC=1 DEMO_CUSTOMER_ID=36d74064-cc59-4ad2-9304-aeae46e660e4
 ```
 
+Validado em 27/09 00:40: revisão `batalha-agentes-00008-74z`, tag `memoria`
+(`https://memoria---batalha-agentes-277ilp3dyq-uc.a.run.app`), smoke 13/13 e as sessões do
+smoke listáveis no engine. **As fatias (`TAG=fatia-sN`) ainda saem com `MEMORY_BACKEND=local`**:
+para levar a memória gerenciada junto, acrescente ao deploy da fatia `MEMORY_BACKEND=agent_engine
+AGENT_ENGINE_ID=6089108039007207424 MAX_INSTANCES=5`.
+
+**Uma sessão de agente deploya por vez.** Dois deploys simultâneos em 27/09 geraram duas
+revisões "00008" e o gcloud imprimiu o nome da errada — o smoke foi rodado na revisão da
+outra sessão. Combine antes de rodar `make deploy`.
+
 Fallback, se o engine voltar a negar: `MEMORY_BACKEND=local` sem `AGENT_ENGINE_ID` (sessão no
 processo, `MAX_INSTANCES=1` forçado). Declare na banca se precisar usá-lo.
 
@@ -203,6 +213,9 @@ marca, nome ou cor do Itaú no front (regra 3): o protótipo tinha e foi limpo a
 **Fatia S3:** `make cdi` antes do deploy (grava `data/evento/cdi_sgs.json`); revisão `fatia-s3`;
 `make smoke-fatia FATIA=s3 BASE_URL=<url da tag>` (7 checks, sem modelo); depois
 `make deploy-web … AGENT_URL=<url da tag>` e `make smoke-fatia FATIA=s2b BASE_URL=<url do vita-app>`.
+
+**Fatia S4:** revisão `fatia-s4`; `make smoke-fatia FATIA=s4 BASE_URL=<url da tag>` (7 checks, Bruno e
+Marcos, sem modelo); depois `make deploy-web … AGENT_URL=<url da tag>`.
 
 **Fatias (protocolo do PRD):** `TAG=fatia-s1` publica a revisão com tag e **0% de tráfego**;
 o Cloud Run exige tag com 3+ caracteres. Smoke sem modelo: `make smoke-fatia FATIA=s1

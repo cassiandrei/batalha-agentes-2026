@@ -150,7 +150,7 @@ Use o LLM simulado. Publique com --tag s3 --no-traffic e mostre os modais na URL
 
 **Feito:** `simular_uso_reserva`, `get_posicao_investimentos` e o índice (`agent/app/indice.py`, fórmula na seção 14 do `DADOS_EVENTO.md`); CDI do SGS por `make cdi`; validador de números no `SecurityPlugin` (teste bloqueando "R$ 1.200,00" fora do payload); `FinancialOverviewModal` e `FlowAdjustmentModal` lendo o payload com "Por que recomendamos isso"; smoke `make smoke-fatia FATIA=s3`.
 
-## S4 — T02 com motor de decisão
+## S4 — T02 com motor de decisão (feita em 27/09)
 
 Ao fim da S4, o modal de parcelamento mostra os prazos do Bruno calculados pelo motor, com 3x, 6x e 9x rejeitados e 12x aprovado, e o Marcos não recebe nenhuma oferta.
 
@@ -178,6 +178,8 @@ Use o LLM simulado. Publique com --tag s4 --no-traffic e mostre o modal na URL d
 ```
 
 **Pronto quando:** na URL da tag, o modal do Bruno mostra os quatro prazos com a decisão do motor, e a conversa do Marcos não exibe cards de oferta.
+
+**Feito:** `get_ofertas_elegiveis`, `simular_parcelamento_fatura` (Price, regra de atenção, `simulacao_id` com validade) e `agent/app/motor.py` (T01 primeiro quando custa menos; números na seção 15 do `DADOS_EVENTO.md`); perfil com `offers` e `treatments.t02/principal/ordem`; `InstallmentModal` e `PrescriptionFooter` lendo o payload, sem card para a faixa V; smoke `make smoke-fatia FATIA=s4` (inclui o Marcos).
 
 ## S5 — Confirmação e memória
 

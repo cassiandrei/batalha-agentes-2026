@@ -661,3 +661,37 @@ Cada simulação recebe `simulacao_id` com validade de 24 h, registrado no estad
 estado (`numeros_tools`) e, na resposta final do modelo, qualquer "R$ X" fora desse
 conjunto bloqueia a resposta com um texto seguro e registra `guard=numero_inventado`.
 Sem payload na sessão, não age.
+
+---
+
+## 15. S4: ofertas por regra, T02 pela tabela Price e motor de decisão (27/09)
+
+**Ofertas (`get_ofertas_elegiveis`).** Faixa do `perfil_risco` + linhas do
+`catalogo_ofertas` daquela faixa. A faixa V não tem linha no catálogo: a tool devolve lista
+vazia, o motivo da faixa e o encaminhamento (renegociação assistida). A regra de atenção
+liga quando `comprometimento >= guardrail_atencao` (0,35, em `parametros_modelo`).
+
+**T02 (`simular_parcelamento_fatura`)**, Bruno em dezembro: saldo R$ 725,07, faixa C,
+`parcelamento_fatura` a 8,5% a.m., custo mensal atual de juros R$ 101,51, comprometimento
+37,7% (regra de atenção ligada):
+
+| Prazo | Parcela (Price) | Juros totais | Regra de atenção |
+|---|---|---|---|
+| 3x | R$ 283,89 | R$ 126,61 | rejeitado (parcela > R$ 101,51) |
+| 6x | R$ 159,23 | R$ 230,31 | rejeitado |
+| 9x | R$ 118,49 | R$ 341,37 | rejeitado |
+| 12x | R$ 98,72 | R$ 459,58 | **aprovado** |
+
+Fórmula: `parcela = P × i / (1 − (1 + i)^−n)`; juros totais sobre a parcela exata, não
+sobre a arredondada (arredondar antes acumula centavos). Aviso fixo no payload: valores
+sem IOF e CET. Cada simulação recebe `simulacao_id` (`t02-…`) com validade de 24 h.
+
+**Motor de decisão (`agent/app/motor.py`).** Custo mensal de cada tratamento: T01 = rendimento
+líquido que a reserva deixa de render (R$ 6,21); T02 = juros totais do prazo aprovado mais
+barato diluídos por mês (459,58 ÷ 12 = R$ 38,30). O mais barato é a recomendação
+principal: **T01**, mesmo com crédito disponível. Sem T01, recomenda o T02 aprovado; sem
+nada aprovado, não recomenda.
+
+**Marcos (`8fbc8ba3`)**: faixa V, `offers.elegivel = false`, `t02 = null`, `t01 = null`
+(sem aplicação). A tela não mostra card de oferta; mostra o custo do rotativo e "Falar
+com uma pessoa".

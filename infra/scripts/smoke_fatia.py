@@ -49,6 +49,66 @@ def s1(base_url: str, customer_id: str) -> int:
 
 
 PUSH_NEUTRO = "O Vita tem uma análise nova para você"
+MARCOS = "8fbc8ba3-7d20-4382-ba8d-ffd070e836a1"
+
+
+def s4(base_url: str, customer_id: str) -> int:
+    """T02 com motor de decisão: prazos do Bruno pela Price, regra de atenção, T01
+    primeiro; Marcos (faixa V) sem oferta. Sem modelo."""
+    base = base_url.rstrip("/")
+    with urllib.request.urlopen(
+        f"{base}/customers/{customer_id}/financial-profile", timeout=60
+    ) as r:
+        p = json.loads(r.read().decode())
+    with urllib.request.urlopen(
+        f"{base}/customers/{MARCOS}/financial-profile", timeout=60
+    ) as r:
+        m = json.loads(r.read().decode())
+    t02 = (p.get("treatments") or {}).get("t02") or {}
+    por = {o["prazo"]: o for o in t02.get("opcoes", [])}
+    checks = [
+        (
+            "Bruno faixa C elegivel, com regra de atencao",
+            (p.get("offers") or {}).get("faixa_risco") == "C"
+            and p["offers"].get("regra_atencao") is True,
+        ),
+        (
+            "T02: 12x = 98,72 aprovado",
+            abs(por.get(12, {}).get("parcela", 0) - 98.72) <= 0.01
+            and por[12]["aprovado"] is True,
+        ),
+        (
+            "T02: 9x = 118,49 rejeitado",
+            abs(por.get(9, {}).get("parcela", 0) - 118.49) <= 0.01
+            and por[9]["aprovado"] is False,
+        ),
+        (
+            "T02: 3x e 6x rejeitados",
+            por.get(3, {}).get("aprovado") is False
+            and por.get(6, {}).get("aprovado") is False,
+        ),
+        (
+            "aviso de valores sem IOF e CET",
+            "IOF" in t02.get("aviso", "") and "CET" in t02.get("aviso", ""),
+        ),
+        (
+            "motor: T01 e a recomendacao principal",
+            (p.get("treatments") or {}).get("principal") == "t01",
+        ),
+        (
+            "CA-05: Marcos faixa V sem oferta, com motivo",
+            (m.get("offers") or {}).get("elegivel") is False
+            and m["offers"].get("ofertas") == []
+            and "V" in m["offers"].get("motivo", "")
+            and (m.get("treatments") or {}).get("t02") is None,
+        ),
+    ]
+    ok = 0
+    for nome, passou in checks:
+        ok += passou
+        print(f"{'✓' if passou else '✗'} {nome}")
+    print(f"\n{ok}/{len(checks)} verificacoes passaram — sem nenhuma chamada ao modelo")
+    return 0 if ok == len(checks) else 1
 
 
 def s3(base_url: str, customer_id: str) -> int:
@@ -191,12 +251,12 @@ def s2(base_url: str, customer_id: str) -> int:
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("fatia", choices=["s1", "s2", "s2b", "s3"])
+    ap.add_argument("fatia", choices=["s1", "s2", "s2b", "s3", "s4"])
     ap.add_argument("--base-url", required=True)
     ap.add_argument("--customer-id", required=True)
     args = ap.parse_args()
     sys.exit(
-        {"s1": s1, "s2": s2, "s2b": s2b, "s3": s3}[args.fatia](
+        {"s1": s1, "s2": s2, "s2b": s2b, "s3": s3, "s4": s4}[args.fatia](
             args.base_url, args.customer_id
         )
     )
