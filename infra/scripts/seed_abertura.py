@@ -76,7 +76,7 @@ def main() -> int:
     }
     saida.parent.mkdir(parents=True, exist_ok=True)
     saida.write_text(
-        json.dumps(outras + [semente], ensure_ascii=False, indent=2), encoding="utf-8"
+        json.dumps([*outras, semente], ensure_ascii=False, indent=2), encoding="utf-8"
     )
     print(f"push: {abertura['push']}")
     print(f"texto: {abertura['texto']}")
