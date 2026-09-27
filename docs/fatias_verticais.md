@@ -241,7 +241,7 @@ seções "Desenho alvo vs. ambiente do evento", "Experiência" e "Plano de imple
    T01, T02, confirmação) e da cena do Marcos, rodando contra a URL, com LLM simulado.
 2. Adicione o modo de ensaio com LLM simulado, distribua orquestrador, especialista e
    redator entre modelos diferentes e limite a uma regeneração por resposta.
-3. Registre nos logs a latência por turno e as chamadas ao modelo por conversa; meaça
+3. Registre nos logs a latência por turno e as chamadas ao modelo por conversa; meça
    uma conversa completa e anote os números no PRD.
 4. Remova o recurso do Google Drive e faça a passada de acessibilidade da seção
    "Experiência" do PRD.

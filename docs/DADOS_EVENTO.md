@@ -571,13 +571,12 @@ o problema é hábito, não falta de dinheiro. Ideal para o Tratamento de rotati
 Renda 6.238, parcelas 4.605, sobra 1.633, comprometimento **73,8%**: continua V. A regra
 "sobra ≥ 600 e comprometimento < 50%" o mantém fora de oferta.
 
-### 12.4 Decisão pendente do time
+### 12.4 Decisão do time: Bruno = `36d74064` (feito na S1)
 
-Se o Bruno for `36d74064`, o snapshot precisa ser regerado com todos os usuários
-(`make stage-evento EVENTO_USUARIOS=1000`, ~467 mil linhas na imagem) ou com uma lista
-explícita de ids. Se for `198fd3b8`, basta `DEMO_CUSTOMER_ID`. As personas do
-`vita_sintetico` (cadastro, CDB, contrato) foram geradas para `2fad9515` e precisam ser
-regeradas com o `persona_id` novo — o script é determinístico, é só trocar o DECLARE.
+O `make stage-evento` passou a exportar os 1.000 usuários (467.585 linhas, 54 MB) e as
+tabelas de `vita_sintetico` (exceto `cadastro_personas`) mais `vw_fatura_mensal` e
+`vw_bioimpedancia` para `data/evento/`. O adaptador carrega tudo em 4,4 s e 0,44 GB.
+As personas do `vita_sintetico` foram regeradas para `36d74064` (seção 13).
 
 ---
 

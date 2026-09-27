@@ -487,7 +487,7 @@ Cada funcionalidade central tem um critério verificável no snapshot do evento;
 
 ## Plano de implementação
 
-> Detalhamento por fatia (aba "Fatias verticais" do doc): [PRD_FATIAS_VERTICAIS.md](PRD_FATIAS_VERTICAIS.md)
+> Detalhamento por fatia (aba "Fatias verticais" do doc): [fatias_verticais.md](fatias_verticais.md)
 
 Tudo precisa estar pronto antes da submissão, domingo 27/09 às 9h30. Os itens obrigatórios são o mínimo para a demo funcionar; os demais melhoram a nota.
 

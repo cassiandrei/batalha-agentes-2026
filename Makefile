@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 # Sem isto, o alvo `data` colide com o diretório data/ e o make não faz nada.
-.PHONY: help setup data run test test-llm lint switch-project stage-data deploy teardown smoke event eval eval-report traffic-split load-bq agent-engine model-armor stage-evento
+.PHONY: help setup data run test test-llm lint switch-project stage-data deploy teardown smoke smoke-fatia event eval eval-report traffic-split load-bq agent-engine model-armor stage-evento
 UV := uv
 ACLI := uvx google-agents-cli
 
@@ -74,6 +74,13 @@ teardown: ## apaga o que o deploy criou: make teardown PROJECT_ID=x [DRY_RUN=1]
 smoke: ## smoke de arquitetura contra um agente vivo: make smoke BASE_URL=... [TOKEN=...]
 	@test -n "$(BASE_URL)" || (echo "BASE_URL é obrigatório"; exit 1)
 	python3 infra/scripts/smoke.py --base-url "$(BASE_URL)" $(if $(TOKEN),--token "$(TOKEN)",)
+
+smoke-fatia: ## smoke de uma fatia sem chamar o modelo: make smoke-fatia FATIA=s1 BASE_URL=<url da tag> CUSTOMER_ID=<id>
+	@test -n "$(BASE_URL)" || (echo "BASE_URL é obrigatório"; exit 1)
+	python3 infra/scripts/smoke_fatia.py $(FATIA) --base-url "$(BASE_URL)" --customer-id "$(CUSTOMER_ID)"
+
+FATIA ?= s1
+CUSTOMER_ID ?= 36d74064-cc59-4ad2-9304-aeae46e660e4
 
 EVENT ?= salary_received
 
