@@ -30,9 +30,11 @@ Leitura na primeira vez, nesta ordem: `docs/BLUEPRINT.md` (o quadro completo), d
 7. **No projeto do evento (`batalha-time-06-1t82`), NÃO tente de novo o que já foi negado.**
    A organização avisou: insistir em módulo negado **desclassifica o time**. Já negados em
    26/09: Cloud Build (`builds submit`), qualquer alteração de IAM (projeto ou recurso),
-   criar SA ou repositório, Vertex AI e Agent Engine pela SA de runtime, Model Armor
-   (criar template ou chamar `sanitize`), aumento de cota da chave. Nada de contornar
-   por outro projeto. Detalhe e contorno de cada um: `docs/SATURDAY_CHECKLIST.md`,
+   criar SA ou repositório, Model Armor (criar template ou chamar `sanitize`), aumento de
+   cota da chave. **Liberado na noite de 26/09:** a SA `squad-agent-sa@…` ganhou
+   `aiplatform.user` (Vertex e Agent Engine), BigQuery e Secret Manager — é a `RUNTIME_SA`
+   do deploy; a chave do AI Studio (`MODEL_KEY_SECRET`) não é mais necessária. Nada de
+   contornar por outro projeto. Detalhe e contorno de cada um: `docs/SATURDAY_CHECKLIST.md`,
    Bloco 2.5. Se algo novo for negado, acrescente aqui na hora.
    **Exceção dada pela organização (26/09, noite):** a SA `squad-agent-sa@…` tem
    `aiplatform.user`, BigQuery e Secret Manager. Usá-la como `RUNTIME_SA` é o caminho

@@ -155,38 +155,36 @@ igual ao do snapshot local (14 transações, R$ 831,78), `/events` gerando abert
 | `aiplatform.user` (criar Agent Engine, chamar Vertex **você**) | `modelarmor.templates.create` |
 | `secretmanager.secretAccessor` (`gemini-api-key`, chave **AI Studio**) | |
 
-A SA de execução (`996610300787-compute@`) tem **só** `artifactregistry.writer`,
-`logging.logWriter` e `storage.admin`: **não lê BigQuery, Vertex, Secret Manager nem
-Agent Engine**. Cada restrição abaixo foi testada, não suposta:
+A SA de execução é **`squad-agent-sa@batalha-time-06-1t82.iam.gserviceaccount.com`**. Na
+noite de 26/09 a organização deu a ela `aiplatform.user`, `bigquery.admin`,
+`secretmanager.secretAccessor` e `discoveryengine.editor` (testado por impersonação:
+`generateContent` no Vertex e listagem de sessões do engine, ambos 200). A compute SA
+(`996610300787-compute@`) continua só com `artifactregistry.writer`, `logging.logWriter` e
+`storage.admin` — não a use como runtime. Cada linha abaixo foi testada, não suposta:
 
 | Restrição | Evidência | Como o deploy contorna |
 |---|---|---|
 | Cloud Build sem bucket | `forbidden from accessing the bucket [..._cloudbuild]` | `BUILD=local` (Docker Desktop aberto; `docker build --platform linux/amd64` + push) |
-| SA sem Vertex | `aiplatform.endpoints.predict denied` (impersonação) | `MODEL_KEY_SECRET=gemini-api-key` — **você** lê a chave e ela vai para a revisão |
-| Chave AI Studio no **free tier** | `limit: 5` por minuto **e `limit: 20` por dia** por modelo (`GenerateRequestsPerDayPerProjectPerModel-FreeTier`) | smoke repete com espera de 20s, mas **20 chamadas/dia não cobrem nem um smoke** (cada turno gasta 2–3). Peça aos organizadores chave com billing ou `aiplatform.user` para a SA — sem isso a demo tem ~7 turnos por dia |
-| SA sem Agent Engine | engine `6089108039007207424` criado, mas `aiplatform.sessions.create denied`; `setIamPolicy` negado no projeto e no recurso | `MEMORY_BACKEND=local` sem `AGENT_ENGINE_ID` → sessão no processo, `MAX_INSTANCES=1` forçado |
 | Sem Model Armor | `modelarmor.templates.create denied` | guard heurístico (`USE_MODEL_ARMOR=false`) |
-| SA sem BigQuery | papel ausente | `DATA_SOURCE=evento` + `make stage-evento` (snapshot na imagem, 200 usuários / 94 mil linhas) |
+| ~~SA sem Vertex~~ **resolvido 26/09 à noite** | era `aiplatform.endpoints.predict denied` | `squad-agent-sa` como `RUNTIME_SA`, Vertex direto, **sem** `MODEL_KEY_SECRET` |
+| ~~Chave AI Studio no free tier~~ **não se aplica mais** | `limit: 20` por dia (`GenerateRequestsPerDayPerProjectPerModel-FreeTier`) derrubava a demo em ~7 turnos | não use a chave. Se aparecer 429 `free_tier`, a revisão no ar está com `MODEL_KEY_SECRET` — redeploye sem ele |
+| ~~SA sem Agent Engine~~ **resolvido 26/09 à noite** | era `aiplatform.sessions.create denied` | `MEMORY_BACKEND=agent_engine AGENT_ENGINE_ID=6089108039007207424 MAX_INSTANCES=5` — sessão e memória fora do container |
+| ~~SA sem BigQuery~~ **resolvido 26/09 à noite** | `bigquery.admin` presente | o snapshot (`DATA_SOURCE=evento`) continua no ar por ser determinístico e sem custo; `DATA_SOURCE=bigquery` voltou a ser opção |
 
 `DEMO_CUSTOMER_ID` tem de ser um `id_usuario` do snapshot — `FICT-0001` não existe lá.
 
-**Declare a limitação na banca, não esconda:** sessão no processo com uma instância é o
-fallback que o projeto de menor privilégio impõe; o backend gerenciado existe, está testado
-no projeto pessoal, e liga com uma variável quando a SA tiver `aiplatform.user`.
-
-Comando que funcionou (primeiro em `DRY_RUN=1`):
+Comando que funcionou (primeiro em `DRY_RUN=1`), com sessão e memória gerenciadas:
 
 ```bash
 make deploy PROJECT_ID=batalha-time-06-1t82 REGION=us-central1 MEMORY_LOCATION=us-central1 \
-  MANAGED_IAM=0 RUNTIME_SA=996610300787-compute@developer.gserviceaccount.com \
-  AR_REPO=agentes BUILD=local MODEL_KEY_SECRET=gemini-api-key DATA_SOURCE=evento \
-  MEMORY_BACKEND=local PUBLIC=1 DEMO_CUSTOMER_ID=00108ccd-699c-453a-a9f9-a66aad6e03e5
+  MANAGED_IAM=0 RUNTIME_SA=squad-agent-sa@batalha-time-06-1t82.iam.gserviceaccount.com \
+  AR_REPO=agentes BUILD=local DATA_SOURCE=evento \
+  MEMORY_BACKEND=agent_engine AGENT_ENGINE_ID=6089108039007207424 MAX_INSTANCES=5 \
+  PUBLIC=1 DEMO_CUSTOMER_ID=36d74064-cc59-4ad2-9304-aeae46e660e4
 ```
 
-Se os organizadores derem `aiplatform.user` à SA: acrescente `AGENT_ENGINE_ID=6089108039007207424
-MEMORY_BACKEND=agent_engine MAX_INSTANCES=5` e o restante não muda. **Já deram:** a SA
-`squad-agent-sa@batalha-time-06-1t82.iam.gserviceaccount.com` tem `aiplatform.user`, BigQuery
-e Secret Manager (testado). Use-a como `RUNTIME_SA` e tire o `MODEL_KEY_SECRET`.
+Fallback, se o engine voltar a negar: `MEMORY_BACKEND=local` sem `AGENT_ENGINE_ID` (sessão no
+processo, `MAX_INSTANCES=1` forçado). Declare na banca se precisar usá-lo.
 
 **Fatia S2 (abertura proativa):** a revisão `fatia-s2` roda como `RUNTIME_SA=squad-agent-sa@…`
 no **Vertex** (sem `MODEL_KEY_SECRET`, sem cota de 20/dia) — testado, o redator respondeu no
@@ -194,6 +192,13 @@ contrato. Fluxo: `make deploy … TAG=fatia-s2` → `make seed-abertura BASE_URL
 (1 chamada real; grava `data/evento/seed_sessions.json`) → `make deploy … TAG=fatia-s2` de novo
 (a semente vai na imagem) → `make smoke-fatia FATIA=s2 BASE_URL=<url da tag>` (7 checks, sem
 modelo). A sessão pré-montada sobrevive a reinício porque o boot a recria da semente.
+
+**Front no GCP (S2b):** `make deploy-web PROJECT_ID=batalha-time-06-1t82 AGENT_URL=<url do agente>`
+publica `web/` como o serviço **`vita-app`** (público, `squad-agent-sa`). URL atual:
+`https://vita-app-996610300787.us-central1.run.app`, apontando para a revisão `fatia-s2` do
+agente. O chat passa pelo `/run` do agente; nenhuma chave de modelo no front. Smoke:
+`make smoke-fatia FATIA=s2b BASE_URL=<url do vita-app>` (1 chamada real, no chat). Sem
+marca, nome ou cor do Itaú no front (regra 3): o protótipo tinha e foi limpo ao entrar em `web/`.
 
 **Fatias (protocolo do PRD):** `TAG=fatia-s1` publica a revisão com tag e **0% de tráfego**;
 o Cloud Run exige tag com 3+ caracteres. Smoke sem modelo: `make smoke-fatia FATIA=s1
