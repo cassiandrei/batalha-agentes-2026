@@ -10,3 +10,4 @@ data/synthetic/
 agent/data/
 agent/artifacts/
 data/evento/
+.claude/worktrees/
