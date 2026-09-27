@@ -188,6 +188,13 @@ MEMORY_BACKEND=agent_engine MAX_INSTANCES=5` e o restante não muda. **Já deram
 `squad-agent-sa@batalha-time-06-1t82.iam.gserviceaccount.com` tem `aiplatform.user`, BigQuery
 e Secret Manager (testado). Use-a como `RUNTIME_SA` e tire o `MODEL_KEY_SECRET`.
 
+**Fatia S2 (abertura proativa):** a revisão `fatia-s2` roda como `RUNTIME_SA=squad-agent-sa@…`
+no **Vertex** (sem `MODEL_KEY_SECRET`, sem cota de 20/dia) — testado, o redator respondeu no
+contrato. Fluxo: `make deploy … TAG=fatia-s2` → `make seed-abertura BASE_URL=<url da tag>`
+(1 chamada real; grava `data/evento/seed_sessions.json`) → `make deploy … TAG=fatia-s2` de novo
+(a semente vai na imagem) → `make smoke-fatia FATIA=s2 BASE_URL=<url da tag>` (7 checks, sem
+modelo). A sessão pré-montada sobrevive a reinício porque o boot a recria da semente.
+
 **Fatias (protocolo do PRD):** `TAG=fatia-s1` publica a revisão com tag e **0% de tráfego**;
 o Cloud Run exige tag com 3+ caracteres. Smoke sem modelo: `make smoke-fatia FATIA=s1
 BASE_URL=<url da tag>`. Promover: `gcloud run services update-traffic batalha-agentes

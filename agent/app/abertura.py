@@ -350,11 +350,22 @@ async def carregar_semente(
             app_name=app_name, user_id=item["user_id"], session_id=item["session_id"]
         ):
             continue
-        await servico.create_session(
+        sessao = await servico.create_session(
             app_name=app_name,
             user_id=item["user_id"],
             session_id=item["session_id"],
             state={**item.get("state", {}), "abertura": item["abertura"]},
+        )
+        # A abertura também entra no histórico: quando o cliente responder, o
+        # orquestrador precisa ver o que o Vita disse, não só o estado.
+        await servico.append_event(
+            sessao,
+            Event(
+                author=redator.name,
+                content=types.Content(
+                    role="model", parts=[types.Part(text=item["abertura"]["texto"])]
+                ),
+            ),
         )
         quantas += 1
     logger.info(

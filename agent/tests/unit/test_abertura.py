@@ -302,6 +302,9 @@ def test_semente_recria_a_sessao_pre_montada_num_processo_novo(snapshot):
     assert abertura["texto"] == RESPOSTA_DO_REDATOR["texto"]
     assert abertura["acoes"][0]["tipo"] == "abrir_fatura"
     assert sessao.state["customer_id"] == BRUNO
+    # O histórico também tem a abertura: a conversa continua de onde o Vita parou.
+    textos = [p.text for e in sessao.events for p in (e.content.parts if e.content else []) if p.text]
+    assert RESPOSTA_DO_REDATOR["texto"] in textos
 
 
 def test_semente_ausente_nao_quebra_o_boot(tmp_path):
