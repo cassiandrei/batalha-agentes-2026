@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { Volume2, BarChart3, Receipt, Zap, Calendar, UserRound, BookOpen, ShieldCheck, Sparkles, Eraser } from 'lucide-react';
+import { Volume2, VolumeX, BarChart3, Receipt, Zap, Calendar, UserRound, BookOpen, ShieldCheck, Sparkles, Eraser } from 'lucide-react';
 import { AcaoAgente, FinancialProfile, Message } from '../types';
 import { RaioXCard, TratamentosCard } from './Cards';
 import { Chip, VitaMark } from './ui';
@@ -15,7 +15,9 @@ interface ChatAreaProps {
   onSelectInstallment: () => void;
   onResetTreatment: () => void;
   onTalkToHuman: () => void;
-  onSpeak: (text: string) => void;
+  onSpeak: (text: string, id?: string) => void;
+  // id da mensagem que está sendo lida em voz alta (null = nenhuma)
+  speakingId?: string | null;
   // S2: botões estruturados vindos do agente
   onAction: (acao: AcaoAgente) => void;
   // S5: resposta à pergunta de consentimento de memória (sem modelo)
@@ -66,6 +68,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
   onResetTreatment,
   onTalkToHuman,
   onSpeak,
+  speakingId = null,
   onAction,
   onConsent,
   onForgetAll,
@@ -109,12 +112,13 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                   <span className="text-[10px] text-mid">· IA · {message.timestamp}</span>
                   <button
                     type="button"
-                    onClick={() => onSpeak(message.content)}
-                    className="ml-auto opacity-60 focus:opacity-100 group-hover:opacity-100 w-9 h-9 -my-2 inline-flex items-center justify-center rounded-full text-mid hover:text-accent hover:bg-surface cursor-pointer"
-                    title="Ouvir mensagem"
-                    aria-label="Ouvir mensagem"
+                    onClick={() => onSpeak(message.content, message.id)}
+                    className={`ml-auto focus:opacity-100 group-hover:opacity-100 w-9 h-9 -my-2 inline-flex items-center justify-center rounded-full hover:bg-surface cursor-pointer ${speakingId === message.id ? 'opacity-100 text-accent' : 'opacity-60 text-mid hover:text-accent'}`}
+                    title={speakingId === message.id ? 'Parar leitura' : 'Ouvir mensagem'}
+                    aria-label={speakingId === message.id ? 'Parar leitura' : 'Ouvir mensagem'}
+                    aria-pressed={speakingId === message.id}
                   >
-                    <Volume2 className="w-3.5 h-3.5" />
+                    {speakingId === message.id ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
                   </button>
                 </div>
 

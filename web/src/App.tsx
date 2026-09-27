@@ -145,9 +145,16 @@ export default function App() {
     };
   }, []);
 
-  // Leitura em voz alta em pt-BR
-  const speakText = (text: string) => {
+  // Leitura em voz alta em pt-BR. O botão de cada mensagem alterna: toca, e tocado de
+  // novo enquanto fala, para. `speakingId` diz qual mensagem está sendo lida.
+  const [speakingId, setSpeakingId] = useState<string | null>(null);
+  const speakText = (text: string, id?: string) => {
     if (!('speechSynthesis' in window)) return;
+    if (id && speakingId === id) {
+      window.speechSynthesis.cancel();
+      setSpeakingId(null);
+      return;
+    }
     window.speechSynthesis.cancel();
     const cleanText = text.replace(/[*_#`]/g, '');
     const utterance = new SpeechSynthesisUtterance(cleanText);
@@ -156,12 +163,18 @@ export default function App() {
     const voices = window.speechSynthesis.getVoices();
     const ptVoice = voices.find((v) => v.lang.includes('pt-BR') || v.lang.includes('pt_BR'));
     if (ptVoice) utterance.voice = ptVoice;
+    utterance.onend = () => setSpeakingId((atual) => (atual === (id ?? null) ? null : atual));
+    utterance.onerror = () => setSpeakingId(null);
+    setSpeakingId(id ?? null);
     window.speechSynthesis.speak(utterance);
   };
 
   // Desligar a voz também interrompe a fala em andamento.
   const alternarVoz = () => {
-    if (speechEnabled && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+    if (speechEnabled && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      setSpeakingId(null);
+    }
     setSpeechEnabled(!speechEnabled);
   };
 
@@ -169,7 +182,7 @@ export default function App() {
     if (!speechEnabled) return;
     const lastMsg = messages[messages.length - 1];
     if (lastMsg && lastMsg.role === 'assistant' && !lastMsg.isInitial) {
-      speakText(lastMsg.content);
+      speakText(lastMsg.content, lastMsg.id);
     }
   }, [messages, speechEnabled]);
 
@@ -379,6 +392,7 @@ export default function App() {
           onResetTreatment={() => setTreatmentStatus('pending')}
           onTalkToHuman={() => setActiveModal('handoff')}
           onSpeak={speakText}
+          speakingId={speakingId}
         />
 
         <PrescriptionFooter onSendMessage={handleSendMessage} isTyping={isTyping} onShowMemory={handleShowMemory} />
