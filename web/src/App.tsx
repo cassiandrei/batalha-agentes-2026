@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Message, FinancialProfile, ActiveModal, Abertura, AcaoAgente, OpcaoT02 } from './types';
+import { Message, FinancialProfile, ActiveModal, Abertura, AcaoAgente, OpcaoT02, Confirmacao } from './types';
 import { Header } from './components/Header';
 import { ChatArea } from './components/ChatArea';
 import { PrescriptionFooter } from './components/PrescriptionFooter';
@@ -48,6 +48,22 @@ const INITIAL_PROFILE: FinancialProfile = {
 const INITIAL_MESSAGES: Message[] = [];
 
 const brlTxt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const agora = () => new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+// S5: a confirmação vai ao agente com iToken e chave de idempotência (CA-14). Um
+// duplo clique reusa a chave e o agente devolve a mesma execução.
+async function confirmarNoAgente(simulacaoId: string, itoken: string, idempotencyKey: string): Promise<Confirmacao> {
+  const r = await fetch('/api/confirmar', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ simulacao_id: simulacaoId, itoken, idempotency_key: idempotencyKey }),
+  });
+  if (!r.ok) {
+    const erro = (await r.json().catch(() => ({}))) as { detail?: string };
+    throw new Error(erro.detail || `HTTP ${r.status}`);
+  }
+  return (await r.json()) as Confirmacao;
+}
 
 export default function App() {
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
@@ -106,7 +122,7 @@ export default function App() {
         setActiveModal('installment');
         break;
       case 'falar_com_pessoa':
-        handleSendMessage('Quero falar com uma pessoa.');
+        handleTalkToHuman();
         break;
     }
   };
@@ -203,49 +219,99 @@ export default function App() {
     }
   };
 
-  // Execution: Option A - Flow Adjustment Treatment
-  // S3: o estado pós-confirmação deriva do T01 calculado pelo agente. A confirmação
-  // real (iToken, evento tratamento_confirmado) é da S5; aqui só a tela muda.
-  const handleConfirmFlowAdjustment = () => {
-    const t01 = profile.t01;
-    if (!t01) return;
-    setTreatmentStatus('flow_adjusted');
-    setProfile((prev) => ({
-      ...prev,
-      card: { ...prev.card, outstandingBalance: 0, rotaryInterestCharged: 0 },
-      reserve: prev.reserve ? { ...prev.reserve, saldo: t01.reserva_restante } : prev.reserve,
-      financialOverview: { ...prev.financialOverview, jurosUltimoMes: 0 },
-    }));
-    const confirmMsg: Message = {
-      id: `treat_${Date.now()}`,
-      role: 'assistant',
-      content: `Feito. ${brlTxt(t01.saldo_quitado)} do saldo no rotativo foram quitados com a sua reserva. Você deixa de pagar ${brlTxt(t01.juros_evitados_mes)} de juros por mês e a reserva continua com ${brlTxt(t01.reserva_restante)}, ${t01.meses_cobertura_essenciais.toFixed(1)} meses das suas despesas essenciais.`,
-      timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-      actionTaken: 'flow_adjusted',
-    };
-    setMessages((prev) => [...prev, confirmMsg]);
+  const [memoriaConsentida, setMemoriaConsentida] = useState<boolean>(false);
+  const [consentPerguntado, setConsentPerguntado] = useState<boolean>(false);
+
+  const addAssistant = (content: string, extra: Partial<Message> = {}) =>
+    setMessages((prev) => [...prev, { id: `asst_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, role: 'assistant', content, timestamp: agora(), ...extra }]);
+
+  // S5: depois da primeira confirmação, o Vita pergunta se pode lembrar (uma vez).
+  const perguntarConsentimento = () => {
+    if (memoriaConsentida || consentPerguntado) return;
+    setConsentPerguntado(true);
+    addAssistant('Quer que eu lembre seus objetivos e os tratamentos que você fez para as próximas conversas? Você pode ver e apagar isso quando quiser.', { consentPrompt: true });
   };
 
-  // Execution: Option B - Installment Treatment
-  // S4: o estado pós-confirmação deriva da opção do T02 escolhida. A confirmação real
-  // (iToken, evento tratamento_confirmado) é da S5; aqui só a tela muda.
-  const handleConfirmInstallment = (opcao: OpcaoT02) => {
+  // T01 — usar a reserva (S3 calcula; S5 confirma no agente)
+  const handleConfirmFlowAdjustment = async (itoken: string, idempotencyKey: string): Promise<boolean> => {
+    const t01 = profile.t01;
+    if (!t01) return false;
+    try {
+      const c = await confirmarNoAgente(t01.simulacao_id, itoken, idempotencyKey);
+      setTreatmentStatus('flow_adjusted');
+      setProfile((prev) => ({
+        ...prev,
+        card: { ...prev.card, outstandingBalance: 0, rotaryInterestCharged: 0 },
+        reserve: prev.reserve ? { ...prev.reserve, saldo: t01.reserva_restante } : prev.reserve,
+        financialOverview: { ...prev.financialOverview, jurosUltimoMes: 0 },
+      }));
+      addAssistant(
+        `Confirmado (execução ${c.execucao_id}). ${brlTxt(t01.saldo_quitado)} do rotativo foram quitados com a sua reserva. Você deixa de pagar ${brlTxt(t01.juros_evitados_mes)} de juros por mês e a reserva continua com ${brlTxt(t01.reserva_restante)}.`,
+        { actionTaken: 'flow_adjusted' },
+      );
+      perguntarConsentimento();
+      return true;
+    } catch (e) {
+      addAssistant(`Não confirmei: ${(e as Error).message} Nada foi executado.`);
+      return false;
+    }
+  };
+
+  // T02 — parcelar (S4 calcula; S5 confirma no agente)
+  const handleConfirmInstallment = async (opcao: OpcaoT02, itoken: string, idempotencyKey: string): Promise<boolean> => {
     const t02 = profile.t02;
-    if (!t02 || !opcao.aprovado) return;
-    setTreatmentStatus('installment_active');
-    setProfile((prev) => ({
-      ...prev,
-      card: { ...prev.card, outstandingBalance: 0, rotaryInterestCharged: 0 },
-      financialOverview: { ...prev.financialOverview, jurosUltimoMes: 0 },
-    }));
-    const confirmMsg: Message = {
-      id: `inst_${Date.now()}`,
-      role: 'assistant',
-      content: `Feito. Os ${brlTxt(t02.saldo)} do rotativo foram parcelados em ${opcao.prazo}x de ${brlTxt(opcao.parcela)} a ${(t02.taxa_mensal * 100).toLocaleString('pt-BR')}% ao mês, ${brlTxt(opcao.juros_totais)} de juros no total. ${t02.aviso} A primeira parcela vem na próxima fatura.`,
-      timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-      actionTaken: 'installment_active',
-    };
-    setMessages((prev) => [...prev, confirmMsg]);
+    if (!t02 || !opcao.aprovado) return false;
+    try {
+      const c = await confirmarNoAgente(t02.simulacao_id, itoken, idempotencyKey);
+      setTreatmentStatus('installment_active');
+      setProfile((prev) => ({
+        ...prev,
+        card: { ...prev.card, outstandingBalance: 0, rotaryInterestCharged: 0 },
+        financialOverview: { ...prev.financialOverview, jurosUltimoMes: 0 },
+      }));
+      addAssistant(
+        `Confirmado (execução ${c.execucao_id}). Os ${brlTxt(t02.saldo)} do rotativo foram parcelados em ${opcao.prazo}x de ${brlTxt(opcao.parcela)} a ${(t02.taxa_mensal * 100).toLocaleString('pt-BR')}% ao mês, ${brlTxt(opcao.juros_totais)} de juros no total. ${t02.aviso}`,
+        { actionTaken: 'installment_active' },
+      );
+      perguntarConsentimento();
+      return true;
+    } catch (e) {
+      addAssistant(`Não confirmei: ${(e as Error).message} Nada foi executado.`);
+      return false;
+    }
+  };
+
+  // S5: memória com consentimento, sem passar pelo modelo
+  const handleConsent = async (sim: boolean) => {
+    const r = await fetch('/api/memoria/consentimento', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ consentimento: sim }) });
+    setMemoriaConsentida(sim && r.ok);
+    setMessages((prev) => prev.map((m) => (m.consentPrompt ? { ...m, consentPrompt: false } : m)));
+    addAssistant(sim ? 'Combinado. Vou lembrar seus objetivos e tratamentos. Para ver ou apagar, use "O que você lembra?" e "Esqueça tudo".' : 'Tudo bem, não vou guardar nada entre conversas.');
+  };
+
+  const handleShowMemory = async () => {
+    const r = await fetch('/api/memoria');
+    const m = (await r.json()) as { consentimento: boolean; lembrancas: Record<string, string> };
+    const itens = Object.entries(m.lembrancas);
+    addAssistant(
+      itens.length
+        ? `Isto é o que eu lembro sobre você:\n\n${itens.map(([k, v]) => `• ${k}: ${v}`).join('\n')}\n\nNunca guardo valores das suas transações, seus dados de cadastro nem o texto das mensagens.`
+        : 'Não lembro nada sobre você entre conversas.' + (m.consentimento ? '' : ' Você ainda não autorizou que eu guardasse.'),
+    );
+  };
+
+  const handleForgetAll = async () => {
+    const r = await fetch('/api/memoria', { method: 'DELETE' });
+    const d = (await r.json()) as { apagadas: number };
+    setMemoriaConsentida(false);
+    addAssistant(`Pronto: apaguei ${d.apagadas} lembrança(s) e não vou mais guardar nada até você autorizar de novo.`);
+  };
+
+  // S5: "Falar com uma pessoa" — sempre disponível; o resumo só vai com consentimento
+  const handleTalkToHuman = async () => {
+    const r = await fetch('/api/pessoa', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ consentimento: memoriaConsentida, motivo: 'pedido pelo cliente na conversa' }) });
+    const h = (await r.json()) as { protocolo: string; fila: string; resumo: unknown };
+    addAssistant(`${h.resumo ? 'Encaminhei você para uma pessoa da equipe com um resumo da conversa, sem seus valores nem dados pessoais.' : 'Encaminhei você para uma pessoa da equipe, sem enviar resumo (você não autorizou compartilhar).'} Protocolo ${h.protocolo}.`);
   };
 
   // Reset conversation to initial state
@@ -255,6 +321,7 @@ export default function App() {
     setProfile(INITIAL_PROFILE);
     setTreatmentStatus('pending');
     setActiveModal('none');
+    setConsentPerguntado(false);
   };
 
   return (
@@ -292,6 +359,7 @@ export default function App() {
           isMobileFrame={isMobileFrame}
           onToggleFrame={() => setIsMobileFrame(!isMobileFrame)}
           score={profile.financialOverview.score}
+          onTalkToHuman={handleTalkToHuman}
         />
 
         {/* S2: push neutro simulado (tela bloqueada). O texto vem do agente. */}
@@ -314,6 +382,7 @@ export default function App() {
           messages={messages}
           isTyping={isTyping}
           onAction={executarAcao}
+          onConsent={handleConsent}
           onOpenFinancialOverview={() => setActiveModal('financial_overview')}
           onOpenInvoice={() => setActiveModal('invoice_details')}
           onSpeak={speakText}
@@ -328,6 +397,8 @@ export default function App() {
           treatmentStatus={treatmentStatus}
           isTyping={isTyping}
           onResetTreatment={() => setTreatmentStatus('pending')}
+          onShowMemory={handleShowMemory}
+          onForgetAll={handleForgetAll}
         />
 
         {/* Interactive Modals */}

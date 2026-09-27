@@ -14,6 +14,9 @@ interface PrescriptionFooterProps {
   treatmentStatus: 'pending' | 'flow_adjusted' | 'installment_active';
   isTyping: boolean;
   onResetTreatment: () => void;
+  // S5: direitos de acesso e eliminação, sem passar pelo modelo
+  onShowMemory: () => void;
+  onForgetAll: () => void;
 }
 
 export const PrescriptionFooter: React.FC<PrescriptionFooterProps> = ({
@@ -24,6 +27,8 @@ export const PrescriptionFooter: React.FC<PrescriptionFooterProps> = ({
   treatmentStatus,
   isTyping,
   onResetTreatment,
+  onShowMemory,
+  onForgetAll,
 }) => {
   const [inputText, setInputText] = useState('');
 
@@ -93,6 +98,20 @@ export const PrescriptionFooter: React.FC<PrescriptionFooterProps> = ({
   return (
     <footer className="p-4 bg-[#141414] border-t border-gray-800 space-y-3 shrink-0">
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none no-scrollbar">
+        <button
+          type="button"
+          onClick={onShowMemory}
+          className="whitespace-nowrap text-[11px] bg-gray-800/80 hover:bg-gray-700 text-gray-300 hover:text-white px-3 py-1.5 rounded-full border border-gray-700 transition-colors shrink-0 cursor-pointer"
+        >
+          O que você lembra sobre mim?
+        </button>
+        <button
+          type="button"
+          onClick={onForgetAll}
+          className="whitespace-nowrap text-[11px] bg-gray-800/80 hover:bg-gray-700 text-gray-300 hover:text-white px-3 py-1.5 rounded-full border border-gray-700 transition-colors shrink-0 cursor-pointer"
+        >
+          Esqueça tudo
+        </button>
         {quickPrompts.map((prompt, index) => (
           <button
             key={index}

@@ -11,14 +11,18 @@ const brl = (v: number | null | undefined) =>
 interface InstallmentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (opcao: OpcaoT02) => void;
+  onConfirm: (opcao: OpcaoT02, itoken: string, idempotencyKey: string) => Promise<boolean>;
   t02: SimulacaoT02 | null;
 }
+
+const novaChave = () => `t02-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
 export const InstallmentModal: React.FC<InstallmentModalProps> = ({ isOpen, onClose, onConfirm, t02 }) => {
   const [prazoEscolhido, setPrazoEscolhido] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successView, setSuccessView] = useState(false);
+  const [itoken, setItoken] = useState('');
+  const [chave, setChave] = useState<string>(novaChave);
 
   if (!isOpen) return null;
 
@@ -27,23 +31,24 @@ export const InstallmentModal: React.FC<InstallmentModalProps> = ({ isOpen, onCl
     (t02?.opcoes.find((o) => o.prazo === prazoEscolhido && o.aprovado)) ??
     (aprovadas.length ? aprovadas.reduce((a, b) => (a.juros_totais <= b.juros_totais ? a : b)) : null);
 
-  const handleApply = () => {
-    if (!escolhida) return;
+  const handleApply = async () => {
+    if (!escolhida || isSubmitting) return;
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setSuccessView(true);
-      try {
-        confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 }, colors: ['#1FA37C', '#FFFFFF'] });
-      } catch {
-        // ignore
-      }
-      onConfirm(escolhida);
-    }, 1000);
+    const ok = await onConfirm(escolhida, itoken, chave);
+    setIsSubmitting(false);
+    if (!ok) return;
+    setSuccessView(true);
+    try {
+      confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 }, colors: ['#1FA37C', '#FFFFFF'] });
+    } catch {
+      // ignore
+    }
   };
 
   const handleFinish = () => {
     setSuccessView(false);
+    setItoken('');
+    setChave(novaChave());
     onClose();
   };
 
@@ -169,6 +174,21 @@ export const InstallmentModal: React.FC<InstallmentModalProps> = ({ isOpen, onCl
                 Primeira parcela em {t02.carencia_dias} dias. Nada é contratado sem a sua confirmação no aplicativo.
               </p>
             </div>
+
+            <div className="bg-[#121212] border border-gray-800 rounded-xl p-4 space-y-2">
+              <label htmlFor="itoken-t02" className="text-xs font-semibold text-gray-200">Confirme com o seu iToken (6 dígitos)</label>
+              <input
+                id="itoken-t02"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={6}
+                value={itoken}
+                onChange={(e) => setItoken(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                placeholder="••••••"
+                className="w-full bg-[#1E1E1E] border border-gray-700 focus:border-[#1FA37C] rounded-lg px-3 py-2 text-sm tracking-[0.4em] text-white outline-none"
+              />
+              <p className="text-[11px] text-gray-500">Nada é executado sem o token. Na demo, qualquer 6 dígitos vale, menos 000000.</p>
+            </div>
           </div>
         ) : (
           <div className="p-8 text-center space-y-4">
@@ -207,7 +227,7 @@ export const InstallmentModal: React.FC<InstallmentModalProps> = ({ isOpen, onCl
               </button>
               <button
                 onClick={handleApply}
-                disabled={isSubmitting || !escolhida}
+                disabled={isSubmitting || !escolhida || itoken.length !== 6}
                 className="bg-[#1FA37C] hover:bg-[#178a68] disabled:opacity-50 text-white text-xs font-semibold px-5 py-2.5 rounded-lg transition-colors flex items-center gap-2 cursor-pointer"
               >
                 {isSubmitting ? (

@@ -10,6 +10,8 @@ interface ChatAreaProps {
   onSpeak: (text: string) => void;
   // S2: botões estruturados vindos do agente
   onAction: (acao: AcaoAgente) => void;
+  // S5: resposta à pergunta de consentimento de memória (sem modelo)
+  onConsent: (sim: boolean) => void;
 }
 
 export const ChatArea: React.FC<ChatAreaProps> = ({
@@ -19,6 +21,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
   onOpenInvoice,
   onSpeak,
   onAction,
+  onConsent,
 }) => {
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -53,6 +56,24 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                   }}
                 />
 
+                {/* S5: consentimento de memória — "sim" explícito, ou nada é guardado */}
+                {message.consentPrompt && (
+                  <div className="mt-3 pt-2.5 border-t border-gray-700/60 flex flex-wrap gap-2">
+                    <button
+                      onClick={() => onConsent(true)}
+                      className="inline-flex items-center gap-1.5 text-xs text-[#1FA37C] hover:text-teal-300 font-semibold bg-[#1FA37C]/10 hover:bg-[#1FA37C]/20 px-2.5 py-1 rounded-md transition-colors cursor-pointer"
+                    >
+                      Sim, pode lembrar
+                    </button>
+                    <button
+                      onClick={() => onConsent(false)}
+                      className="inline-flex items-center gap-1.5 text-xs text-gray-300 hover:text-white font-medium bg-gray-700/50 hover:bg-gray-700 px-2.5 py-1 rounded-md transition-colors cursor-pointer"
+                    >
+                      Agora não
+                    </button>
+                  </div>
+                )}
+
                 {/* S2: botões renderizados a partir das ações do agente, não do front */}
                 {message.actions && message.actions.length > 0 && (
                   <div className="mt-3 pt-2.5 border-t border-gray-700/60 flex flex-wrap gap-2">
@@ -78,7 +99,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                   <div className="mt-3 p-2.5 bg-emerald-950/30 border border-emerald-800/40 rounded-lg space-y-2">
                     <div className="flex items-center gap-2 text-xs text-emerald-300">
                       <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span>Cobrança de R$ 142,50/mês eliminada com a sua reserva</span>
+                      <span>Rotativo quitado com a sua reserva; os juros param aqui</span>
                     </div>
                   </div>
                 )}

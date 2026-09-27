@@ -28,6 +28,17 @@ export interface Message {
   actionTaken?: 'flow_adjusted' | 'installment_active';
   // S2: botões estruturados vindos do agente
   actions?: AcaoAgente[];
+  // S5: pergunta de consentimento de memória, respondida por botões (sem modelo)
+  consentPrompt?: boolean;
+}
+
+export interface Confirmacao {
+  status: 'confirmada' | 'ja_confirmada';
+  execucao_id: string;
+  evento: string;
+  tipo: 't01' | 't02';
+  simulacao_id: string;
+  em: string;
 }
 
 export interface InvoiceMonth {

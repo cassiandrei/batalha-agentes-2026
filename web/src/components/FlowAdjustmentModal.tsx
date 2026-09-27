@@ -10,10 +10,13 @@ const brl = (v: number | null | undefined) =>
 interface FlowAdjustmentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  // S5: devolve true se o agente confirmou; a chave de idempotência é uma por abertura do modal
+  onConfirm: (itoken: string, idempotencyKey: string) => Promise<boolean>;
   isAlreadyAdjusted: boolean;
   t01: SimulacaoT01 | null;
 }
+
+const novaChave = () => `t01-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
 export const FlowAdjustmentModal: React.FC<FlowAdjustmentModalProps> = ({
   isOpen,
@@ -24,26 +27,29 @@ export const FlowAdjustmentModal: React.FC<FlowAdjustmentModalProps> = ({
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successView, setSuccessView] = useState(false);
+  const [itoken, setItoken] = useState('');
+  const [chave, setChave] = useState<string>(novaChave);
 
   if (!isOpen) return null;
 
-  const handleApply = () => {
-    if (!t01) return;
+  const handleApply = async () => {
+    if (!t01 || isSubmitting) return;
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setSuccessView(true);
-      try {
-        confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 }, colors: ['#1FA37C', '#FFFFFF', '#4CAF50'] });
-      } catch {
-        // ignore
-      }
-      onConfirm();
-    }, 1000);
+    const ok = await onConfirm(itoken, chave);
+    setIsSubmitting(false);
+    if (!ok) return;
+    setSuccessView(true);
+    try {
+      confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 }, colors: ['#1FA37C', '#FFFFFF', '#4CAF50'] });
+    } catch {
+      // ignore
+    }
   };
 
   const handleFinish = () => {
     setSuccessView(false);
+    setItoken('');
+    setChave(novaChave());
     onClose();
   };
 
@@ -160,9 +166,22 @@ export const FlowAdjustmentModal: React.FC<FlowAdjustmentModalProps> = ({
               <p className="mt-2 leading-relaxed text-gray-400">{t01.justificativa}</p>
             </details>
 
-            <div className="flex items-center gap-2 text-[11px] text-gray-400 px-1">
-              <Lock className="w-3.5 h-3.5 text-[#1FA37C]" />
-              <span>Nada é executado sem a sua confirmação no aplicativo</span>
+            <div className="bg-[#121212] border border-gray-800 rounded-xl p-4 space-y-2">
+              <label htmlFor="itoken-t01" className="flex items-center gap-2 text-xs font-semibold text-gray-200">
+                <Lock className="w-3.5 h-3.5 text-[#1FA37C]" />
+                Confirme com o seu iToken (6 dígitos)
+              </label>
+              <input
+                id="itoken-t01"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={6}
+                value={itoken}
+                onChange={(e) => setItoken(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                placeholder="••••••"
+                className="w-full bg-[#1E1E1E] border border-gray-700 focus:border-[#1FA37C] rounded-lg px-3 py-2 text-sm tracking-[0.4em] text-white outline-none"
+              />
+              <p className="text-[11px] text-gray-500">Nada é executado sem o token. Na demo, qualquer 6 dígitos vale, menos 000000.</p>
             </div>
           </div>
         ) : (
@@ -206,7 +225,7 @@ export const FlowAdjustmentModal: React.FC<FlowAdjustmentModalProps> = ({
               </button>
               <button
                 onClick={handleApply}
-                disabled={isSubmitting || !t01 || isAlreadyAdjusted}
+                disabled={isSubmitting || !t01 || isAlreadyAdjusted || itoken.length !== 6}
                 className="bg-[#1FA37C] hover:bg-[#178a68] disabled:opacity-50 text-white text-xs font-semibold px-5 py-2.5 rounded-lg transition-colors flex items-center gap-2 shadow-md shadow-teal-950/40 cursor-pointer"
               >
                 {isSubmitting ? (

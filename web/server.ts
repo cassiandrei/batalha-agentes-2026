@@ -163,6 +163,32 @@ app.get('/api/abertura', async (_req: Request, res: Response) => {
   }
 });
 
+// S5: confirmação (CA-14), memória com consentimento e "falar com uma pessoa".
+// Tudo proxy para o agente; o front não decide nada.
+async function proxyJson(res: Response, metodo: string, caminho: string, corpo?: unknown) {
+  if (!AGENT_URL || !DEMO_CUSTOMER_ID) {
+    res.status(503).json({ error: 'AGENT_URL e DEMO_CUSTOMER_ID precisam estar no ambiente' });
+    return;
+  }
+  try {
+    const r = await fetch(`${AGENT_URL}/customers/${DEMO_CUSTOMER_ID}${caminho}`, {
+      method: metodo,
+      headers: { 'Content-Type': 'application/json' },
+      body: corpo === undefined ? undefined : JSON.stringify(corpo),
+    });
+    const texto = await r.text();
+    res.status(r.status).type('application/json').send(texto);
+  } catch (e) {
+    res.status(502).json({ error: `falha ao consultar o agente: ${(e as Error).message}` });
+  }
+}
+
+app.post('/api/confirmar', (req: Request, res: Response) => proxyJson(res, 'POST', '/confirmations', req.body));
+app.get('/api/memoria', (_req: Request, res: Response) => proxyJson(res, 'GET', '/memory'));
+app.delete('/api/memoria', (_req: Request, res: Response) => proxyJson(res, 'DELETE', '/memory'));
+app.post('/api/memoria/consentimento', (req: Request, res: Response) => proxyJson(res, 'POST', '/memory/consent', req.body));
+app.post('/api/pessoa', (req: Request, res: Response) => proxyJson(res, 'POST', '/handoff', req.body));
+
 async function startServer() {
   if (process.env.NODE_ENV === 'production') {
     app.use(express.static(path.resolve(__dirname, 'dist')));

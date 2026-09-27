@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart3, Receipt, Volume2, VolumeX, Smartphone, Monitor } from 'lucide-react';
+import { BarChart3, Receipt, Volume2, VolumeX, Smartphone, Monitor, UserRound } from 'lucide-react';
 
 interface HeaderProps {
   onOpenFinancialOverview: () => void;
@@ -12,6 +12,8 @@ interface HeaderProps {
   onToggleFrame: () => void;
   // S1: vem do perfil; null até a S3 definir o índice. Nada de número fixo aqui.
   score: number | null;
+  // S5: saída humana sempre visível
+  onTalkToHuman: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -24,6 +26,7 @@ export const Header: React.FC<HeaderProps> = ({
   isMobileFrame,
   onToggleFrame,
   score,
+  onTalkToHuman,
 }) => {
   const isHealthy = treatmentStatus !== 'pending';
 
@@ -68,6 +71,16 @@ export const Header: React.FC<HeaderProps> = ({
           title="Ver detalhes da fatura"
         >
           <Receipt className="w-4 h-4" />
+        </button>
+
+        {/* S5: Falar com uma pessoa, sempre visível */}
+        <button
+          onClick={onTalkToHuman}
+          className="p-1.5 text-gray-400 hover:text-gray-200 hover:bg-gray-800/80 rounded-lg transition-colors cursor-pointer"
+          title="Falar com uma pessoa"
+          aria-label="Falar com uma pessoa"
+        >
+          <UserRound className="w-4 h-4" />
         </button>
 
         {/* Speech toggle */}
