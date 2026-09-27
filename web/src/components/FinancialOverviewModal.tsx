@@ -63,14 +63,12 @@ export const FinancialOverviewModal: React.FC<FinancialOverviewModalProps> = ({ 
               </div>
             )}
           </div>
-          <div className="relative w-20 h-20 flex items-center justify-center shrink-0" role="img" aria-label={`Índice ${score ?? 'indisponível'} de 100`}>
-            <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36" aria-hidden="true">
-              <path className="text-line" strokeWidth="3.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-              <path className="text-accent" strokeDasharray={`${score ?? 0}, 100`} strokeWidth="3.5" strokeLinecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-            </svg>
-            <span className="absolute text-[13px] font-bold text-ink">{score ?? '—'}</span>
-          </div>
         </div>
+        {score !== null && (
+          <div className="mt-3 w-full h-2.5 rounded-full bg-line overflow-hidden" role="img" aria-label={`Índice ${score} de 100`}>
+            <div className="h-full bg-accent rounded-full" style={{ width: `${score}%` }} />
+          </div>
+        )}
         {fo.componentes && (
           <div className="mt-4 pt-3 border-t border-line grid grid-cols-4 gap-2 text-center">
             {(

@@ -34,10 +34,12 @@ interface SheetProps {
   tag?: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  /** Muda quando a vista troca (simulação → sucesso): o corpo remonta e volta ao topo. */
+  bodyKey?: string;
 }
 
 /** Folha modal que sobe do rodapé, contida na moldura do aparelho. */
-export const Sheet: React.FC<SheetProps> = ({ open, onClose, title, subtitle, icon, tag, children, footer }) => {
+export const Sheet: React.FC<SheetProps> = ({ open, onClose, title, subtitle, icon, tag, children, footer, bodyKey = 'corpo' }) => {
   const painel = useRef<HTMLDivElement>(null);
   const tituloId = useRef(`sheet-${Math.random().toString(36).slice(2, 8)}`);
 
@@ -87,7 +89,7 @@ export const Sheet: React.FC<SheetProps> = ({ open, onClose, title, subtitle, ic
             <X className="w-4 h-4" />
           </button>
         </div>
-        <div className="px-4 py-4 overflow-y-auto space-y-3.5">{children}</div>
+        <div key={bodyKey} className="px-4 py-4 overflow-y-auto space-y-3.5">{children}</div>
         {footer && <div className="px-4 pt-3 pb-4 border-t border-line bg-surface flex flex-col gap-2">{footer}</div>}
       </div>
     </div>
@@ -147,6 +149,31 @@ export const Linha: React.FC<{ rotulo: React.ReactNode; valor: React.ReactNode; 
     </div>
   );
 };
+
+/** Campo do iToken: vive no rodapé do sheet, colado ao botão que ele libera. */
+export const CampoIToken: React.FC<{ id: string; valor: string; onChange: (v: string) => void }> = ({ id, valor, onChange }) => (
+  <div className="space-y-1.5">
+    <label htmlFor={id} className="flex items-center gap-2 text-[12.5px] font-semibold text-ink">
+      <svg className="w-3.5 h-3.5 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+      </svg>
+      Confirme com o seu iToken (6 dígitos)
+    </label>
+    <input
+      id={id}
+      inputMode="numeric"
+      pattern="[0-9]*"
+      maxLength={6}
+      value={valor}
+      onChange={(e) => onChange(e.target.value.replace(/\D/g, '').slice(0, 6))}
+      placeholder="••••••"
+      autoComplete="one-time-code"
+      className="w-full bg-canvas border border-line-strong focus:border-accent rounded-xl px-3 min-h-12 text-[16px] tracking-[0.4em] text-ink outline-none"
+    />
+    <p className="text-[11px] text-mid">Nada é executado sem o token. Na demo, qualquer 6 dígitos vale, menos 000000.</p>
+  </div>
+);
 
 /** Hero de sucesso: pedra verde com check, tag e título. */
 export const HeroSucesso: React.FC<{ tag: string; titulo: string; texto: string }> = ({ tag, titulo, texto }) => (

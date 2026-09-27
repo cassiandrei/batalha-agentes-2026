@@ -126,7 +126,7 @@ export const HandoffSheet: React.FC<HandoffSheetProps> = ({ open, onClose, profi
           <div className="bg-surface rounded-pedra p-4 shadow-card border border-line flex items-start gap-3">
             <VitaMark size="md" className="mt-0.5" />
             <div className="flex-1">
-              <span className="text-[11px] font-bold text-accent-dark uppercase tracking-wider block mb-1">O que o Vita viu</span>
+              <span className="text-[13px] font-semibold text-ink block mb-1">O que o Vita viu</span>
               <p className="text-[13px] text-ink-2 leading-relaxed">
                 {faixaV
                   ? `${profile.offers?.motivo} ${profile.offers?.encaminhamento}`
@@ -175,7 +175,7 @@ export const HandoffSheet: React.FC<HandoffSheetProps> = ({ open, onClose, profi
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div className="flex-1">
-              <span className={`text-[11px] font-bold uppercase tracking-wider block ${memoriaConsentida ? 'text-success-text' : 'text-ink-3'}`}>O que vai junto</span>
+              <span className={`text-[13px] font-semibold block ${memoriaConsentida ? 'text-success-text' : 'text-ink'}`}>O que vai junto</span>
               <p className="text-[12px] font-medium text-ink leading-snug">
                 {memoriaConsentida
                   ? 'Faixa, mês, gatilho e recomendação. Nunca valores, nome ou identificador.'

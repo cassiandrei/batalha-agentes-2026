@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import confetti from 'canvas-confetti';
 import { Message, FinancialProfile, ActiveModal, Abertura, AcaoAgente, OpcaoT02, Confirmacao } from './types';
 import { Header } from './components/Header';
 import { ChatArea } from './components/ChatArea';
@@ -315,6 +316,22 @@ export default function App() {
 
   const fechar = () => setActiveModal('none');
 
+  // Confete só dentro da moldura do aparelho, e só se o sistema não pediu menos movimento.
+  const canvasConfete = useRef<HTMLCanvasElement>(null);
+  const celebrar = () => {
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || !canvasConfete.current) return;
+    try {
+      confetti.create(canvasConfete.current, { resize: true, useWorker: false })({
+        particleCount: 90,
+        spread: 70,
+        origin: { y: 0.65 },
+        colors: ['#0F7A5A', '#00875A', '#FFFFFF'],
+      });
+    } catch {
+      // sem confete não é erro
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#E9E9EB] flex flex-col items-center justify-center font-sans antialiased text-ink">
       <div
@@ -367,8 +384,9 @@ export default function App() {
           treatmentStatus={treatmentStatus}
           onSelectOption={(type) => setActiveModal(type === 'flow' ? 'flow_adjustment' : 'installment')}
         />
-        <FlowAdjustmentModal isOpen={activeModal === 'flow_adjustment'} onClose={fechar} onConfirm={handleConfirmFlowAdjustment} isAlreadyAdjusted={treatmentStatus === 'flow_adjusted'} t01={profile.t01} />
-        <InstallmentModal isOpen={activeModal === 'installment'} onClose={fechar} onConfirm={handleConfirmInstallment} t02={profile.t02} />
+        <FlowAdjustmentModal isOpen={activeModal === 'flow_adjustment'} onClose={fechar} onConfirm={handleConfirmFlowAdjustment} isAlreadyAdjusted={treatmentStatus === 'flow_adjusted'} t01={profile.t01} onCelebrate={celebrar} />
+        <InstallmentModal isOpen={activeModal === 'installment'} onClose={fechar} onConfirm={handleConfirmInstallment} t02={profile.t02} onCelebrate={celebrar} />
+        <canvas ref={canvasConfete} className="absolute inset-0 w-full h-full pointer-events-none z-[60]" aria-hidden="true" />
         <InvoiceDetailModal isOpen={activeModal === 'invoice_details'} onClose={fechar} profile={profile} />
         <HandoffSheet open={activeModal === 'handoff'} onClose={fechar} profile={profile} memoriaConsentida={memoriaConsentida} onConfirm={encaminhar} />
       </div>

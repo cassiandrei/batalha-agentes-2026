@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { ArrowRight, Calendar, CheckCircle2, XCircle, Lock, ShieldCheck } from 'lucide-react';
-import confetti from 'canvas-confetti';
+import { ArrowRight, Calendar, CheckCircle2, XCircle, ShieldCheck } from 'lucide-react';
 import { OpcaoT02, SimulacaoT02 } from '../types';
-import { brl, Botao, HeroSucesso, Linha, Sheet } from './ui';
+import { brl, Botao, CampoIToken, HeroSucesso, Linha, Sheet } from './ui';
 
 // S4: todo número desta tela vem de t02 (simular_parcelamento_fatura, no agente).
 // Cabe e não cabe na regra aparecem em texto e ícone, não só em cor.
@@ -11,12 +10,12 @@ interface InstallmentModalProps {
   onClose: () => void;
   onConfirm: (opcao: OpcaoT02, itoken: string, idempotencyKey: string) => Promise<boolean>;
   t02: SimulacaoT02 | null;
+  onCelebrate?: () => void;
 }
 
 const novaChave = () => `t02-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-const reduzMovimento = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
-export const InstallmentModal: React.FC<InstallmentModalProps> = ({ isOpen, onClose, onConfirm, t02 }) => {
+export const InstallmentModal: React.FC<InstallmentModalProps> = ({ isOpen, onClose, onConfirm, t02, onCelebrate }) => {
   const [prazoEscolhido, setPrazoEscolhido] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successView, setSuccessView] = useState(false);
@@ -35,13 +34,7 @@ export const InstallmentModal: React.FC<InstallmentModalProps> = ({ isOpen, onCl
     setIsSubmitting(false);
     if (!ok) return;
     setSuccessView(true);
-    if (!reduzMovimento()) {
-      try {
-        confetti({ particleCount: 70, spread: 60, origin: { y: 0.7 }, colors: ['#0F7A5A', '#00875A', '#FFFFFF'] });
-      } catch {
-        // ignore
-      }
-    }
+    onCelebrate?.();
   };
 
   const handleFinish = () => {
@@ -58,10 +51,13 @@ export const InstallmentModal: React.FC<InstallmentModalProps> = ({ isOpen, onCl
       icon={<div className="w-7 h-7 rounded-lg bg-accent flex items-center justify-center text-white shrink-0" aria-hidden="true"><Calendar className="w-4 h-4" /></div>}
       tag="T02"
       title="Parcelar o saldo do rotativo"
-      subtitle="Prazos calculados pelo agente; a regra decide o que cabe no seu orçamento"
+      subtitle={successView ? 'Executado com o seu iToken e registrado uma vez só' : 'Prazos calculados pelo agente; a regra decide o que cabe no seu orçamento'}
+      bodyKey={successView ? 'sucesso' : 'simulacao'}
       footer={
         !t02 ? undefined : !successView ? (
-          <Botao onClick={handleApply} disabled={isSubmitting || !escolhida || itoken.length !== 6} className="w-full">
+          <>
+            {escolhida && <CampoIToken id="itoken-t02" valor={itoken} onChange={setItoken} />}
+            <Botao onClick={handleApply} disabled={isSubmitting || !escolhida || itoken.length !== 6} className="w-full">
             {isSubmitting ? (
               <>
                 <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" aria-hidden="true" />
@@ -73,7 +69,8 @@ export const InstallmentModal: React.FC<InstallmentModalProps> = ({ isOpen, onCl
                 <ArrowRight className="w-4 h-4" aria-hidden="true" />
               </>
             )}
-          </Botao>
+            </Botao>
+          </>
         ) : (
           <Botao onClick={handleFinish} className="w-full">
             Voltar para a conversa <ArrowRight className="w-4 h-4" aria-hidden="true" />
@@ -141,24 +138,6 @@ export const InstallmentModal: React.FC<InstallmentModalProps> = ({ isOpen, onCl
             </div>
             <p className="text-[11.5px] text-mid leading-relaxed">Primeira parcela em {t02.carencia_dias} dias. Nada é contratado sem a sua confirmação.</p>
           </div>
-
-          <section className="bg-surface rounded-pedra p-4 border border-line space-y-2">
-            <label htmlFor="itoken-t02" className="flex items-center gap-2 text-[12.5px] font-semibold text-ink">
-              <Lock className="w-3.5 h-3.5 text-accent" aria-hidden="true" />
-              Confirme com o seu iToken (6 dígitos)
-            </label>
-            <input
-              id="itoken-t02"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              maxLength={6}
-              value={itoken}
-              onChange={(e) => setItoken(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              placeholder="••••••"
-              className="w-full bg-canvas border border-line-strong focus:border-accent rounded-xl px-3 min-h-12 text-[16px] tracking-[0.4em] text-ink outline-none"
-            />
-            <p className="text-[11px] text-mid">Nada é executado sem o token. Na demo, qualquer 6 dígitos vale, menos 000000.</p>
-          </section>
         </>
       ) : (
         <>

@@ -93,7 +93,7 @@ export const RaioXCard: React.FC<RaioXProps> = ({ profile, onOpenInvoice, onOpen
             <span className="text-[10px] text-alert-text font-semibold bg-alert/10 px-2 py-0.5 rounded-full shrink-0">neste mês</span>
           </div>
           {fo.mesesPagandoJuros !== null && (
-            <div className="text-[11px] text-ink-2 bg-surface/95 rounded-lg px-2.5 py-1 border border-alert/15 flex items-center justify-between gap-2">
+            <div className="text-[11px] text-ink-2 pt-1.5 border-t border-alert/15 flex items-center justify-between gap-2">
               <span>
                 <strong>{fo.mesesPagandoJuros}</strong> {fo.mesesPagandoJuros === 1 ? 'mês' : 'meses'} pagando juros em 2025
               </span>
@@ -192,7 +192,7 @@ export const TratamentosCard: React.FC<TratamentosProps> = ({ profile, treatment
             <UserRound className="w-5 h-5" />
           </div>
           <div className="flex-1 min-w-0">
-            <span className="text-[11px] font-bold text-accent-dark uppercase tracking-wider block">O caminho é com uma pessoa</span>
+            <span className="text-[13px] font-semibold text-ink block">O caminho é com uma pessoa</span>
             <p className="text-[12.5px] text-ink leading-snug mt-0.5">{offers?.encaminhamento}</p>
           </div>
         </div>

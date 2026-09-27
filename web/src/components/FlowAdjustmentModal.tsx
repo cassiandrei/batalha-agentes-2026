@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { ArrowRight, Lock, ShieldCheck, Zap } from 'lucide-react';
-import confetti from 'canvas-confetti';
+import { ArrowRight, ShieldCheck, Zap } from 'lucide-react';
 import { SimulacaoT01 } from '../types';
-import { brl, Botao, HeroSucesso, Linha, Sheet } from './ui';
+import { brl, Botao, CampoIToken, HeroSucesso, Linha, Sheet } from './ui';
 
 // S3: todo número desta tela vem de t01 (simular_uso_reserva, no agente). Nada escrito à mão.
 interface FlowAdjustmentModalProps {
@@ -12,12 +11,13 @@ interface FlowAdjustmentModalProps {
   onConfirm: (itoken: string, idempotencyKey: string) => Promise<boolean>;
   isAlreadyAdjusted: boolean;
   t01: SimulacaoT01 | null;
+  // confete dentro da moldura do aparelho (App decide se há movimento)
+  onCelebrate?: () => void;
 }
 
 const novaChave = () => `t01-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-const reduzMovimento = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
-export const FlowAdjustmentModal: React.FC<FlowAdjustmentModalProps> = ({ isOpen, onClose, onConfirm, isAlreadyAdjusted, t01 }) => {
+export const FlowAdjustmentModal: React.FC<FlowAdjustmentModalProps> = ({ isOpen, onClose, onConfirm, isAlreadyAdjusted, t01, onCelebrate }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successView, setSuccessView] = useState(false);
   const [itoken, setItoken] = useState('');
@@ -30,13 +30,7 @@ export const FlowAdjustmentModal: React.FC<FlowAdjustmentModalProps> = ({ isOpen
     setIsSubmitting(false);
     if (!ok) return;
     setSuccessView(true);
-    if (!reduzMovimento()) {
-      try {
-        confetti({ particleCount: 80, spread: 70, origin: { y: 0.7 }, colors: ['#0F7A5A', '#00875A', '#FFFFFF'] });
-      } catch {
-        // ignore
-      }
-    }
+    onCelebrate?.();
   };
 
   const handleFinish = () => {
@@ -53,10 +47,13 @@ export const FlowAdjustmentModal: React.FC<FlowAdjustmentModalProps> = ({ isOpen
       icon={<div className="w-7 h-7 rounded-lg bg-accent flex items-center justify-center text-white shrink-0" aria-hidden="true"><Zap className="w-4 h-4" /></div>}
       tag="T01"
       title="Usar a reserva para quitar o rotativo"
-      subtitle="Simulação calculada pelo agente; nada acontece sem a sua confirmação"
+      subtitle={successView ? 'Executado com o seu iToken e registrado uma vez só' : 'Simulação calculada pelo agente; nada acontece sem a sua confirmação'}
+      bodyKey={successView ? 'sucesso' : 'simulacao'}
       footer={
         !successView ? (
-          <Botao onClick={handleApply} disabled={isSubmitting || !t01 || isAlreadyAdjusted || itoken.length !== 6} className="w-full">
+          <>
+            {t01 && !isAlreadyAdjusted && <CampoIToken id="itoken-t01" valor={itoken} onChange={setItoken} />}
+            <Botao onClick={handleApply} disabled={isSubmitting || !t01 || isAlreadyAdjusted || itoken.length !== 6} className="w-full">
             {isSubmitting ? (
               <>
                 <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" aria-hidden="true" />
@@ -68,7 +65,8 @@ export const FlowAdjustmentModal: React.FC<FlowAdjustmentModalProps> = ({ isOpen
                 <ArrowRight className="w-4 h-4" aria-hidden="true" />
               </>
             )}
-          </Botao>
+            </Botao>
+          </>
         ) : (
           <Botao onClick={handleFinish} className="w-full">
             Voltar para a conversa <ArrowRight className="w-4 h-4" aria-hidden="true" />
@@ -134,24 +132,6 @@ export const FlowAdjustmentModal: React.FC<FlowAdjustmentModalProps> = ({ isOpen
             <summary className="cursor-pointer font-semibold text-ink min-h-11 flex items-center">Por que recomendamos isso</summary>
             <p className="mt-2 leading-relaxed text-mid">{t01.justificativa}</p>
           </details>
-
-          <section className="bg-surface rounded-pedra p-4 border border-line space-y-2">
-            <label htmlFor="itoken-t01" className="flex items-center gap-2 text-[12.5px] font-semibold text-ink">
-              <Lock className="w-3.5 h-3.5 text-accent" aria-hidden="true" />
-              Confirme com o seu iToken (6 dígitos)
-            </label>
-            <input
-              id="itoken-t01"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              maxLength={6}
-              value={itoken}
-              onChange={(e) => setItoken(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              placeholder="••••••"
-              className="w-full bg-canvas border border-line-strong focus:border-accent rounded-xl px-3 min-h-12 text-[16px] tracking-[0.4em] text-ink outline-none"
-            />
-            <p className="text-[11px] text-mid">Nada é executado sem o token. Na demo, qualquer 6 dígitos vale, menos 000000.</p>
-          </section>
         </>
       ) : (
         <>

@@ -98,6 +98,12 @@
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { scrollbar-width: none; }
 
+/* Fileira de chips: a borda direita esmaece para ler como rolagem, não como corte. */
+.rail-fade {
+  mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent);
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent);
+}
+
 /* Relógio da tela de bloqueio: dígitos tabulares */
 .font-clock {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;

@@ -26,7 +26,7 @@ export const PrescriptionFooter: React.FC<ComposerProps> = ({ onSendMessage, isT
 
   return (
     <footer className="shrink-0 bg-surface border-t border-line z-20 flex flex-col">
-      <div className="flex gap-2 overflow-x-auto no-scrollbar px-3.5 pt-2.5 pb-1">
+      <div className="flex gap-2 overflow-x-auto no-scrollbar rail-fade px-3.5 pr-10 pt-2.5 pb-1">
         <Chip onClick={onShowMemory} icon={<Brain className="w-4 h-4" />}>
           O que você lembra sobre mim?
         </Chip>
