@@ -210,3 +210,15 @@ def test_falar_com_uma_pessoa_leva_resumo_sem_dado_sensivel_e_so_com_consentimen
         assert "R$" not in texto and BRUNO not in texto and "Bruno" not in texto
         sem = http.post(f"/customers/{BRUNO}/handoff", json={"consentimento": False}).json()
         assert sem["resumo"] is None and sem["protocolo"]
+
+
+def test_consentir_depois_de_confirmar_lembra_o_tratamento_na_hora(cliente):
+    with cliente as http:
+        sid = _t01_id(http)
+        http.post(f"/customers/{BRUNO}/confirmations", json={"simulacao_id": sid, "itoken": ITOKEN_OK, "idempotency_key": "z"})
+        assert http.get(f"/customers/{BRUNO}/memory").json()["lembrancas"] == {}
+        c = http.post(f"/customers/{BRUNO}/memory/consent", json={"consentimento": True}).json()
+        assert c["lembrado"] and c["lembrado"].startswith("tratamento:")
+        lemb = http.get(f"/customers/{BRUNO}/memory").json()["lembrancas"]
+        assert any("T01 confirmado" in v for v in lemb.values())
+

@@ -66,12 +66,21 @@ def _req(url: str, metodo: str = "GET", corpo: dict | None = None) -> tuple[int,
         return e.code, json.loads(e.read().decode() or "{}")
 
 
+CANDIDATOS_MEMORIA = (
+    "198fd3b8-5d5f-4b38-ad52-02464b769596",
+    "258bf045-e201-4b2c-adc3-7caf08828ec1",
+    "2fad9515-3c09-4400-8269-d83fd4e2c063",
+)
+
+
 def s5(base_url: str, customer_id: str) -> int:
-    """Confirmação idempotente com iToken, memória com consentimento, esquecer tudo,
-    falar com uma pessoa. Sem modelo."""
-    base = f"{base_url.rstrip('/')}/customers/{customer_id}"
+    """Confirmação idempotente com iToken (no cliente da demo, sem tocar na memória
+    dele) e memória/esquecer/pessoa num OUTRO cliente com T01 — o smoke apaga
+    memória, e a semente do Bruno tem de sobreviver ao smoke."""
     import uuid
 
+    raiz = base_url.rstrip("/")
+    base = f"{raiz}/customers/{customer_id}"
     _, p = _req(f"{base}/financial-profile")
     sid = ((p.get("treatments") or {}).get("t01") or {}).get("simulacao_id")
     chave = f"smoke-{uuid.uuid4().hex[:6]}"
@@ -90,20 +99,36 @@ def s5(base_url: str, customer_id: str) -> int:
         "POST",
         {"simulacao_id": sid, "itoken": "000000", "idempotency_key": chave + "x"},
     )
-    _req(f"{base}/memory", "DELETE")
-    _, m0 = _req(f"{base}/memory")
-    _req(f"{base}/memory/consent", "POST", {"consentimento": True})
-    _, p2 = _req(f"{base}/financial-profile")
+
+    outro = next(
+        (
+            c
+            for c in CANDIDATOS_MEMORIA
+            if c != customer_id
+            and (
+                (
+                    _req(f"{raiz}/customers/{c}/financial-profile")[1].get("treatments")
+                    or {}
+                ).get("t01")
+            )
+        ),
+        None,
+    )
+    ob = f"{raiz}/customers/{outro}"
+    _req(f"{ob}/memory", "DELETE")
+    _, m0 = _req(f"{ob}/memory")
+    _req(f"{ob}/memory/consent", "POST", {"consentimento": True})
+    _, p2 = _req(f"{ob}/financial-profile")
     sid2 = ((p2.get("treatments") or {}).get("t01") or {}).get("simulacao_id")
     _req(
-        f"{base}/confirmations",
+        f"{ob}/confirmations",
         "POST",
         {"simulacao_id": sid2, "itoken": "123456", "idempotency_key": chave + "y"},
     )
-    _, m1 = _req(f"{base}/memory")
-    _, d = _req(f"{base}/memory", "DELETE")
-    _, m2 = _req(f"{base}/memory")
-    _, h = _req(f"{base}/handoff", "POST", {"consentimento": True, "motivo": "smoke"})
+    _, m1 = _req(f"{ob}/memory")
+    _, d = _req(f"{ob}/memory", "DELETE")
+    _, m2 = _req(f"{ob}/memory")
+    _, h = _req(f"{ob}/handoff", "POST", {"consentimento": True, "motivo": "smoke"})
     texto_h = json.dumps(h.get("resumo") or {})
     checks = [
         (
@@ -119,6 +144,10 @@ def s5(base_url: str, customer_id: str) -> int:
             c1[1].get("evento") == "tratamento_confirmado",
         ),
         ("iToken invalido nao executa (401)", ruim[0] == 401),
+        (
+            f"outro cliente com T01 para o teste de memoria ({(outro or '')[:8]})",
+            outro is not None,
+        ),
         (
             "sem consentimento, memoria vazia",
             m0.get("consentimento") is False and m0.get("lembrancas") == {},
@@ -138,7 +167,7 @@ def s5(base_url: str, customer_id: str) -> int:
             "falar com uma pessoa: protocolo e resumo sem valor nem id",
             str(h.get("protocolo", "")).startswith("VITA-")
             and "R$" not in texto_h
-            and customer_id not in texto_h,
+            and (outro or "x") not in texto_h,
         ),
     ]
     ok = 0
@@ -147,9 +176,6 @@ def s5(base_url: str, customer_id: str) -> int:
         print(f"{'✓' if passou else '✗'} {nome}")
     print(f"\n{ok}/{len(checks)} verificacoes passaram — sem nenhuma chamada ao modelo")
     return 0 if ok == len(checks) else 1
-
-
-MARCOS = "8fbc8ba3-7d20-4382-ba8d-ffd070e836a1"
 
 
 def s4(base_url: str, customer_id: str) -> int:

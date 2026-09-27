@@ -305,7 +305,28 @@ async def consentir_memoria(
 
     valor = datetime.now(UTC).isoformat() if corpo.consentimento else ""
     await _gravar_estado(request, customer_id, {"consent_given_at": valor})
-    return {"consentimento": corpo.consentimento, "consent_given_at": valor or None}
+    lembrado = None
+    if corpo.consentimento:
+        # A pergunta vem DEPOIS da primeira confirmação; com o "sim", o tratamento que
+        # acabou de acontecer entra na memória, senão a demo "lembra nada" logo após concordar.
+        _, sessao = await _sessao_abertura(request, customer_id)
+        tipo = sessao.state.get("tratamento_confirmado")
+        if tipo:
+            hoje = valor[:10]
+            chave, texto = (
+                f"tratamento:{hoje}",
+                f"{str(tipo).upper()} confirmado em {hoje}",
+            )
+            if valor_permitido(chave, texto):
+                await get_memory_store().save_preference(
+                    customer_id, chave, texto, valor, load_config().memory_ttl_days
+                )
+                lembrado = chave
+    return {
+        "consentimento": corpo.consentimento,
+        "consent_given_at": valor or None,
+        "lembrado": lembrado,
+    }
 
 
 @app.delete("/customers/{customer_id}/memory")
