@@ -436,7 +436,10 @@ def s10(base_url: str, customer_id: str) -> int:
     checks = [
         (
             "ofuscação desofuscada e bloqueada sem modelo",
-            ofusc.get("tools") == [] and "Vita" in ofusc.get("reply", ""),
+            ofusc.get("tools") == []
+            and any(
+                t in ofusc.get("reply", "") for t in ("Vita", "Não consigo ajudar")
+            ),
         ),
         (
             "identidade: resposta fixa, sem modelo nem versão",

@@ -408,12 +408,14 @@ async def julgar(pedido: JulgamentoRequest) -> dict:
     texto += f"Resposta A:\n{pedido.resposta_a}\n"
     if pedido.resposta_b:
         texto += f"\nResposta B:\n{pedido.resposta_b}\n"
+    llm = _model()
     pedido_llm = LlmRequest(
+        model=getattr(llm, "model", None),
         contents=[types.Content(role="user", parts=[types.Part(text=texto)])],
         config=types.GenerateContentConfig(response_mime_type="application/json"),
     )
     saida = ""
-    async for resposta in _model().generate_content_async(pedido_llm, stream=False):
+    async for resposta in llm.generate_content_async(pedido_llm, stream=False):
         partes = (resposta.content.parts if resposta.content else None) or []
         saida = "".join(p.text for p in partes if p.text) or saida
     try:
