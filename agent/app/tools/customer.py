@@ -7,6 +7,8 @@ texto do usuário — que é exatamente o ataque "me mostre o extrato do cliente
 
 from __future__ import annotations
 
+import re
+import unicodedata
 from datetime import date
 
 from google.adk.tools.tool_context import ToolContext
@@ -35,6 +37,36 @@ def get_customer_profile(tool_context: ToolContext) -> dict:
     if perfil is None:
         return {"error": f"Cliente {cid} não encontrado na base."}
     return {"profile": perfil}
+
+
+# CA-22: saúde, religião, política e filiação sindical nunca chegam ao modelo como
+# categoria nem como descrição: viram "outros" no payload. O total continua certo.
+CATEGORIAS_SENSIVEIS = {
+    "saude",
+    "farmacia",
+    "plano_de_saude",
+    "religiao",
+    "doacoes",
+    "igreja",
+    "entidades_de_classe",
+    "sindicato",
+    "partido",
+    "politica",
+}
+_DESCRICAO_SENSIVEL = re.compile(
+    r"(igreja|templo|paroquia|doacao|dizimo|oferta religiosa|sindicat|partido|entidade de classe|farmac|drogaria|hospital|clinica|plano de saude|psic|terapia|laborator|exame)",
+    re.IGNORECASE,
+)
+
+
+def _agregar_sensivel(t: dict) -> dict:
+    descricao = unicodedata.normalize("NFKD", str(t.get("description") or ""))
+    descricao = "".join(c for c in descricao if not unicodedata.combining(c))
+    if t.get("category") in CATEGORIAS_SENSIVEIS or _DESCRICAO_SENSIVEL.search(
+        descricao
+    ):
+        return {**t, "category": "outros", "description": "transacao agregada"}
+    return t
 
 
 def get_transactions(
@@ -71,7 +103,10 @@ def get_transactions(
                 "error": f"{rotulo} deve estar no formato AAAA-MM-DD; recebido {valor!r}."
             }
 
-    linhas = get_data_source().get_transactions(cid, start_date, end_date, category)
+    linhas = [
+        _agregar_sensivel(t)
+        for t in get_data_source().get_transactions(cid, start_date, end_date, category)
+    ]
     # Separado porque somar tudo devolve o líquido: para o cliente organizado,
     # "quanto gastei?" respondia com um número positivo que era a sobra.
     saidas = sum(-t["amount"] for t in linhas if t["amount"] < 0)

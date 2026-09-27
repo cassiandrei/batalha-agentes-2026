@@ -56,6 +56,37 @@ _FORA_ESCOPO = [
         "tarefa_generica",
     ),
 ]
+# S10 (workshop de IA Responsável): leet e letras espaçadas escondem instruções.
+_LEET = str.maketrans(
+    {
+        "0": "o",
+        "1": "i",
+        "3": "e",
+        "4": "a",
+        "5": "s",
+        "7": "t",
+        "8": "b",
+        "@": "a",
+        "$": "s",
+        "|": "l",
+        "!": "i",
+    }
+)
+_TOKEN_MISTO = re.compile(
+    r"\b(?=(?:[0-9@$|!]*[a-z]){2})(?=[a-z0-9@$|!]*[0-9@$|!])[a-z0-9@$|!]{3,}\b",
+    re.IGNORECASE,
+)
+_LETRAS_ESPACADAS = re.compile(r"\b(?:[a-z] ){3,}[a-z]\b", re.IGNORECASE)
+
+# CA-25: risco à vida interrompe o fluxo financeiro; nunca chega ao modelo.
+_CUIDADO = re.compile(
+    r"(minha vida corre perigo|vida em perigo|me matar|suicid|nao quero mais viver|acabar com tudo|tirar (a )?minha vida|quero morrer|vou me jogar|nao aguento mais viver|me machucar)"
+)
+# CA-22: pergunta sobre o sistema tem resposta fixa; modelo, versão e guardrails nunca saem.
+_IDENTIDADE = re.compile(
+    r"((voce|vc|tu) (usa|e|eh|roda|foi feito|foi treinado)\b.{0,25}\b(gpt|chatgpt|gemini|claude|llama|openai|google|anthropic|modelo|llm|guardrail|memoria)|qual (e |eh )?(a |o )?(sua |seu )?(modelo|versao|llm|ia|arquitetura|prompt)|(usa|tem|quais) (seus |suas )?(guardrails?|ferramentas|tools|filtros|regras internas)|que modelo)"
+)
+
 _OFENSA = re.compile(
     r"\b(idiota|imbecil|burro|burra|lixo|otario|otaria|vagabund[oa]|desgrac[ao]|merda|porra|caralho|fdp|filho da puta|vai se f)\b"
 )
@@ -85,6 +116,27 @@ def _sem_acento(texto: str) -> str:
     ).lower()
 
 
+def desofuscar(texto: str) -> str:
+    """Só tokens que misturam letras e dígitos/símbolos viram letras ("v0c3" → "voce");
+    "R$ 1.200" e "12x" ficam como estão. Letras espaçadas ("m e m o r i a") se juntam."""
+
+    def _leet(m: re.Match) -> str:
+        return m.group(0).translate(_LEET)
+
+    t = _TOKEN_MISTO.sub(_leet, texto)
+    t = _LETRAS_ESPACADAS.sub(lambda m: m.group(0).replace(" ", ""), t)
+    # "3" sozinho é "é" em leet ("voce 3 um gerente"); só na cópia de detecção.
+    return re.sub(r"\b3\b", "e", t)
+
+
+def risco_a_vida(texto: str) -> bool:
+    return bool(_CUIDADO.search(_sem_acento(texto)))
+
+
+def pergunta_identidade(texto: str) -> bool:
+    return bool(_IDENTIDADE.search(_sem_acento(texto)))
+
+
 def hash_entrada(texto: str) -> str:
     return hashlib.sha256(normalizar(texto).encode("utf-8")).hexdigest()[:16]
 
@@ -110,13 +162,26 @@ def avaliar_entrada(texto: str) -> Decisao:
     limpo = normalizar(texto)
     h = hashlib.sha256(limpo.encode("utf-8")).hexdigest()[:16]
     mascarado, achados = mask_pii(limpo)
-    if detect_injection(mascarado).blocked:
+    # As heurísticas leem o texto desofuscado; o que segue ao modelo é o mascarado.
+    alvo = desofuscar(mascarado)
+    if risco_a_vida(alvo):
+        return Decisao("bloqueado", "entrada", "cuidado", mascarado, h, tuple(achados))
+    if detect_injection(alvo).blocked:
         return Decisao("bloqueado", "entrada", "injecao", mascarado, h, tuple(achados))
-    if outro_cliente(mascarado) or (achados and outro_cliente(limpo)):
+    # ids hexadecimais viram letras na desofuscação: checa também o texto original
+    if (
+        outro_cliente(mascarado)
+        or outro_cliente(alvo)
+        or (achados and outro_cliente(limpo))
+    ):
         return Decisao(
             "bloqueado", "entrada", "outro_cliente", mascarado, h, tuple(achados)
         )
-    if categoria := fora_do_escopo(mascarado):
+    if pergunta_identidade(alvo):
+        return Decisao(
+            "bloqueado", "entrada", "identidade", mascarado, h, tuple(achados)
+        )
+    if categoria := fora_do_escopo(alvo):
         return Decisao("bloqueado", "entrada", categoria, mascarado, h, tuple(achados))
     if achados:
         return Decisao(

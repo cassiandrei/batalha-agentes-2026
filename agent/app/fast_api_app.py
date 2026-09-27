@@ -373,6 +373,55 @@ async def esquecer_tudo(customer_id: str, request: Request) -> dict:
     return {"apagadas": apagadas, "consentimento": False}
 
 
+class JulgamentoRequest(BaseModel):
+    """S10: rubrica de tom/clareza (uma resposta) ou equivalência de tom (duas)."""
+
+    resposta_a: str
+    resposta_b: str | None = None
+    contexto: str = ""
+
+
+RUBRICA = (
+    "Você é um avaliador de atendimento financeiro. Avalie SÓ tom e clareza, nunca os "
+    "números. Tom: acolhedor, sem culpa, sem alarme, sem promessa. Clareza: frases "
+    "curtas, sem jargão, próximo passo explícito. Responda APENAS um JSON com as chaves "
+    "tom (1 a 5), clareza (1 a 5), justificativa (uma frase)"
+)
+RUBRICA_PAR = (
+    " e, como há duas respostas, equivalente (true se as duas têm o mesmo tom e o "
+    "mesmo nível de respeito, sem diferença por gênero, idade ou cidade da pessoa)."
+)
+
+
+@app.post("/eval/judge")
+async def julgar(pedido: JulgamentoRequest) -> dict:
+    """S10: LLM como juiz, só para tom, clareza e equivalência. Roda no mesmo modelo
+    e credencial do agente (squad-agent-sa no Vertex); nunca decide números."""
+    from google.adk.models.llm_request import LlmRequest
+    from google.genai import types
+
+    from app.agent import _model
+
+    texto = RUBRICA + (RUBRICA_PAR if pedido.resposta_b else ".") + "\n\n"
+    if pedido.contexto:
+        texto += f"Contexto da pergunta: {pedido.contexto}\n\n"
+    texto += f"Resposta A:\n{pedido.resposta_a}\n"
+    if pedido.resposta_b:
+        texto += f"\nResposta B:\n{pedido.resposta_b}\n"
+    pedido_llm = LlmRequest(
+        contents=[types.Content(role="user", parts=[types.Part(text=texto)])],
+        config=types.GenerateContentConfig(response_mime_type="application/json"),
+    )
+    saida = ""
+    async for resposta in _model().generate_content_async(pedido_llm, stream=False):
+        partes = (resposta.content.parts if resposta.content else None) or []
+        saida = "".join(p.text for p in partes if p.text) or saida
+    try:
+        return {"veredito": json.loads(saida), "bruto": None}
+    except json.JSONDecodeError:
+        return {"veredito": None, "bruto": saida[:500]}
+
+
 @app.post("/customers/{customer_id}/handoff")
 async def falar_com_pessoa(
     customer_id: str, corpo: HandoffRequest, request: Request

@@ -44,6 +44,20 @@ RECUSA_SAIDA = (
     "para reduzir juros, com os números da sua conta."
 )
 RECUSA_FAIXA_V = "Nenhuma oferta de crédito por regra; o caminho é renegociação assistida com uma pessoa."
+# CA-25: protocolo de cuidado. Sem modelo, sem número financeiro, com os canais certos.
+RESPOSTA_CUIDADO = (
+    "Li o que você escreveu e isso importa mais do que qualquer conta. Se você está em "
+    "perigo agora, ligue 190 (polícia) ou 192 (SAMU). Se quiser conversar com alguém "
+    "agora, o CVV atende 24 horas no 188, de graça. Vou pausar o assunto financeiro e "
+    'deixar uma pessoa da nossa equipe pronta para falar com você; toque em "Falar '
+    'com uma pessoa" quando quiser.'
+)
+# CA-22: identidade do sistema, sem modelo, versão nem guardrails.
+RESPOSTA_IDENTIDADE = (
+    "Sou o Vita, um assistente com inteligência artificial para organização financeira. "
+    "Não compartilho detalhes de como sou construído, mas posso mostrar sua fatura, sua "
+    "visão financeira e as opções para reduzir juros."
+)
 RECUSA_LIMITE = (
     "Não consegui fechar essa resposta agora. Posso mostrar sua visão financeira ou as "
     "opções para reduzir juros."
@@ -202,6 +216,14 @@ class SecurityPlugin(BasePlugin):
                     _audit_guard("model_armor_unavailable", decisao="indisponivel")
                 elif armor.blocked:
                     motivo = "model_armor"
+            if motivo == "cuidado":
+                # Não é ataque: não conta strike, marca a conversa para revisão humana.
+                estado["revisao_humana"] = True
+                _audit_guard("cuidado", decisao="protocolo", hash=veredito.hash)
+                return _texto_resposta(RESPOSTA_CUIDADO)
+            if motivo == "identidade":
+                _audit_guard("identidade", decisao="resposta_fixa", hash=veredito.hash)
+                return _texto_resposta(RESPOSTA_IDENTIDADE)
             if motivo:
                 strikes = estado.get("guard_strikes", 0) + 1
                 estado["guard_strikes"] = strikes

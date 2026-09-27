@@ -17,7 +17,7 @@ from dataclasses import dataclass
 PATTERNS = [
     r"(ignore|ignora|esqueca|desconsidere|despreze|disregard|forget)\b.{0,30}"
     r"(instruc|instruction|prompt|regra|rule|acima|above|anterior|previous|dito\s+antes|veio\s+antes)",
-    r"(reveal|show|print|revele|mostre|diga)\b.{0,20}(system\s*)?(prompt|instruc)",
+    r"(reveal|show|print|revele|mostre|diga)\b.{0,20}(system\s*)?(prompt|instruc|regras\s+internas|suas\s+regras|regras\s+do\s+sistema|todas\s+as\s+(suas\s+)?regras)",
     r"(voce\s+agora|agora\s+voce)\s+(e|sera)\s+(um|uma|o|a)\b",
     r"you\s+are\s+now\s+a",
     r"act\s+as\s+(if|though)\s+you",
@@ -32,6 +32,10 @@ PATTERNS = [
     r"(novas?\s+instruc|nova\s+regra|regra\s+nova|instrucao\s+nova)\b.{0,30}\b(a\s+partir\s+de\s+agora|de\s+agora\s+em\s+diante|daqui\s+pra\s+frente)",
     r"(a\s+partir\s+de\s+agora|de\s+agora\s+em\s+diante|daqui\s+pra\s+frente)\b.{0,20}\b(voce\s+(e|sera|vai\s+ser)|responda|ignore|obedeca|nova)",
     r"\bassistente\s*[,:]\s*(ofereca|libere|libera|aprove|ignore|mostre|liste)\b",
+    # S10: "motivo nobre" e comando disfarçado de protocolo.
+    r"(modo\s+de\s+teste|modo\s+teste|teste\s+de\s+roteamento|ambiente\s+de\s+teste)\b.{0,60}\b(funcao|acao|comando|tool|ferramenta|pix|transfer)",
+    r"(proxima|seguinte)\s+(funcao|acao|ferramenta|tool)\s+(obrigatoria|requerida|mandatoria)",
+    r"(desative|desligue|desabilite|remova)\b.{0,20}\b(filtros?|guardrails?|seguranca|restricoes)",
 ]
 _COMPILADOS = [re.compile(p) for p in PATTERNS]
 

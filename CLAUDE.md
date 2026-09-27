@@ -130,6 +130,7 @@ docs/                  arquitetura (entregável 5), drawio (entregável 4), LGPD
 | `make smoke-fatia FATIA=sN BASE_URL=x [TOKEN=...]` | smoke de uma fatia (s1–s8); contra o agente, `TOKEN=$(gcloud auth print-identity-token)` |
 | `make seed-abertura BASE_URL=x CUSTOMER_ID=y` | gera a semente da abertura proativa a partir do agente vivo |
 | `make roteiro BASE_URL=x [SEM_CHAT=1]` | roteiro ponta a ponta da demo (Bruno + Marcos) com latência por passo |
+| `make avaliacao AGENT_URL=x TOKEN=... [JUIZ=1]` | S10: conversas sintéticas e contrafactual contra o agente vivo; grava `docs/avaliacao.md` |
 | `make redteam` | red team sobre as camadas determinísticas, sem modelo; grava `docs/redteam/RELATORIO.md` |
 | `make teardown PROJECT_ID=x [DRY_RUN=1]` | apaga o que o deploy criou |
 

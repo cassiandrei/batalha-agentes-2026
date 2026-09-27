@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 # Sem isto, o alvo `data` colide com o diretório data/ e o make não faz nada.
-.PHONY: help setup data run test test-llm lint switch-project stage-data deploy deploy-web teardown smoke smoke-fatia seed-abertura cdi redteam roteiro event eval eval-report traffic-split load-bq agent-engine model-armor stage-evento
+.PHONY: help setup data run test test-llm lint switch-project stage-data deploy deploy-web teardown smoke smoke-fatia seed-abertura cdi redteam roteiro avaliacao event eval eval-report traffic-split load-bq agent-engine model-armor stage-evento
 UV := uv
 ACLI := uvx google-agents-cli
 
@@ -94,6 +94,10 @@ CUSTOMER_ID ?= 36d74064-cc59-4ad2-9304-aeae46e660e4
 roteiro: ## roteiro ponta a ponta da demo (Bruno + Marcos): make roteiro BASE_URL=<vita-app> [SEM_CHAT=1]
 	@test -n "$(BASE_URL)" || (echo "BASE_URL é obrigatório"; exit 1)
 	python3 infra/scripts/roteiro_e2e.py --base-url "$(BASE_URL)" $(if $(SEM_CHAT),--sem-chat,)
+
+avaliacao: ## S10: conversas sinteticas + contrafactual contra o agente vivo: make avaliacao AGENT_URL=<url> TOKEN=$$(gcloud auth print-identity-token) [JUIZ=1]
+	@test -n "$(AGENT_URL)" || (echo "AGENT_URL é obrigatório"; exit 1)
+	TOKEN="$(TOKEN)" python3 infra/scripts/avaliacao.py --agent-url "$(AGENT_URL)" $(if $(JUIZ),--juiz,)
 
 redteam: ## roda o red team sem chamar o modelo e grava docs/redteam/RELATORIO.md
 	cd agent && $(UV) run python ../infra/scripts/redteam.py
