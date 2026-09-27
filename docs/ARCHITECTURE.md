@@ -138,7 +138,7 @@ risco (faixas A, B, C, V com motivo) e bioimpedância anual. Tudo em
 | Chave de modelo exposta | Nenhuma: tudo roda pela `squad-agent-sa` | Teste do deploy que falha se `GEMINI_API_KEY` aparecer |
 
 Números: 310 testes automatizados sem credencial; smokes por fatia contra o serviço vivo
-(S1 5/5, S2 7/7, S2b 6/6, S3 7/7, S4 7/7, S5 7/7).
+(S1 5/5, S2 7/7, S2b 6/6, S3 7/7, S4 7/7, S5 8/8).
 
 ## 8. LGPD
 

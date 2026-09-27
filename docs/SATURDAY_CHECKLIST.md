@@ -217,7 +217,7 @@ marca, nome ou cor do Itaú no front (regra 3): o protótipo tinha e foi limpo a
 **Fatia S4:** revisão `fatia-s4`; `make smoke-fatia FATIA=s4 BASE_URL=<url da tag>` (7 checks, Bruno e
 Marcos, sem modelo); depois `make deploy-web … AGENT_URL=<url da tag>`.
 
-**Fatia S5:** revisão `fatia-s5`; `make smoke-fatia FATIA=s5 BASE_URL=<url da tag>` (7 checks, sem modelo:
+**Fatia S5:** revisão `fatia-s5`; `make smoke-fatia FATIA=s5 BASE_URL=<url da tag>` (8 checks, sem modelo:
 confirmação idempotente, iToken, memória, esquecer, pessoa); depois `make deploy-web …`.
 
 **Fatias (protocolo do PRD):** `TAG=fatia-s1` publica a revisão com tag e **0% de tráfego**;
