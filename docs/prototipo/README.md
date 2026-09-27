@@ -28,3 +28,21 @@ DEMO_CUSTOMER_ID=36d74064-cc59-4ad2-9304-aeae46e660e4
 
 Os valores da v1 que **sobram** no protótipo (mensagens iniciais do chat, system prompt,
 cards A/B, Visão Financeira) pertencem às fatias S2, S3 e S4.
+
+## S2 — `s2_front.patch` (cumulativo: S1 + S2, sobre o commit `f7d9d34`)
+
+Aplique **este** no lugar do `s1_front.patch` (ele já contém a S1).
+
+- `server.ts`: `GET /api/abertura` lê `GET ${AGENT_URL}/customers/${DEMO_CUSTOMER_ID}/opening`
+  no agente: a abertura já está na sessão, zero chamadas ao modelo.
+- `src/App.tsx`: a conversa começa vazia; um push neutro simulado ("O Vita tem uma análise
+  nova para você", texto vindo do agente) aparece acima do chat; ao tocar, entra a mensagem
+  de abertura com os botões vindos de `acoes`. As três mensagens iniciais da v1 saíram.
+- `src/components/ChatArea.tsx`: botões renderizados a partir de `message.actions`
+  (catálogo `abrir_fatura`, `abrir_visao_financeira`, `abrir_simulacao_t01/t02`,
+  `falar_com_pessoa`); rótulo do assistente vira "Vita · IA". A apresentação "Sou o
+  Vita, um assistente com IA" vem no texto do agente.
+- `src/types.ts`: `AcaoAgente`, `Abertura`, `Message.actions`.
+
+Sobras da v1 que **não** são da S2: respostas de fallback do chat, mensagens de
+confirmação dos tratamentos e cards A/B (S3–S5).

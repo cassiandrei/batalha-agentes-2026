@@ -35,9 +35,16 @@ EVENT_TYPES: dict[str, str] = {
         "A fatura do cartão do cliente vence em breve{due_date}{amount}. Lembre com "
         "gentileza e ofereça comparar pagar à vista com parcelar."
     ),
+    # Gatilho da jornada Vita. Não vira prompt: dispara o pipeline de abertura
+    # (diagnóstico por tools → redator), ver app/abertura.py.
+    "dreno_rotativo": (
+        "O cliente completou três faturas seguidas sem pagamento integral{amount}."
+    ),
 }
 
-EventType = Literal["salary_received", "spending_spike", "invoice_due_soon"]
+EventType = Literal[
+    "salary_received", "spending_spike", "invoice_due_soon", "dreno_rotativo"
+]
 
 
 class EventRequest(BaseModel):

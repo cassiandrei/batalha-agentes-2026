@@ -16,6 +16,7 @@ import contextlib
 import os
 import uuid
 from collections.abc import AsyncIterator
+from pathlib import Path
 
 from a2a.server.tasks import InMemoryTaskStore
 from dotenv import load_dotenv
@@ -23,8 +24,17 @@ from fastapi import FastAPI, HTTPException, Request
 from google.adk.cli.fast_api import get_fast_api_app
 from google.adk.runners import Runner
 
+from app.abertura import (
+    TRIGGER,
+    carregar_semente,
+    executar_abertura,
+    montar_abertura,
+    pipeline_abertura,
+    session_id_abertura,
+)
 from app.app_utils import services
 from app.app_utils.a2a import attach_a2a_routes
+from app.config import load_config
 from app.events import EventRequest, build_event_prompt
 from app.financial_profile import build_financial_profile
 
@@ -50,6 +60,30 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     )
     app.state.runner = runner
     app.state.agent_app_name = adk_app.name
+    # Pipeline da abertura proativa: mesmo app_name e mesmo session service, para a
+    # sessão pré-montada ser a que o chat continua. Mesmos plugins: os guardrails
+    # valem para o redator também.
+    from google.adk.apps import App
+
+    from app.plugins.audit_plugin import AuditPlugin
+    from app.plugins.security_plugin import SecurityPlugin
+
+    app.state.pipeline_runner = Runner(
+        app=App(
+            name=adk_app.name,
+            root_agent=pipeline_abertura,
+            plugins=[SecurityPlugin(), AuditPlugin()],
+        ),
+        session_service=runner.session_service,
+        artifact_service=runner.artifact_service,
+        auto_create_session=True,
+    )
+    # Sessão em memória morre com a instância; a semente na imagem a recria.
+    await carregar_semente(
+        runner.session_service,
+        adk_app.name,
+        Path(load_config().data_dir) / "evento" / "seed_sessions.json",
+    )
     await attach_a2a_routes(
         app,
         agent=root_agent,
@@ -83,13 +117,27 @@ async def receber_evento(evento: EventRequest, request: Request) -> dict:
     """
     from google.genai import types
 
+    nome_app = request.app.state.agent_app_name
+    if evento.event_type == TRIGGER:
+        mes = evento.details.get("mes_referencia")
+        resultado = await executar_abertura(
+            request.app.state.pipeline_runner,
+            nome_app,
+            evento.customer_id,
+            int(mes) if mes is not None else None,
+        )
+        return {
+            "event_type": evento.event_type,
+            "message": resultado["abertura"]["texto"],
+            **resultado,
+        }
+
     try:
         instrucao = build_event_prompt(evento.event_type, evento.details)
     except ValueError as erro:
         raise HTTPException(status_code=422, detail=str(erro)) from erro
 
     runner = request.app.state.runner
-    nome_app = request.app.state.agent_app_name
     sessao = f"event-{uuid.uuid4().hex[:12]}"
 
     await runner.session_service.create_session(
@@ -113,6 +161,20 @@ async def receber_evento(evento: EventRequest, request: Request) -> dict:
         "event_type": evento.event_type,
         "message": " ".join(partes).strip(),
     }
+
+
+@app.get("/customers/{customer_id}/opening")
+async def abertura_pre_montada(customer_id: str, request: Request) -> dict:
+    """CA-03: a primeira mensagem já está na sessão; nenhuma chamada ao modelo."""
+    sessao = await request.app.state.runner.session_service.get_session(
+        app_name=request.app.state.agent_app_name,
+        user_id=customer_id,
+        session_id=session_id_abertura(customer_id),
+    )
+    abertura = montar_abertura(sessao)
+    if abertura is None:
+        raise HTTPException(status_code=404, detail="sem abertura para este cliente")
+    return abertura
 
 
 @app.get("/customers/{customer_id}/financial-profile")

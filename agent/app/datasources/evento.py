@@ -168,6 +168,10 @@ class EventoDataSource:
 
     # --- tabelas do time (vita_sintetico) ---
 
+    def customer_ids(self) -> list[str]:
+        """Clientes com fatura na vw_fatura_mensal (o público possível do gatilho)."""
+        return sorted(self._tabelas.get("vw_fatura_mensal", {}))
+
     def get_fatura_rotativo(self, customer_id: str) -> list[dict]:
         meses = [
             project_fatura(r)
