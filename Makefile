@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 # Sem isto, o alvo `data` colide com o diretório data/ e o make não faz nada.
-.PHONY: help setup data run test test-llm lint switch-project stage-data deploy deploy-web teardown smoke smoke-fatia seed-abertura event eval eval-report traffic-split load-bq agent-engine model-armor stage-evento
+.PHONY: help setup data run test test-llm lint switch-project stage-data deploy deploy-web teardown smoke smoke-fatia seed-abertura cdi event eval eval-report traffic-split load-bq agent-engine model-armor stage-evento
 UV := uv
 ACLI := uvx google-agents-cli
 
@@ -88,6 +88,9 @@ smoke-fatia: ## smoke de uma fatia sem chamar o modelo: make smoke-fatia FATIA=s
 
 FATIA ?= s1
 CUSTOMER_ID ?= 36d74064-cc59-4ad2-9304-aeae46e660e4
+
+cdi: ## busca o CDI no SGS do Banco Central e grava data/evento/cdi_sgs.json (parametro com origem)
+	python3 infra/scripts/fetch_cdi.py
 
 seed-abertura: ## gera data/evento/seed_sessions.json a partir de um agente vivo (1 chamada real): make seed-abertura BASE_URL=<url>
 	@test -n "$(BASE_URL)" || (echo "BASE_URL é obrigatório"; exit 1)

@@ -130,3 +130,24 @@ def project_perfil_risco(row: dict) -> dict:
 
 def project_diagnostico(row: dict) -> dict:
     return _pick_tipado(row, DIAGNOSTICO_FIELDS)
+
+
+INVESTIMENTO_FIELDS = ("produto", "liquidez", "percentual_cdi", "finalidade", "saldo")
+
+
+def project_investimento(row: dict) -> dict:
+    d = {c: row[c] for c in INVESTIMENTO_FIELDS if c in row}
+    for c in ("percentual_cdi", "saldo"):
+        if c in d:
+            d[c] = float(d[c])
+    return d
+
+
+def project_parametro(row: dict) -> dict:
+    """parametros_modelo: valor numérico + origem e fonte, que o modelo pode citar."""
+    return {
+        "valor": float(row["valor"]),
+        "unidade": row.get("unidade", ""),
+        "origem": row.get("origem", ""),
+        "fonte": row.get("fonte", ""),
+    }

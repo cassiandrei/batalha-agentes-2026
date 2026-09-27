@@ -119,7 +119,7 @@ Ao fim da S2b, as telas têm URL própria no projeto do evento e nenhuma chamada
 
 **Pronto quando:** abrir a URL do `vita-app`, tocar no push, ver a abertura com os botões, abrir a fatura com os números reais e mandar uma mensagem respondida pelo agente. Verificado: `https://vita-app-996610300787.us-central1.run.app`, 6/6 no smoke.
 
-## S3 — Visão financeira e T01
+## S3 — Visão financeira e T01 (feita em 27/09)
 
 Ao fim da S3, a visão financeira e a simulação de "usar a reserva" mostram o CDB de R$ 41.270 do Bruno, o saldo de R$ 725,07 quitado e quanto sobra, tudo calculado por tool e com "Por que recomendamos isso".
 
@@ -147,6 +147,8 @@ Use o LLM simulado. Publique com --tag s3 --no-traffic e mostre os modais na URL
 ```
 
 **Pronto quando:** os dois modais na URL da tag mostram apenas valores do payload, e o validador bloqueia uma resposta de teste com número inventado.
+
+**Feito:** `simular_uso_reserva`, `get_posicao_investimentos` e o índice (`agent/app/indice.py`, fórmula na seção 14 do `DADOS_EVENTO.md`); CDI do SGS por `make cdi`; validador de números no `SecurityPlugin` (teste bloqueando "R$ 1.200,00" fora do payload); `FinancialOverviewModal` e `FlowAdjustmentModal` lendo o payload com "Por que recomendamos isso"; smoke `make smoke-fatia FATIA=s3`.
 
 ## S4 — T02 com motor de decisão
 

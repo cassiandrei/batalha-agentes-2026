@@ -21,6 +21,7 @@ from google.genai import types
 
 from app.callbacks.authz import UnsafeToolArgs, assert_tool_args_safe
 from app.callbacks.injection import detect_injection
+from app.callbacks.numeros import numeros_do_payload, valores_fora_do_payload
 from app.callbacks.output import check_output
 from app.callbacks.pii import mask_pii
 from app.config import load_config
@@ -30,6 +31,11 @@ RECUSA = (
     "ou explicar um conceito. Se preferir, posso transferir para um atendente."
 )
 TRANSFERENCIA = "Vou transferir você para um atendente humano, que consegue ajudar melhor a partir daqui."
+RECUSA_NUMERO = (
+    "Prefiro não citar um valor que não veio dos seus dados. Posso mostrar os números "
+    "exatos da sua fatura e da sua reserva, ou explicar como eles foram calculados."
+)
+_MAX_NUMEROS_NO_ESTADO = 400
 # Campos de texto livre vindos dos dados: escritos por terceiros, nunca confiáveis.
 FREE_TEXT_KEYS = {"description", "name", "merchant", "title", "excerpt"}
 SANITIZED = "[conteúdo removido: instrução suspeita nos dados]"
@@ -147,7 +153,15 @@ class SecurityPlugin(BasePlugin):
         tool_context: ToolContext,
         result: dict[str, Any],
     ) -> dict[str, Any] | None:
-        """Injection indireta: neutraliza texto de terceiro vindo dos dados."""
+        """Injection indireta: neutraliza texto de terceiro vindo dos dados. E
+        registra os números do payload: são os únicos que a resposta pode citar."""
+        novos = numeros_do_payload(result)
+        if novos:
+            atuais = list(tool_context.state.get("numeros_tools") or [])
+            juntos = list(dict.fromkeys(atuais + sorted(novos)))[
+                -_MAX_NUMEROS_NO_ESTADO:
+            ]
+            tool_context.state["numeros_tools"] = juntos
         limpo, mexeu = _limpar(result)
         if mexeu:
             _audit_guard("indirect_injection", tool=tool.name)
@@ -180,6 +194,12 @@ class SecurityPlugin(BasePlugin):
 
         if final:
             completo = self._acumulado.pop(inv, "")
+            # Número nunca vem do LLM: cifra em reais fora do payload das tools não sai.
+            permitidos = set(callback_context.state.get("numeros_tools") or [])
+            inventados = valores_fora_do_payload(completo, permitidos)
+            if inventados:
+                _audit_guard("numero_inventado", quantos=len(inventados))
+                return _texto_resposta(RECUSA_NUMERO)
             _, violacoes = check_output(completo, suitability)
             if violacoes:
                 # Chegou aqui = a PII estava partida entre chunks, e os chunks

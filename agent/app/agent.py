@@ -36,7 +36,13 @@ from app.tools.memory_tools import (
     recall_profile,
     remember_preference,
 )
-from app.tools.vita import get_diagnostico, get_fatura_rotativo, get_perfil_risco
+from app.tools.vita import (
+    get_diagnostico,
+    get_fatura_rotativo,
+    get_perfil_risco,
+    get_posicao_investimentos,
+    simular_uso_reserva,
+)
 
 # Falha na importação se alguma flag estiver ligada sem implementação atrás.
 # Melhor o app não subir do que subir fingindo ter proteção.
@@ -64,6 +70,8 @@ analyst = Agent(
         get_fatura_rotativo,
         get_perfil_risco,
         get_diagnostico,
+        get_posicao_investimentos,
+        simular_uso_reserva,
         compound_interest,
         compare_revolving_vs_installments,
         time_to_reach_goal,

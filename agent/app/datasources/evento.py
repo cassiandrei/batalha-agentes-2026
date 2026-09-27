@@ -13,6 +13,7 @@ recebe as linhas de uma query em vez do CSV.
 from __future__ import annotations
 
 import csv
+import json
 import unicodedata
 from collections import defaultdict
 from collections.abc import Iterable
@@ -22,13 +23,29 @@ from pathlib import Path
 from app.datasources.projections import (
     project_diagnostico,
     project_fatura,
+    project_investimento,
+    project_parametro,
     project_perfil_risco,
     project_transaction,
 )
 
 # Tabelas do time exportadas por `make stage-evento`, além do extrato. Opcionais:
 # um snapshot antigo (só extrato) continua servindo o que tem.
-TABELAS_DO_TIME = ("vw_fatura_mensal", "perfil_risco", "vw_bioimpedancia")
+TABELAS_DO_TIME = (
+    "vw_fatura_mensal",
+    "perfil_risco",
+    "vw_bioimpedancia",
+    "posicao_investimentos",
+    "parametros_modelo",
+)
+# CDI sem o arquivo do SGS (make cdi): valor fixo, com a origem dizendo que é fixo.
+# O modelo pode citar a origem; nunca fica em dúvida se o número é medido ou chutado.
+CDI_FIXO_DECLARADO = {
+    "serie_sgs": 4389,
+    "data_referencia": "24/09/2026",
+    "cdi_aa_pct": 13.65,
+    "origem": "fixo_declarado",
+}
 
 # Vocabulário do agente (prompts, eval) ← categorias do evento.
 _MAPA = {
@@ -66,7 +83,10 @@ class EventoDataSource:
         self,
         linhas: Iterable[dict],
         tabelas: dict[str, Iterable[dict]] | None = None,
+        cdi: dict | None = None,
     ) -> None:
+        self._cdi = dict(cdi) if cdi else None
+        self._parametros: dict[str, dict] = {}
         por_usuario: dict[str, list[dict]] = defaultdict(list)
         for r in linhas:
             por_usuario[r["id_usuario"]].append(r)
@@ -75,6 +95,9 @@ class EventoDataSource:
         self._por_usuario = dict(por_usuario)
         self._tabelas: dict[str, dict[str, list[dict]]] = {}
         for nome, rows in (tabelas or {}).items():
+            if nome == "parametros_modelo":  # não é por usuário
+                self._parametros = {r["parametro"]: project_parametro(r) for r in rows}
+                continue
             idx: dict[str, list[dict]] = defaultdict(list)
             for r in rows:
                 idx[r["id_usuario"]].append(r)
@@ -187,6 +210,18 @@ class EventoDataSource:
         rs = self._linhas_do_time("vw_bioimpedancia", customer_id)
         return project_diagnostico(rs[0]) if rs else None
 
+    def get_posicao_investimentos(self, customer_id: str) -> list[dict]:
+        return [
+            project_investimento(r)
+            for r in self._linhas_do_time("posicao_investimentos", customer_id)
+        ]
+
+    def get_parametros_modelo(self) -> dict[str, dict]:
+        return dict(self._parametros)
+
+    def get_cdi(self) -> dict:
+        return dict(self._cdi) if self._cdi else dict(CDI_FIXO_DECLARADO)
+
 
 @lru_cache(maxsize=8)
 def _carregar_snapshot(caminho: str) -> tuple[dict, ...]:
@@ -206,6 +241,10 @@ def from_snapshot(data_dir: Path) -> EventoDataSource:
         for nome in TABELAS_DO_TIME
         if (pasta / f"{nome}.csv").exists()
     }
+    cdi_path = pasta / "cdi_sgs.json"
+    cdi = (
+        json.loads(cdi_path.read_text(encoding="utf-8")) if cdi_path.exists() else None
+    )
     return EventoDataSource(
-        _carregar_snapshot(str(pasta / "extrato.csv")), tabelas=tabelas
+        _carregar_snapshot(str(pasta / "extrato.csv")), tabelas=tabelas, cdi=cdi
     )

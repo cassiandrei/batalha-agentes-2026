@@ -619,3 +619,45 @@ irrelevante. Narrativamente é forte — 41 mil parados a 1% a.m. enquanto paga 
 725 — e é exatamente o comportamento de "contabilidade mental" que o produto quer
 atacar. Mas se a cena pedir um cliente apertado, o valor destoa; nesse caso fixar o CDB
 da persona (ex.: `GREATEST(..., 1000)` → valor declarado) no bloco 5.
+
+---
+
+## 14. S3: CDI, Índice de Organização Financeira e T01 (27/09)
+
+**CDI.** `make cdi` busca a série 4389 do SGS (CDI acumulada no mês, anualizada) e grava
+`data/evento/cdi_sgs.json` com data e origem `bcb_sgs`; em 24/09/2026 era **13,65% a.a.**
+Sem o arquivo, o agente usa o mesmo valor com origem `fixo_declarado`. A origem vai no
+payload e na justificativa: o cliente sabe se o número é medido ou fixo.
+
+**Índice de Organização Financeira (0 a 100)**, por regra sobre a `vw_bioimpedancia`,
+quatro pilares de 25 pontos, lineares:
+
+| Pilar | Indicador | 25 pontos | 0 pontos |
+|---|---|---|---|
+| poupança | `poupanca_sobre_entradas_pct` | ≥ +20% | ≤ −20% |
+| dreno | `dreno_pct_renda` | 0% | ≥ 5% da renda |
+| comprometimento | `comprometimento_credito_pct` | 0% | ≥ 50% |
+| cronicidade | `meses_pagando_juros` | 0 meses | 12 meses |
+
+Status: ≥ 75 organizado; 50 a 74 atenção; < 50 crítico. **Bruno: 61, atenção**
+(poupança 25 + dreno 17,15 + comprometimento 6,15 + cronicidade 12,5). Fórmula em
+`agent/app/indice.py`, versão `v1`, com teste nos extremos.
+
+**T01, usar a reserva** (`simular_uso_reserva`), para o Bruno em dezembro:
+
+| Campo | Valor | Regra |
+|---|---|---|
+| saldo quitado | R$ 725,07 | saldo no rotativo (juros ÷ 0,14) |
+| juros evitados por mês | R$ 101,51 | 725,07 × 14% (`taxa_rotativo_cartao`) |
+| rendimento bruto perdido por mês | ≈ R$ 7,97 | 725,07 × ((1,1365)^(1/12) − 1) × 1,03 |
+| IR | 22,5% sobre o rendimento | alíquota mais alta, declarada: a base não diz há quanto tempo o dinheiro está aplicado |
+| ganho líquido por mês | ≈ R$ 95 | juros evitados − rendimento líquido perdido |
+| reserva restante | R$ 40.544,93 | 41.270 − 725,07; ≈ 22 meses de despesas essenciais (R$ 1.831,90/mês) |
+
+Cada simulação recebe `simulacao_id` com validade de 24 h, registrado no estado da sessão:
+é o que o schema de ações (CA-13) exige para `abrir_simulacao_t01`.
+
+**Validador de números.** O `SecurityPlugin` guarda todo número devolvido pelas tools no
+estado (`numeros_tools`) e, na resposta final do modelo, qualquer "R$ X" fora desse
+conjunto bloqueia a resposta com um texto seguro e registra `guard=numero_inventado`.
+Sem payload na sessão, não age.

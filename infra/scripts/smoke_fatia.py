@@ -51,6 +51,53 @@ def s1(base_url: str, customer_id: str) -> int:
 PUSH_NEUTRO = "O Vita tem uma análise nova para você"
 
 
+def s3(base_url: str, customer_id: str) -> int:
+    """Visão financeira e T01: índice por regra, reserva e simulação, tudo do payload."""
+    url = f"{base_url.rstrip('/')}/customers/{customer_id}/financial-profile"
+    with urllib.request.urlopen(url, timeout=60) as r:
+        p = json.loads(r.read().decode())
+    idx = p.get("index") or {}
+    res = p.get("reserve") or {}
+    t01 = (p.get("treatments") or {}).get("t01") or {}
+    nulos = [k for k, v in t01.items() if v is None]
+    checks = [
+        (
+            "indice 0..100 com status e 4 componentes",
+            isinstance(idx.get("score"), int)
+            and 0 <= idx["score"] <= 100
+            and idx.get("status") in ("organizado", "atencao", "critico")
+            and len(idx.get("componentes") or {}) == 4,
+        ),
+        (
+            "reserva: CDB DI de 41.270 a 103% do CDI",
+            res.get("saldo") == 41270.0 and res.get("percentual_cdi") == 1.03,
+        ),
+        (
+            "T01: saldo quitado 725,07 e juros evitados 101,51",
+            t01.get("saldo_quitado") == 725.07
+            and t01.get("juros_evitados_mes") == 101.51,
+        ),
+        ("T01: reserva restante 40.544,93", t01.get("reserva_restante") == 40544.93),
+        (
+            "T01: CDI do SGS com origem declarada e IR",
+            t01.get("cdi_origem") in ("bcb_sgs", "fixo_declarado")
+            and t01.get("ir_mes", 0) > 0,
+        ),
+        ("CA-08: nenhum campo nulo no T01", bool(t01) and not nulos),
+        (
+            "justificativa cita os numeros do payload",
+            "725,07" in t01.get("justificativa", "")
+            and "101,51" in t01.get("justificativa", ""),
+        ),
+    ]
+    ok = 0
+    for nome, passou in checks:
+        ok += passou
+        print(f"{'✓' if passou else '✗'} {nome}")
+    print(f"\n{ok}/{len(checks)} verificacoes passaram — sem nenhuma chamada ao modelo")
+    return 0 if ok == len(checks) else 1
+
+
 def s2b(base_url: str, customer_id: str) -> int:
     """Front publicado: página carrega, abertura e perfil vêm do agente, chat passa
     pelo agente (UMA chamada real ao modelo)."""
@@ -144,7 +191,7 @@ def s2(base_url: str, customer_id: str) -> int:
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("fatia", choices=["s1", "s2", "s2b"])
+    ap.add_argument("fatia", choices=["s1", "s2", "s2b", "s3"])
     ap.add_argument("--base-url", required=True)
     ap.add_argument("--customer-id", required=True)
     args = ap.parse_args()
