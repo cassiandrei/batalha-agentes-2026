@@ -7,18 +7,25 @@
 
 ## O que é este repositório
 
-Template genérico de agente conversacional em **ADK 2.8** sobre **GCP**, para um hackathon
-de bem-estar financeiro. **Não é a solução** — é o andaime que será adaptado à jornada
-no dia do evento.
+O **Vita**, agente de bem-estar financeiro em **ADK 2.8** sobre **GCP** para a Batalha de
+Agentes (26–27/09/2026). Nasceu de um template genérico (histórico em
+`docs/produto/BLUEPRINT.md` e `HANDOFF.md`) e foi construído em fatias verticais S1–S8
+sobre a jornada do rotativo do cartão (persona Bruno; cena do Marcos na faixa V).
 
-Leitura na primeira vez, nesta ordem: `docs/BLUEPRINT.md` (o quadro completo), depois
-`docs/SATURDAY_CHECKLIST.md` (o que fazer no evento).
+Leitura na primeira vez, nesta ordem: `docs/produto/PRD.md` (o produto),
+`docs/produto/fatias_verticais.md` (o que cada fatia entregou), `docs/produto/DADOS_EVENTO.md`
+(dados, regras e decisões, uma seção por fatia) e `docs/ARCHITECTURE.md` (o que está
+publicado). `docs/SATURDAY_CHECKLIST.md` tem o roteiro do dia da banca.
 
 ---
 
 ## Regras que não podem ser quebradas
 
-1. **Nada específico de jornada** fora dos pontos marcados. Use `grep -rn "TODO(jornada)"`.
+1. **A jornada é a do PRD (rotativo do cartão).** O que é específico dela vive em
+   `app/tools/vita.py`, `abertura.py`, `indice.py`, `motor.py`, `confirmacoes.py`,
+   `financial_profile.py`, `tools/normas.py` e nos prompts; guardas, plugins, memória e
+   datasources continuam genéricos. Os marcadores `TODO(jornada)` nos prompts ficam: há
+   teste que os procura.
 2. **Somente dados sintéticos.** Identificadores com prefixo `FICT-`. Nenhum dado real de
    pessoa, em nenhuma circunstância.
 3. **Nenhuma marca, logo ou identidade visual do Itaú** em código, assets, prompts ou UI.
@@ -68,22 +75,32 @@ Quebrar qualquer um destes invalida o argumento técnico do projeto. Há teste p
 
 ```
 agent/app/
-  agent.py         orquestrador + subagentes + App(plugins)
-  config.py        ÚNICO ponto de leitura de env
-  session_setup.py semeadura de identidade em modo demo
-  prompts/v1/      prompts versionados, escolhidos por PROMPT_VERSION
-  tools/           tools determinísticas e tipadas
-  callbacks/       funções puras de guarda, SEM dependência de ADK
-  plugins/         aplicam as funções puras a todos os agentes
-  datasources/     Protocol + implementação local + projeções
-  memory/          Protocol + SQLite
+  agent.py             orquestrador + analyst/educator + especialista_normas (AgentTool) + App(plugins)
+  fast_api_app.py      /events e /customers/{id}/{opening,financial-profile,confirmations,memory,handoff}
+  config.py            ÚNICO ponto de leitura de env
+  abertura.py          pipeline proativo (diagnóstico → redator) e semente da sessão (S2)
+  financial_profile.py perfil que o front consome, montado só a partir das tools (S1–S4)
+  indice.py, motor.py  índice de organização financeira (S3) e motor de decisão (S4)
+  confirmacoes.py      confirmação idempotente com iToken mock (S5)
+  llm_simulado.py      LLM_MODE=simulado (S7)
+  session_setup.py     semeadura de identidade em modo demo
+  prompts/v1/          prompts versionados, escolhidos por PROMPT_VERSION
+  tools/               vita.py (fatura, risco, T01, T02, ofertas), normas.py (BM25), finance, customer, memory
+  callbacks/           funções puras de guarda, SEM dependência de ADK (entrada, injection, pii, output, numeros, authz)
+  plugins/             security (todas as camadas) e audit (guard, turn, seed, model_call)
+  datasources/         Protocol + local + evento (snapshot) + projeções
+  memory/              Protocol + SQLite + política do que pode ser lembrado
 data/
-  generator/       gerador sintético, seed fixa
-  knowledge/       textos de educação financeira
-  normas/          corpus do especialista em normas (uma fonte por arquivo)
-  redteam/         casos do red team (make redteam, sem modelo)
-infra/scripts/     switch_project, deploy, teardown, smoke
-docs/              blueprint, arquitetura, LGPD, experimentação, checklist
+  evento/              snapshot da base do evento, CDI e seed_sessions (make stage-evento, make cdi, make seed-abertura)
+  seeds/               memória semeada do Bruno
+  generator/           gerador sintético, seed fixa
+  knowledge/           textos de educação financeira
+  normas/              corpus do especialista em normas (uma fonte por arquivo)
+  redteam/             casos do red team (make redteam, sem modelo)
+web/                   front React/Vite + Express publicado como vita-app; só proxy, nenhum número escrito
+infra/scripts/         deploy, deploy_web, smoke, smoke_fatia, roteiro_e2e, redteam, seed_abertura, fetch_cdi
+docs/produto/          PRD, fatias verticais, DADOS_EVENTO (uma seção por fatia), blueprint histórico
+docs/                  arquitetura (entregável 5), drawio (entregável 4), LGPD, experimentação, checklist, redteam
 ```
 
 ---
@@ -94,13 +111,18 @@ docs/              blueprint, arquitetura, LGPD, experimentação, checklist
 |---|---|
 | `make setup` | venv 3.12 + dependências + `.env` |
 | `make data` | gera os dados sintéticos |
-| `make test` | 145 testes, **sem credencial nenhuma** |
+| `make test` | 361 testes, **sem credencial nenhuma** |
 | `make test-llm` | inclui os que chamam o modelo |
 | `make lint` | ruff check + format |
 | `make run` | playground local |
 | `make switch-project PROJECT_ID=x [REGION=y] [MODE=vertex\|local]` | troca projeto, região e modo |
-| `make deploy PROJECT_ID=x [DRY_RUN=1]` | deploy no Cloud Run |
-| `make smoke BASE_URL=x [TOKEN=y]` | 13 verificações contra agente vivo |
+| `make stage-evento PROJECT_ID=x` | exporta o snapshot da base do evento para `data/evento/` |
+| `make cdi` | busca o CDI no SGS do Banco Central (parâmetro com origem) |
+| `make deploy PROJECT_ID=x [TAG=fatia-sN] [MIN_INSTANCES=1] [DRY_RUN=1]` | deploy no Cloud Run; com `TAG`, revisão sem tráfego |
+| `make deploy-web PROJECT_ID=x AGENT_URL=y` | publica o front como `vita-app` |
+| `make smoke BASE_URL=x [TOKEN=y]` | verificações de arquitetura contra o agente vivo |
+| `make smoke-fatia FATIA=sN BASE_URL=x` | smoke de uma fatia (s1–s8), quase sempre sem modelo |
+| `make seed-abertura BASE_URL=x CUSTOMER_ID=y` | gera a semente da abertura proativa a partir do agente vivo |
 | `make roteiro BASE_URL=x [SEM_CHAT=1]` | roteiro ponta a ponta da demo (Bruno + Marcos) com latência por passo |
 | `make redteam` | red team sobre as camadas determinísticas, sem modelo; grava `docs/redteam/RELATORIO.md` |
 | `make teardown PROJECT_ID=x [DRY_RUN=1]` | apaga o que o deploy criou |
@@ -134,7 +156,7 @@ docs/              blueprint, arquitetura, LGPD, experimentação, checklist
 
 **Use os objetos reais do ADK como dublê, não `dict`.** O `State` do ADK não tem `pop()`
 nem `__delitem__`; um `dict` tem. Essa divergência já deixou um bug chegar à produção que
-145 testes não pegaram.
+a suíte inteira não pegou.
 
 ```python
 from google.adk.sessions.state import State
@@ -172,6 +194,8 @@ têm teste, mas podem mudar sem aviso. A mais sensível é a confirmação de a�
 
 ## O que não existe
 
-`BigQueryDataSource`, RAG Engine, Model Armor, endpoint `/events` com Pub/Sub,
-`traffic_split.sh`, `make eval`. As costuras (`Protocol` + fábrica + flags) estão prontas
-para recebê-los.
+Leitura **ao vivo** no BigQuery (o agente lê o snapshot exportado por `make stage-evento`),
+RAG Engine (a busca de normas é BM25 local pela mesma interface), Model Armor (negado no
+projeto do evento), `/events` por Pub/Sub (o endpoint existe e é chamado por HTTP),
+avaliação offline com conversas sintéticas (S10, não feita), vídeo de backup (tarefa
+manual). As costuras (`Protocol` + fábrica + flags) estão prontas para recebê-los.

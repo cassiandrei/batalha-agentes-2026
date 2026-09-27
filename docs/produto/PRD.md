@@ -439,6 +439,8 @@ A demo mostra a jornada do Bruno ponta a ponta com dado real e sintético declar
 
 ## Protótipo atual (AI Studio)
 
+> **Resolvido (S2b a S7).** O protótipo virou `web/` neste repositório e é publicado como `vita-app`; todas as divergências abaixo foram tratadas (números pelas tools, Drive e Firebase removidos, markdown sem HTML, "garantida" fora). A tabela fica como registro da decisão.
+
 O protótipo do designer ([danmarcello/Vita](https://github.com/danmarcello/Vita), commit `f7d9d34`) tem a jornada completa e boas funcionalidades novas, mas ainda conta a história da v1 e deixa o Gemini gerar os números. As divergências abaixo precisam ser resolvidas antes da demo.
 
 | Funcionalidade | No protótipo | Posição no PRD |
@@ -499,47 +501,47 @@ A implementação está organizada em fatias verticais, uma sessão do Claude Co
 
 **Obrigatório**
 
-- [ ] Exportar `vita_sintetico` (sem `cadastro_personas`) para `data/evento/` dentro do `make stage-evento` — Engenharia
-- [ ] Implementar as tools de leitura, política e cálculo com a interface dupla BigQuery/snapshot — Engenharia
-- [ ] Implementar o orquestrador (`LlmAgent` raiz) e o especialista em normas como `AgentTool` — Engenharia
-- [ ] Implementar o guardião em callbacks: bloqueio da faixa V em `before_tool_callback` e validador em `after_model_callback` — Engenharia
-- [ ] Montar o pipeline proativo (`SequentialAgent`: diagnóstico → redator) gravando a sessão pré-montada do Bruno — Engenharia
-- [ ] Proteger a cota do Gemini: ensaiar com LLM simulado, gravar e reproduzir a jornada do Bruno, limitar o guardião a uma regeneração e distribuir papéis entre modelos diferentes — Engenharia
-- [ ] Pedir à organização, na primeira hora de domingo, `aiplatform.user` para a SA de runtime ou cota maior — Engenharia
-- [ ] Manter uma instância sempre ativa na apresentação e semear a sessão pré-montada e a memória do Bruno no boot, a partir de arquivo na imagem — Engenharia
-- [ ] Embarcar o classificador local de injeção e calibrar o limiar com o conjunto de red team — Engenharia
-- [ ] Detector de dados sensíveis com validação (CPF, cartão, telefone, e-mail, conta) mascarando antes do LLM e dos logs — Engenharia
-- [ ] Vincular o `id_usuario` à sessão e ignorar o argumento do modelo nas tools — Engenharia
-- [ ] Ligar as configurações de segurança da API do Gemini, o token canário e a lista de URLs permitidas na saída — Engenharia
-- [ ] Montar o red team (\~60 ataques e 40 perguntas legítimas) e gerar as taxas de bloqueio e falso positivo para o pitch — Engenharia e Produto
-- [ ] Ajustar o gerador (limite de cerca de 2 vezes a renda, meses de rotativo na faixa de risco, mínimo existencial na faixa V) e rerodar — Engenharia
+- [x] Exportar `vita_sintetico` (sem `cadastro_personas`) para `data/evento/` dentro do `make stage-evento` — Engenharia — *S1*
+- [x] Implementar as tools de leitura, política e cálculo com a interface dupla BigQuery/snapshot — Engenharia — *S1–S4, sobre o snapshot; leitura ao vivo no BigQuery não entrou*
+- [x] Implementar o orquestrador (`LlmAgent` raiz) e o especialista em normas como `AgentTool` — Engenharia — *S8*
+- [x] Implementar o guardião em callbacks: bloqueio da faixa V em `before_tool_callback` e validador em `after_model_callback` — Engenharia — *S3 e S6*
+- [x] Montar o pipeline proativo (`SequentialAgent`: diagnóstico → redator) gravando a sessão pré-montada do Bruno — Engenharia — *S2*
+- [x] Proteger a cota do Gemini: ensaiar com LLM simulado, gravar e reproduzir a jornada do Bruno, limitar o guardião a uma regeneração e distribuir papéis entre modelos diferentes — Engenharia — *S7*
+- [x] Pedir à organização, na primeira hora de domingo, `aiplatform.user` para a SA de runtime ou cota maior — Engenharia — *atendido na noite de 26/09 (squad-agent-sa); não pedir de novo*
+- [x] Manter uma instância sempre ativa na apresentação e semear a sessão pré-montada e a memória do Bruno no boot, a partir de arquivo na imagem — Engenharia — *S2, S5 e S7*
+- [x] Embarcar o classificador local de injeção e calibrar o limiar com o conjunto de red team — Engenharia — *S6: heurísticas PT-BR calibradas no red team; classificador embarcado dispensado*
+- [x] Detector de dados sensíveis com validação (CPF, cartão, telefone, e-mail, conta) mascarando antes do LLM e dos logs — Engenharia — *S6*
+- [x] Vincular o `id_usuario` à sessão e ignorar o argumento do modelo nas tools — Engenharia — *desde o template; identificador na conversa bloqueado na S6*
+- [x] Ligar as configurações de segurança da API do Gemini, o token canário e a lista de URLs permitidas na saída — Engenharia — *S6*
+- [x] Montar o red team (\~60 ataques e 40 perguntas legítimas) e gerar as taxas de bloqueio e falso positivo para o pitch — Engenharia e Produto — *S6: 65 + 40, `docs/redteam/RELATORIO.md`*
+- [x] Ajustar o gerador (limite de cerca de 2 vezes a renda, meses de rotativo na faixa de risco, mínimo existencial na faixa V) e rerodar — Engenharia — *vita_sintetico v2, 26/09*
 - [x] Rodar a seleção do Bruno (infra/sql/vita\_selecao\_bruno\_rotativo.sql), escolher o cliente e preencher os valores da persona — Engenharia e Produto
 - [ ] Atualizar o roteiro do pitch com os números reais do Bruno e do público do gatilho — Produto
-- [ ] Definir a fórmula do Índice de Organização Financeira sobre os indicadores da bioimpedância — Engenharia e Produto
+- [x] Definir a fórmula do Índice de Organização Financeira sobre os indicadores da bioimpedância — Engenharia e Produto — *S3, seção 14 do DADOS_EVENTO*
 - [x] Confirmar se o Marcos continua na faixa V pela regra do mínimo existencial (bloco 4 do script de seleção) — Engenharia
 
 **Protótipo (AI Studio)**
 
-- [ ] Tirar os números do system prompt e ligar o `/api/chat` às tools — Engenharia
-- [ ] Trocar os valores fixos das telas e do perfil pelos do cliente selecionado, vindos do payload das tools — Design e Engenharia
-- [ ] Renderizar markdown com sanitização no lugar de `dangerouslySetInnerHTML` — Engenharia
-- [ ] Remover do protótipo o recurso do Google Drive (login, listagem, exclusão e salvamento) — Engenharia
-- [ ] Restringir a chave web do Firebase por domínio — Engenharia
-- [ ] Remover "garantida" e os textos de fallback com números fixos — Design
+- [x] Tirar os números do system prompt e ligar o `/api/chat` às tools — Engenharia — *S2b*
+- [x] Trocar os valores fixos das telas e do perfil pelos do cliente selecionado, vindos do payload das tools — Design e Engenharia — *S1–S4*
+- [x] Renderizar markdown com sanitização no lugar de `dangerouslySetInnerHTML` — Engenharia — *S6*
+- [x] Remover do protótipo o recurso do Google Drive (login, listagem, exclusão e salvamento) — Engenharia — *S2b*
+- [x] Restringir a chave web do Firebase por domínio — Engenharia — *não se aplica: o Firebase saiu com o Drive na S2b*
+- [x] Remover "garantida" e os textos de fallback com números fixos — Design — *S2b e S7*
 
 **Importante**
 
-- [ ] Carregar CDI via SGS e incluir IR e IOF em `simular_uso_reserva` — Engenharia
-- [ ] Exibir na tela de parcelamento o aviso de que os valores não incluem IOF e CET — Design
+- [x] Carregar CDI via SGS e incluir IR e IOF em `simular_uso_reserva` — Engenharia — *S3: CDI e IR regressivo; IOF de resgate não entra porque a reserva tem mais de 30 dias*
+- [x] Exibir na tela de parcelamento o aviso de que os valores não incluem IOF e CET — Design — *S4*
 - [ ] Separar juros de rotativo e de cheque especial nas views e recalcular o impacto por modalidade — Engenharia
-- [ ] Montar o corpus do RAG (20 a 40 documentos) e o playbook de tom — Produto e Design
+- [x] Montar o corpus do RAG (20 a 40 documentos) e o playbook de tom — Produto e Design — *S8: 8 fontes, 24 trechos em `data/normas/`*
 - [ ] Rodar a avaliação offline com as conversas sintéticas — Engenharia
-- [ ] Tentar a permissão de leitura da service account no BigQuery — Engenharia
+- [x] Tentar a permissão de leitura da service account no BigQuery — Engenharia — *squad-agent-sa recebeu BigQuery em 26/09; o agente segue lendo o snapshot*
 
 **Pitch**
 
-- [ ] Diagrama de arquitetura em LeanIX, Gliffy ou equivalente (entregável 4) — Engenharia
-- [ ] Documento explicativo da arquitetura (entregável 5), a partir das seções de arquitetura, dados e segurança deste PRD — Engenharia
+- [x] Diagrama de arquitetura em LeanIX, Gliffy ou equivalente (entregável 4) — Engenharia — *`docs/4. Desenho de solução (arquitetura).drawio`*
+- [x] Documento explicativo da arquitetura (entregável 5), a partir das seções de arquitetura, dados e segurança deste PRD — Engenharia — *`docs/ARCHITECTURE.md`*
 - [ ] Racional de prototipação (entregável 3) — Design
 - [ ] Proposta de negócio (entregável 1) com o dreno regressivo e o público de 355 clientes — Produto
 

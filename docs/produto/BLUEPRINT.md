@@ -1,5 +1,10 @@
 # Blueprint — Template de Agente ADK para a Batalha de Agentes
 
+> **Documento histórico (25/09).** Descreve o template genérico de antes do evento. A
+> jornada foi escolhida (rotativo do cartão) e o Vita foi construído em fatias S1–S8 sobre
+> este andaime; o estado atual está em `PRD.md`, `fatias_verticais.md`, `DADOS_EVENTO.md` e
+> `docs/ARCHITECTURE.md`. As contagens e os "ainda não existe" abaixo são da data do texto.
+
 > **Propósito deste documento:** dar contexto completo a um revisor externo (humano ou
 > outro modelo) que não tem acesso ao repositório. Descreve o que foi construído, por que
 > cada decisão foi tomada, o que está provado por teste e o que ainda não existe.

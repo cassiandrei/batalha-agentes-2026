@@ -1,5 +1,7 @@
 # HANDOFF — Ambiente para a Batalha de Agentes (Itaú × Google)
 
+> **Histórico.** Este é o pedido original do template (antes do evento). Já foi executado; o que vale hoje está em `CLAUDE.md` e em `docs/produto/`.
+
 > **Para o Claude Code:** leia este arquivo inteiro antes de agir. Execute **fase por fase**, na ordem.
 > Ao final de cada fase, rode a verificação indicada, me mostre o resultado e **espere meu "ok"** antes de seguir.
 > Se algo exigir login no navegador, cobrança no GCP ou decisão minha, pare e me peça.
