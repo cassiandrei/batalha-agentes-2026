@@ -53,7 +53,7 @@ const agora = () => new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', mi
 // S5: a confirmação vai ao agente com iToken e chave de idempotência (CA-14). Um
 // duplo clique reusa a chave e o agente devolve a mesma execução.
 async function confirmarNoAgente(simulacaoId: string, itoken: string, idempotencyKey: string): Promise<Confirmacao> {
-  const r = await fetch('/api/confirmar', {
+  const r = await fetch(api('/api/confirmar'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ simulacao_id: simulacaoId, itoken, idempotency_key: idempotencyKey }),
@@ -64,6 +64,10 @@ async function confirmarNoAgente(simulacaoId: string, itoken: string, idempotenc
   }
   return (await r.json()) as Confirmacao;
 }
+
+// S6: ?cliente=marcos põe a cena do Marcos (faixa V) na tela. O id fica no servidor.
+const CLIENTE = new URLSearchParams(window.location.search).get('cliente') === 'marcos' ? 'marcos' : 'bruno';
+const api = (caminho: string) => `${caminho}${caminho.includes('?') ? '&' : '?'}cliente=${CLIENTE}`;
 
 export default function App() {
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
@@ -81,7 +85,7 @@ export default function App() {
   // S2: busca a abertura pré-montada. Zero chamadas ao modelo: ela já está na sessão.
   useEffect(() => {
     let ativo = true;
-    fetch('/api/abertura')
+    fetch(api('/api/abertura'))
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then((a: Abertura) => {
         if (ativo) setAbertura(a);
@@ -130,7 +134,7 @@ export default function App() {
   // S1: o perfil vem do agente; nenhum valor fixo sobra no card.
   useEffect(() => {
     let ativo = true;
-    fetch('/api/financial-profile')
+    fetch(api('/api/financial-profile'))
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then((p: FinancialProfile) => {
         if (ativo) setProfile(p);
@@ -181,7 +185,7 @@ export default function App() {
     setIsTyping(true);
 
     try {
-      const response = await fetch('/api/chat', {
+      const response = await fetch(api('/api/chat'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -284,14 +288,14 @@ export default function App() {
 
   // S5: memória com consentimento, sem passar pelo modelo
   const handleConsent = async (sim: boolean) => {
-    const r = await fetch('/api/memoria/consentimento', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ consentimento: sim }) });
+    const r = await fetch(api('/api/memoria/consentimento'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ consentimento: sim }) });
     setMemoriaConsentida(sim && r.ok);
     setMessages((prev) => prev.map((m) => (m.consentPrompt ? { ...m, consentPrompt: false } : m)));
     addAssistant(sim ? 'Combinado. Vou lembrar seus objetivos e tratamentos. Para ver ou apagar, use "O que você lembra?" e "Esqueça tudo".' : 'Tudo bem, não vou guardar nada entre conversas.');
   };
 
   const handleShowMemory = async () => {
-    const r = await fetch('/api/memoria');
+    const r = await fetch(api('/api/memoria'));
     const m = (await r.json()) as { consentimento: boolean; lembrancas: Record<string, string> };
     const itens = Object.entries(m.lembrancas);
     addAssistant(
@@ -302,7 +306,7 @@ export default function App() {
   };
 
   const handleForgetAll = async () => {
-    const r = await fetch('/api/memoria', { method: 'DELETE' });
+    const r = await fetch(api('/api/memoria'), { method: 'DELETE' });
     const d = (await r.json()) as { apagadas: number };
     setMemoriaConsentida(false);
     addAssistant(`Pronto: apaguei ${d.apagadas} lembrança(s) e não vou mais guardar nada até você autorizar de novo.`);
@@ -310,7 +314,7 @@ export default function App() {
 
   // S5: "Falar com uma pessoa" — sempre disponível; o resumo só vai com consentimento
   const handleTalkToHuman = async () => {
-    const r = await fetch('/api/pessoa', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ consentimento: memoriaConsentida, motivo: 'pedido pelo cliente na conversa' }) });
+    const r = await fetch(api('/api/pessoa'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ consentimento: memoriaConsentida, motivo: 'pedido pelo cliente na conversa' }) });
     const h = (await r.json()) as { protocolo: string; fila: string; resumo: unknown };
     addAssistant(`${h.resumo ? 'Encaminhei você para uma pessoa da equipe com um resumo da conversa, sem seus valores nem dados pessoais.' : 'Encaminhei você para uma pessoa da equipe, sem enviar resumo (você não autorizou compartilhar).'} Protocolo ${h.protocolo}.`);
   };

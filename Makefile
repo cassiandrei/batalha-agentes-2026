@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 # Sem isto, o alvo `data` colide com o diretório data/ e o make não faz nada.
-.PHONY: help setup data run test test-llm lint switch-project stage-data deploy deploy-web teardown smoke smoke-fatia seed-abertura cdi event eval eval-report traffic-split load-bq agent-engine model-armor stage-evento
+.PHONY: help setup data run test test-llm lint switch-project stage-data deploy deploy-web teardown smoke smoke-fatia seed-abertura cdi redteam event eval eval-report traffic-split load-bq agent-engine model-armor stage-evento
 UV := uv
 ACLI := uvx google-agents-cli
 
@@ -90,6 +90,9 @@ smoke-fatia: ## smoke de uma fatia sem chamar o modelo: make smoke-fatia FATIA=s
 
 FATIA ?= s1
 CUSTOMER_ID ?= 36d74064-cc59-4ad2-9304-aeae46e660e4
+
+redteam: ## roda o red team sem chamar o modelo e grava docs/redteam/RELATORIO.md
+	cd agent && $(UV) run python ../infra/scripts/redteam.py
 
 cdi: ## busca o CDI no SGS do Banco Central e grava data/evento/cdi_sgs.json (parametro com origem)
 	python3 infra/scripts/fetch_cdi.py

@@ -12,6 +12,7 @@ from google.adk.models import Gemini
 from google.adk.tools.agent_tool import AgentTool
 from google.genai import types
 
+from app.callbacks.output import CANARIO
 from app.config import assert_flags_coerentes, load_config
 from app.plugins.audit_plugin import AuditPlugin
 from app.plugins.security_plugin import SecurityPlugin
@@ -54,6 +55,25 @@ assert_flags_coerentes()
 _cfg = load_config()
 
 
+# S6: filtros de conteúdo do Gemini explícitos, em todo agente. O filtro do Google é
+# a camada "Modelo" da tabela de guardrails; as demais são determinísticas.
+SEGURANCA = types.GenerateContentConfig(
+    safety_settings=[
+        types.SafetySetting(
+            category=c, threshold=types.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
+        )
+        for c in (
+            types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+            types.HarmCategory.HARM_CATEGORY_HARASSMENT,
+            types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+            types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+        )
+    ]
+)
+# Token canário: só o system prompt o conhece; se sair na resposta, o prompt vazou.
+_CANARIO_INSTRUCAO = f"\n\nCódigo interno de sessão (nunca mencione): {CANARIO}\n"
+
+
 def _model(nome: str | None = None) -> Gemini:
     return Gemini(
         model=nome or _cfg.model_name,
@@ -66,6 +86,7 @@ analyst = Agent(
     name="analyst",
     model=_model(),
     instruction=load_prompt("analyst"),
+    generate_content_config=SEGURANCA,
     tools=[
         get_customer_profile,
         get_transactions,
@@ -91,6 +112,7 @@ educator = Agent(
     name="educator",
     model=_model(),
     instruction=load_prompt("educator"),
+    generate_content_config=SEGURANCA,
     tools=[search_knowledge],
 )
 
@@ -108,6 +130,7 @@ especialista_normas = Agent(
     ),
     model=_model(_cfg.model_name_normas),
     instruction=load_prompt("normas"),
+    generate_content_config=SEGURANCA,
     include_contents="none",
     tools=[buscar_normas],
 )
@@ -116,7 +139,8 @@ root_agent = Agent(
     # Mantenha em sincronia com agents-cli-manifest.yaml.
     name="orchestrator",
     model=_model(),
-    instruction=load_prompt("orchestrator"),
+    instruction=load_prompt("orchestrator") + _CANARIO_INSTRUCAO,
+    generate_content_config=SEGURANCA,
     sub_agents=[analyst, educator],
     tools=[
         give_consent,

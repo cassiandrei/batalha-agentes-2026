@@ -34,12 +34,16 @@ from app.abertura import (
 )
 from app.app_utils import services
 from app.app_utils.a2a import attach_a2a_routes
+from app.app_utils.auditoria import configurar_auditoria
 from app.config import load_config
 from app.confirmacoes import REGISTRO
 from app.events import EventRequest, build_event_prompt
 from app.financial_profile import build_financial_profile
 from app.memory.factory import get_memory_store
 from app.memory.politica import carregar_semente_memoria, valor_permitido
+
+# CA-16: o rastro `event=guard` precisa sair do processo para o Cloud Logging.
+configurar_auditoria()
 
 load_dotenv()
 allow_origins = (

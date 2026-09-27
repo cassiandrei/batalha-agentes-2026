@@ -20,6 +20,7 @@ from google.adk.tools.tool_context import ToolContext
 from google.genai import types
 
 from app.callbacks.authz import UnsafeToolArgs, assert_tool_args_safe
+from app.callbacks.entrada import avaliar_entrada, hash_entrada
 from app.callbacks.injection import detect_injection
 from app.callbacks.numeros import numeros_do_payload, valores_fora_do_payload
 from app.callbacks.output import check_output
@@ -27,9 +28,24 @@ from app.callbacks.pii import mask_pii
 from app.config import load_config
 
 RECUSA = (
-    "Não consigo atender esse pedido. Posso ajudar com a sua situação financeira "
-    "ou explicar um conceito. Se preferir, posso transferir para um atendente."
+    "Não consigo ajudar com isso. Posso mostrar sua visão financeira ou as opções "
+    "para reduzir juros. Se preferir, posso transferir para uma pessoa."
 )
+RECUSA_ESCOPO = (
+    "Isso fica fora do que eu faço. Posso ajudar com a sua fatura, o rotativo, a "
+    "reserva e as opções para reduzir juros."
+)
+RECUSA_OUTRO_CLIENTE = (
+    "Só consigo falar da sua própria conta: a identidade vem da sessão, e nenhum "
+    "identificador escrito na conversa muda isso. Posso mostrar a sua visão financeira."
+)
+RECUSA_SAIDA = (
+    "Prefiro não prometer resultado. Posso mostrar sua visão financeira ou as opções "
+    "para reduzir juros, com os números da sua conta."
+)
+RECUSA_FAIXA_V = "Nenhuma oferta de crédito por regra; o caminho é renegociação assistida com uma pessoa."
+# Tools que criam ou simulam crédito novo: a faixa V não chega nelas.
+TOOLS_CREDITO = {"simular_parcelamento_fatura"}
 TRANSFERENCIA = "Vou transferir você para um atendente humano, que consegue ajudar melhor a partir daqui."
 RECUSA_NUMERO = (
     "Prefiro não citar um valor que não veio dos seus dados. Posso mostrar os números "
@@ -53,10 +69,21 @@ SANITIZED = "[conteúdo removido: instrução suspeita nos dados]"
 _audit_logger = logging.getLogger("audit")
 
 
-def _audit_guard(guard: str, **campos: Any) -> None:
-    """Registra que um guard agiu. Nunca o conteúdo, só o metadado."""
+def _audit_guard(
+    guard: str, camada: str = "entrada", decisao: str = "bloqueado", **campos: Any
+) -> None:
+    """Registra que um guard agiu: camada, categoria, decisão e hash. Nunca o texto."""
     _audit_logger.info(
-        json.dumps({"event": "guard", "guard": guard, **campos}, ensure_ascii=False)
+        json.dumps(
+            {
+                "event": "guard",
+                "guard": guard,
+                "camada": camada,
+                "decisao": decisao,
+                **campos,
+            },
+            ensure_ascii=False,
+        )
     )
 
 
@@ -86,6 +113,26 @@ def _limpar(valor: Any, chave: str | None = None) -> tuple[Any, bool]:
     return valor, False
 
 
+def faixa_do_cliente(state: Any) -> str | None:
+    """Faixa de risco do cliente da sessão, por regra, memorizada no estado."""
+    faixa = state.get("faixa_risco")
+    if faixa:
+        return faixa
+    cid = state.get("customer_id")
+    if not cid:
+        return None
+    from app.tools.vita import get_data_source
+
+    try:
+        perfil = get_data_source().get_perfil_risco(cid)
+    except Exception:  # datasource sem perfil de risco (modo local): sem política
+        return None
+    faixa = (perfil or {}).get("faixa_risco")
+    if faixa:
+        state["faixa_risco"] = faixa
+    return faixa
+
+
 class SecurityPlugin(BasePlugin):
     def __init__(self) -> None:
         super().__init__(name="security")
@@ -100,9 +147,9 @@ class SecurityPlugin(BasePlugin):
         estado = callback_context.state
         conteudos = llm_request.contents or []
 
-        # Mascaramento PRIMEIRO. Além de ser idempotente, isto é o que garante
-        # residência: com Model Armor ligado o texto sai do Brasil, e o que
-        # atravessa a fronteira já vai sem CPF, cartão, e-mail e telefone.
+        # Mascaramento PRIMEIRO, no histórico inteiro. Além de idempotente, é o que
+        # garante residência: o que atravessa a fronteira já vai sem CPF, cartão,
+        # e-mail e telefone.
         for content in conteudos:
             for part in content.parts or []:
                 if not part.text:
@@ -110,34 +157,41 @@ class SecurityPlugin(BasePlugin):
                 mascarado, achados = mask_pii(part.text)
                 if achados:
                     part.text = mascarado
-                    _audit_guard("pii_masked", kinds=achados)
+                    _audit_guard(
+                        "pii_masked",
+                        decisao="mascarado",
+                        kinds=achados,
+                        hash=hash_entrada(part.text),
+                    )
 
-        # Injeção: só na mensagem NOVA. O histórico já foi vetado, e a mensagem
-        # bloqueada continua persistida na sessão — varrer tudo a redetectava a
-        # cada turno, recusando conversa legítima para sempre e somando strike.
+        # Camada de entrada: só na mensagem NOVA. O histórico já foi vetado, e a
+        # mensagem bloqueada continua persistida na sessão — varrer tudo a
+        # redetectava a cada turno, recusando conversa legítima para sempre.
         for part in (conteudos[-1].parts if conteudos else None) or []:
             if not part.text:
                 continue
-            motivo = None
-            if detect_injection(part.text).blocked:
-                motivo = "prompt_injection"
-            elif cfg.use_model_armor:
-                # Camada adicional, nunca substituta: medimos que ela pega
-                # paráfrases que o heurístico perde, e que ambas erram juntas
-                # num jailbreak estilo DAN.
+            veredito = avaliar_entrada(part.text)
+            part.text = veredito.texto  # normalizado: sem invisíveis, com teto
+            motivo = veredito.categoria if veredito.decisao == "bloqueado" else None
+            if motivo is None and cfg.use_model_armor:
+                # Camada adicional, nunca substituta.
                 from app.callbacks import model_armor
 
-                veredito = model_armor.scan_prompt(part.text)
-                if veredito.unavailable:
-                    _audit_guard("model_armor_unavailable")
-                elif veredito.blocked:
+                armor = model_armor.scan_prompt(part.text)
+                if armor.unavailable:
+                    _audit_guard("model_armor_unavailable", decisao="indisponivel")
+                elif armor.blocked:
                     motivo = "model_armor"
             if motivo:
                 strikes = estado.get("guard_strikes", 0) + 1
                 estado["guard_strikes"] = strikes
-                _audit_guard(motivo, strikes=strikes)
+                _audit_guard(motivo, strikes=strikes, hash=veredito.hash)
                 if strikes >= cfg.guard_strikes_to_human:
                     return _texto_resposta(TRANSFERENCIA)
+                if motivo == "outro_cliente":
+                    return _texto_resposta(RECUSA_OUTRO_CLIENTE)
+                if motivo in ("tarefa_generica", "tema_fora", "ofensa"):
+                    return _texto_resposta(RECUSA_ESCOPO)
                 return _texto_resposta(RECUSA)
         return None
 
@@ -147,8 +201,11 @@ class SecurityPlugin(BasePlugin):
         try:
             assert_tool_args_safe(tool.name, tool_args)
         except UnsafeToolArgs as erro:
-            _audit_guard("unsafe_tool_args", tool=tool.name)
+            _audit_guard("unsafe_tool_args", camada="tool", tool=tool.name)
             return {"error": str(erro)}
+        if tool.name in TOOLS_CREDITO and faixa_do_cliente(tool_context.state) == "V":
+            _audit_guard("faixa_v_sem_credito", camada="tool", tool=tool.name)
+            return {"error": RECUSA_FAIXA_V, "elegivel": False, "faixa_risco": "V"}
         return None
 
     async def after_tool_callback(
@@ -181,7 +238,7 @@ class SecurityPlugin(BasePlugin):
             tool_context.state["citacao_pendente"] = citadas or None
         limpo, mexeu = _limpar(result)
         if mexeu:
-            _audit_guard("indirect_injection", tool=tool.name)
+            _audit_guard("indirect_injection", camada="tool", tool=tool.name)
             return limpo
         return None
 
@@ -204,10 +261,14 @@ class SecurityPlugin(BasePlugin):
                 continue
             texto, violacoes = check_output(part.text, suitability)
             if violacoes:
-                _audit_guard("output_violation", kinds=violacoes)
+                _audit_guard("output_violation", camada="saida", kinds=violacoes)
                 if final:
                     self._acumulado.pop(inv, None)
-                return _texto_resposta(texto if "pii_leak" in violacoes else RECUSA)
+                if violacoes == ["pii_leak"]:
+                    return _texto_resposta(texto)
+                return _texto_resposta(
+                    RECUSA_SAIDA if "termo_proibido" in violacoes else RECUSA
+                )
 
         if final:
             completo = self._acumulado.pop(inv, "")
@@ -215,7 +276,9 @@ class SecurityPlugin(BasePlugin):
             permitidos = set(callback_context.state.get("numeros_tools") or [])
             inventados = valores_fora_do_payload(completo, permitidos)
             if inventados:
-                _audit_guard("numero_inventado", quantos=len(inventados))
+                _audit_guard(
+                    "numero_inventado", camada="saida", quantos=len(inventados)
+                )
                 return _texto_resposta(RECUSA_NUMERO)
             # CA-19: resposta apoiada em norma sem a fonte não sai.
             pendentes = callback_context.state.get("citacao_pendente") or []
@@ -224,14 +287,21 @@ class SecurityPlugin(BasePlugin):
 
                 callback_context.state["citacao_pendente"] = None
                 if not any(cita(c, completo) for c in pendentes):
-                    _audit_guard("resposta_sem_citacao", fontes=len(pendentes))
+                    _audit_guard(
+                        "resposta_sem_citacao", camada="saida", fontes=len(pendentes)
+                    )
                     return _texto_resposta(RECUSA_CITACAO)
             _, violacoes = check_output(completo, suitability)
             if violacoes:
                 # Chegou aqui = a PII estava partida entre chunks, e os chunks
                 # anteriores JÁ foram entregues. Não dá para desfazer; registra
                 # para a trilha de auditoria. Mitigação real: desligar streaming.
-                _audit_guard("split_pii_leak", kinds=violacoes)
+                _audit_guard(
+                    "split_pii_leak",
+                    camada="saida",
+                    decisao="registrado",
+                    kinds=violacoes,
+                )
             # Model Armor na SAÍDA: com os filtros de IA responsável no template,
             # olhar só o prompt deixaria o agente produzir o que o filtro barra.
             # Roda no texto completo, uma vez por invocação, não por chunk.
@@ -242,6 +312,8 @@ class SecurityPlugin(BasePlugin):
                 if veredito.unavailable:
                     _audit_guard("model_armor_unavailable", where="response")
                 elif veredito.blocked:
-                    _audit_guard("model_armor_response", kinds=["rai_or_sdp"])
+                    _audit_guard(
+                        "model_armor_response", camada="saida", kinds=["rai_or_sdp"]
+                    )
                     return _texto_resposta(RECUSA)
         return None

@@ -214,6 +214,7 @@ def _politica(customer_id: str) -> dict:
     limite_atencao = params.get("guardrail_atencao", {}).get("valor", 0.35)
     base = {
         "faixa_risco": faixa,
+        "minimo_existencial": params.get("minimo_existencial", {}).get("valor", 600.0),
         "motivo_faixa": perfil["motivo_faixa"],
         "comprometimento": perfil["comprometimento"],
         "custo_mensal_juros_atual": custo_atual,

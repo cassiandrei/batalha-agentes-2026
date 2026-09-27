@@ -73,6 +73,18 @@ export const Header: React.FC<HeaderProps> = ({
           <Receipt className="w-4 h-4" />
         </button>
 
+        {/* S6: cena do Marcos (faixa V) na demo. Recarrega: conversa e sessão são outras. */}
+        <button
+          onClick={() => {
+            const marcos = new URLSearchParams(window.location.search).get('cliente') === 'marcos';
+            window.location.search = marcos ? '' : '?cliente=marcos';
+          }}
+          className="hidden sm:inline-flex items-center px-2 py-1 rounded-lg text-[11px] font-medium text-gray-400 hover:text-gray-200 hover:bg-gray-800/80 border border-gray-800 transition-colors cursor-pointer"
+          title="Alternar entre a cena do Bruno e a do Marcos"
+        >
+          {new URLSearchParams(window.location.search).get('cliente') === 'marcos' ? 'Marcos' : 'Bruno'}
+        </button>
+
         {/* S5: Falar com uma pessoa, sempre visível */}
         <button
           onClick={onTalkToHuman}

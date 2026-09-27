@@ -59,6 +59,7 @@ Quebrar qualquer um destes invalida o argumento técnico do projeto. Há teste p
 | **Consentimento é porta.** Sem ele, não grava | `app/memory/local.py` |
 | **Ação financeira exige confirmação** | `app/tools/actions.py` |
 | **Log nunca tem conteúdo de conversa** | `app/plugins/audit_plugin.py` |
+| **Entrada bloqueada não chama o modelo; log `guard` só com hash** | `app/callbacks/entrada.py`, `app/plugins/security_plugin.py` |
 | **Resposta sobre norma sempre cita a fonte** | `app/tools/normas.py`, porta em `app/plugins/security_plugin.py` |
 
 ---
@@ -80,6 +81,7 @@ data/
   generator/       gerador sintético, seed fixa
   knowledge/       textos de educação financeira
   normas/          corpus do especialista em normas (uma fonte por arquivo)
+  redteam/         casos do red team (make redteam, sem modelo)
 infra/scripts/     switch_project, deploy, teardown, smoke
 docs/              blueprint, arquitetura, LGPD, experimentação, checklist
 ```
@@ -99,6 +101,7 @@ docs/              blueprint, arquitetura, LGPD, experimentação, checklist
 | `make switch-project PROJECT_ID=x [REGION=y] [MODE=vertex\|local]` | troca projeto, região e modo |
 | `make deploy PROJECT_ID=x [DRY_RUN=1]` | deploy no Cloud Run |
 | `make smoke BASE_URL=x [TOKEN=y]` | 13 verificações contra agente vivo |
+| `make redteam` | red team sobre as camadas determinísticas, sem modelo; grava `docs/redteam/RELATORIO.md` |
 | `make teardown PROJECT_ID=x [DRY_RUN=1]` | apaga o que o deploy criou |
 
 ---

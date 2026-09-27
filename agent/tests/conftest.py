@@ -11,9 +11,8 @@ import pathlib
 from pathlib import Path
 
 import pytest
-from dotenv import load_dotenv
-
 from data.generator.generate import generate_all
+from dotenv import load_dotenv
 
 # O .env só era carregado pelo fast_api_app. Sem isto, GEMINI_API_KEY nunca
 # chega ao os.environ do pytest: os testes de integração pulavam silenciosamente

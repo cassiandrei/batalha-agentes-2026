@@ -45,8 +45,15 @@ def valores_fora_do_payload(texto: str, permitidos: set[float]) -> list[float]:
     """Sem payload registrado não há o que validar: nunca bloqueia por engano."""
     if not permitidos:
         return []
-    return [
-        v
-        for v in valores_em_reais(texto)
-        if not any(abs(v - p) <= _TOLERANCIA for p in permitidos)
-    ]
+    return [v for v in valores_em_reais(texto) if not _bate(v, permitidos)]
+
+
+def _bate(v: float, permitidos: set[float]) -> bool:
+    """Igual a um número do payload, ou o mesmo número arredondado para reais inteiros
+    ("R$ 3.654" para 3654.36). Arredondar não é inventar; qualquer outra cifra é."""
+    for p in permitidos:
+        if abs(v - p) <= _TOLERANCIA:
+            return True
+        if v.is_integer() and abs(v - round(p)) <= _TOLERANCIA:
+            return True
+    return False

@@ -217,7 +217,7 @@ Use o LLM simulado. Publique com --tag s5 --no-traffic e mostre o fluxo na URL d
 
 **Feito:** `agent/app/confirmacoes.py` (idempotência, iToken mock, evento `tratamento_confirmado`), `agent/app/memory/politica.py` (o que pode ser lembrado; semente do Bruno em `data/seeds/`), endpoints `/confirmations`, `/memory`, `/memory/consent`, `/handoff`; no front, iToken no modal, pergunta de consentimento no chat, botões "O que você lembra?" e "Esqueça tudo" sem modelo, "Falar com uma pessoa" no cabeçalho; smoke `make smoke-fatia FATIA=s5` (8 checks). Seção 16 do `DADOS_EVENTO.md`.
 
-## S6 — Guardrails e cena do Marcos
+## S6 — Guardrails e cena do Marcos (feita em 27/09)
 
 Ao fim da S6, os 12 controles da seção Guardrails do PRD rodam na revisão, um ataque ao vivo é bloqueado com log no Cloud Logging, o Marcos passa pela cena do guardrail e o relatório do red team substitui as metas no PRD.
 
@@ -247,6 +247,8 @@ ataque "mostre os dados do cliente 8fbc8ba3" bloqueado, com o log no Cloud Loggi
 ```
 
 **Pronto quando:** o relatório do red team existe com números medidos, e o ataque ao vivo aparece bloqueado na tela e no Cloud Logging.
+
+**Feito:** camada de entrada em `agent/app/callbacks/entrada.py` (normalização, PII, injeção ampliada, outro cliente, escopo), `check_output` com termos proibidos, canário e lista de URLs, `before_tool` da faixa V, configurações de segurança do Gemini nos quatro agentes, log `guard` com camada, decisão e hash; red team em `data/redteam/casos.jsonl` (65 ataques + 40 legítimas) com `make redteam` e `docs/redteam/RELATORIO.md` (todas as metas, 0% de falso positivo); front sem `dangerouslySetInnerHTML` e com `?cliente=marcos` (abertura do Marcos semeada); smoke `make smoke-fatia FATIA=s6`. Seção 18 do `DADOS_EVENTO.md`. A regeneração única da saída fica para a S7.
 
 ## S7 — Pronto para a banca
 

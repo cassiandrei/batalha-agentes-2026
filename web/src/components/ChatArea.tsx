@@ -14,6 +14,23 @@ interface ChatAreaProps {
   onConsent: (sim: boolean) => void;
 }
 
+// Só **negrito** e parágrafos viram elementos; qualquer outra coisa é texto puro.
+export function renderTexto(texto: string): React.ReactNode {
+  return texto.split(/\n{2,}/).map((paragrafo, i) => (
+    <p key={i}>
+      {paragrafo.split(/(\*\*[^*]+\*\*)/g).map((parte, j) =>
+        parte.startsWith('**') && parte.endsWith('**') ? (
+          <strong key={j} className="font-bold text-white">
+            {parte.slice(2, -2)}
+          </strong>
+        ) : (
+          <React.Fragment key={j}>{parte}</React.Fragment>
+        ),
+      )}
+    </p>
+  ));
+}
+
 export const ChatArea: React.FC<ChatAreaProps> = ({
   messages,
   isTyping,
@@ -46,15 +63,8 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
             <div key={message.id} className="flex flex-col items-start max-w-[88%] sm:max-w-[85%] group animate-fade-in">
               {/* Vita Assistant Message - Exact styling from prompt */}
               <div className="bg-gray-800/50 border-l-2 border-[#1FA37C] p-4 rounded-r-xl rounded-bl-xl text-sm leading-relaxed text-gray-200 shadow-sm relative">
-                {/* Format markdown bold if present */}
-                <div 
-                  className="space-y-1.5"
-                  dangerouslySetInnerHTML={{
-                    __html: message.content
-                      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-white">$1</strong>')
-                      .replace(/\n\n/g, '<br/><br/>')
-                  }}
-                />
+                {/* S6: markdown sanitizado (só negrito e parágrafos), nunca HTML do modelo */}
+                <div className="space-y-1.5">{renderTexto(message.content)}</div>
 
                 {/* S8: fonte citada pelo especialista em normas, com link */}
                 {message.citacoes && message.citacoes.length > 0 && (

@@ -19,6 +19,11 @@ app.use(express.json());
 // do agente. Este servidor só faz o proxy e extrai o texto da resposta.
 const AGENT_URL = (process.env.AGENT_URL || '').replace(/\/$/, '');
 const DEMO_CUSTOMER_ID = process.env.DEMO_CUSTOMER_ID || '';
+// S6: cena do Marcos (faixa V). ?cliente=marcos troca o cliente da demo; o id vem do
+// ambiente, nunca da conversa.
+const DEMO_CUSTOMER_ID_MARCOS = process.env.DEMO_CUSTOMER_ID_MARCOS || '8fbc8ba3-7d20-4382-ba8d-ffd070e836a1';
+const clienteDe = (req: Request) => (req.query.cliente === 'marcos' ? DEMO_CUSTOMER_ID_MARCOS : DEMO_CUSTOMER_ID);
+const nomeDe = (req: Request) => (req.query.cliente === 'marcos' ? 'Marcos' : 'Bruno');
 const APP_NAME = 'app';
 const sessaoDoCliente = (id: string) => `abertura-${id}`;
 
@@ -43,15 +48,16 @@ app.post('/api/chat', async (req: Request, res: Response) => {
     res.status(422).json({ error: 'userMessage vazio' });
     return;
   }
-  const sessionId = sessaoDoCliente(DEMO_CUSTOMER_ID);
+  const cliente = clienteDe(req);
+  const sessionId = sessaoDoCliente(cliente);
   try {
-    await garantirSessao(DEMO_CUSTOMER_ID, sessionId);
+    await garantirSessao(cliente, sessionId);
     const r = await fetch(`${AGENT_URL}/run`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         app_name: APP_NAME,
-        user_id: DEMO_CUSTOMER_ID,
+        user_id: cliente,
         session_id: sessionId,
         new_message: { role: 'user', parts: [{ text: userMessage }] },
       }),
@@ -100,20 +106,20 @@ app.post('/api/chat', async (req: Request, res: Response) => {
 
 // Financial Profile Data endpoint — S1: o bloco `card` vem do agente (tools), nunca daqui.
 
-app.get('/api/financial-profile', async (_req: Request, res: Response) => {
+app.get('/api/financial-profile', async (req: Request, res: Response) => {
   if (!AGENT_URL || !DEMO_CUSTOMER_ID) {
     res.status(503).json({ error: 'AGENT_URL e DEMO_CUSTOMER_ID precisam estar no ambiente' });
     return;
   }
   try {
-    const r = await fetch(`${AGENT_URL}/customers/${DEMO_CUSTOMER_ID}/financial-profile`);
+    const r = await fetch(`${AGENT_URL}/customers/${clienteDe(req)}/financial-profile`);
     if (!r.ok) {
       res.status(r.status).json({ error: `agente respondeu ${r.status}` });
       return;
     }
     const agente = await r.json();
     res.json({
-      user: 'Bruno',
+      user: nomeDe(req),
       card: {
         brand: 'Cartão de crédito',
         lastFour: '',
@@ -160,13 +166,13 @@ app.get('/api/financial-profile', async (_req: Request, res: Response) => {
 });
 
 // S2: abertura proativa. A sessão já está montada no agente; aqui só se lê.
-app.get('/api/abertura', async (_req: Request, res: Response) => {
+app.get('/api/abertura', async (req: Request, res: Response) => {
   if (!AGENT_URL || !DEMO_CUSTOMER_ID) {
     res.status(503).json({ error: 'AGENT_URL e DEMO_CUSTOMER_ID precisam estar no ambiente' });
     return;
   }
   try {
-    const r = await fetch(`${AGENT_URL}/customers/${DEMO_CUSTOMER_ID}/opening`);
+    const r = await fetch(`${AGENT_URL}/customers/${clienteDe(req)}/opening`);
     if (!r.ok) {
       res.status(r.status).json({ error: `agente respondeu ${r.status}` });
       return;
@@ -179,13 +185,13 @@ app.get('/api/abertura', async (_req: Request, res: Response) => {
 
 // S5: confirmação (CA-14), memória com consentimento e "falar com uma pessoa".
 // Tudo proxy para o agente; o front não decide nada.
-async function proxyJson(res: Response, metodo: string, caminho: string, corpo?: unknown) {
+async function proxyJson(req: Request, res: Response, metodo: string, caminho: string, corpo?: unknown) {
   if (!AGENT_URL || !DEMO_CUSTOMER_ID) {
     res.status(503).json({ error: 'AGENT_URL e DEMO_CUSTOMER_ID precisam estar no ambiente' });
     return;
   }
   try {
-    const r = await fetch(`${AGENT_URL}/customers/${DEMO_CUSTOMER_ID}${caminho}`, {
+    const r = await fetch(`${AGENT_URL}/customers/${clienteDe(req)}${caminho}`, {
       method: metodo,
       headers: { 'Content-Type': 'application/json' },
       body: corpo === undefined ? undefined : JSON.stringify(corpo),
@@ -197,11 +203,11 @@ async function proxyJson(res: Response, metodo: string, caminho: string, corpo?:
   }
 }
 
-app.post('/api/confirmar', (req: Request, res: Response) => proxyJson(res, 'POST', '/confirmations', req.body));
-app.get('/api/memoria', (_req: Request, res: Response) => proxyJson(res, 'GET', '/memory'));
-app.delete('/api/memoria', (_req: Request, res: Response) => proxyJson(res, 'DELETE', '/memory'));
-app.post('/api/memoria/consentimento', (req: Request, res: Response) => proxyJson(res, 'POST', '/memory/consent', req.body));
-app.post('/api/pessoa', (req: Request, res: Response) => proxyJson(res, 'POST', '/handoff', req.body));
+app.post('/api/confirmar', (req: Request, res: Response) => proxyJson(req, res, 'POST', '/confirmations', req.body));
+app.get('/api/memoria', (req: Request, res: Response) => proxyJson(req, res, 'GET', '/memory'));
+app.delete('/api/memoria', (req: Request, res: Response) => proxyJson(req, res, 'DELETE', '/memory'));
+app.post('/api/memoria/consentimento', (req: Request, res: Response) => proxyJson(req, res, 'POST', '/memory/consent', req.body));
+app.post('/api/pessoa', (req: Request, res: Response) => proxyJson(req, res, 'POST', '/handoff', req.body));
 
 async function startServer() {
   if (process.env.NODE_ENV === 'production') {
