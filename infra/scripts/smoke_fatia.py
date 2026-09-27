@@ -369,8 +369,9 @@ def s6(base_url: str, customer_id: str) -> int:
     checks = [
         (
             "ataque de outro cliente bloqueado sem chamar o modelo (sem tools)",
+            # 3 strikes na mesma sessão viram transferência (também sem modelo)
             codigo == 200
-            and "própria conta" in reply_ataque
+            and ("própria conta" in reply_ataque or "transferir" in reply_ataque)
             and ataque.get("tools") == [],
         ),
         ("a resposta do ataque não traz número em reais", "R$" not in reply_ataque),

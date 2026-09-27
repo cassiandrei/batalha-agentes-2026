@@ -266,3 +266,38 @@ def test_front_sem_html_do_modelo_e_com_regiao_viva():
             .read_text(encoding="utf-8")
             .lower()
         )
+
+
+class LlmEmLaco(BaseLlm):
+    """Sempre chama a tool: sem teto, o turno nunca termina."""
+
+    model: str = "fake"
+    chamadas: int = 0
+
+    async def generate_content_async(
+        self, llm_request, stream=False
+    ) -> AsyncGenerator[LlmResponse, None]:
+        self.chamadas += 1
+        yield LlmResponse(
+            content=types.Content(
+                role="model",
+                parts=[
+                    types.Part(
+                        function_call=types.FunctionCall(name="registra", args={})
+                    )
+                ],
+            )
+        )
+
+
+def test_teto_de_chamadas_por_turno_corta_o_laco(monkeypatch, caplog):
+    from app.plugins.security_plugin import RECUSA_LIMITE
+
+    monkeypatch.setenv("MAX_MODEL_CALLS_TURNO", "5")
+    llm = LlmEmLaco()
+    runner = _app_com(llm)
+    with caplog.at_level("INFO", logger="audit"):
+        resposta = asyncio.run(_conversa(runner, "laco", "oi"))
+    assert resposta.strip() == RECUSA_LIMITE
+    assert llm.chamadas == 5
+    assert "limite_chamadas_turno" in caplog.text

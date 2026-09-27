@@ -849,6 +849,12 @@ uma instrução de correção, uma vez (`REGENERACOES_MAX`, padrão 1). Se a nov
 passa, ela sai; senão, a resposta segura padrão. O log registra `decisao=regenerado` e,
 se preciso, `decisao=resposta_segura`.
 
+**Teto de chamadas por turno.** Um turno do smoke s8 chegou a 33 chamadas ao modelo
+(86 s): laço entre orquestrador, transferência e tools. O `SecurityPlugin` agora corta o
+turno acima de `MAX_MODEL_CALLS_TURNO` (padrão 8) com a resposta segura `RECUSA_LIMITE` e
+`guard=limite_chamadas_turno`. O `educator` também recebeu o `especialista_normas`, para
+uma pergunta normativa transferida por engano ainda chegar à fonte.
+
 **Latência e chamadas nos logs.** O `AuditPlugin` emite `event=turn` no fim de cada
 invocação com `latency_ms`, `model_calls` (do turno) e `model_calls_conversa`
 (acumulado da sessão), além dos `model_call` com latência e tokens que já existiam.
@@ -870,6 +876,21 @@ restringir.
 confirmação idempotente com iToken, consentimento e memória, pessoa, abertura e perfil
 do Marcos, ataque de outro cliente e, sem `SEM_CHAT`, dois chats (Bruno e Marcos). Mede
 a latência de cada passo.
+
+**Latências medidas (27/09, revisão `fatia-s7`, `make roteiro` no `vita-app`).** Duas
+rodadas seguidas, 14/14 passos nas duas:
+
+| Passo | Rodada 1 (instância fria) | Rodada 2 (quente) |
+| --- | --- | --- |
+| Push e abertura do Bruno (sem modelo) | 1,5 s | 0,3 s |
+| Perfil financeiro (fatura, índice, T01, T02) | 7,1 s | ~2 s |
+| Confirmação com iToken (duas chamadas) | 0,6 s | 0,6 s |
+| Chat do Bruno pelo agente (1 turno) | 20,1 s | 2,1 s |
+| Chat do Marcos pedindo crédito (1 turno) | 12,0 s | 6,4 s |
+| Roteiro inteiro | 48,3 s | 19,5 s |
+
+Um turno de chat custa de 1 a 3 chamadas ao modelo (orquestrador, especialista ou
+analista, orquestrador); o log `event=turn` traz o número exato por turno e por conversa.
 
 **Vídeo de backup.** Fora do código: gravar a jornada na URL do `vita-app` no domingo de
 manhã, depois da regressão (ver `docs/SATURDAY_CHECKLIST.md`).

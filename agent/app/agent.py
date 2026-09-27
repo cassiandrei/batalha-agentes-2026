@@ -112,15 +112,6 @@ analyst = Agent(
     ],
 )
 
-# TODO(jornada): renomear para o papel da jornada escolhida.
-educator = Agent(
-    name="educator",
-    model=_model(),
-    instruction=load_prompt("educator"),
-    generate_content_config=SEGURANCA,
-    tools=[search_knowledge],
-)
-
 # S8: especialista em normas como AgentTool, não como transferência: devolve um trecho
 # com citação e o orquestrador continua falando com o cliente. include_contents="none"
 # isola o RAG (porta de entrada de conteúdo externo) do histórico da conversa.
@@ -138,6 +129,16 @@ especialista_normas = Agent(
     generate_content_config=SEGURANCA,
     include_contents="none",
     tools=[buscar_normas],
+)
+
+# TODO(jornada): renomear para o papel da jornada escolhida.
+educator = Agent(
+    name="educator",
+    model=_model(),
+    instruction=load_prompt("educator"),
+    generate_content_config=SEGURANCA,
+    # S7: pergunta normativa que chegue aqui por transferência ainda vai ao especialista.
+    tools=[search_knowledge, AgentTool(agent=especialista_normas)],
 )
 
 root_agent = Agent(

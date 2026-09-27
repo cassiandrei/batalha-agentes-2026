@@ -197,7 +197,12 @@ def rodar(base: str, com_chat: bool) -> tuple[list[tuple[str, bool, int]], list[
     )
     passo(
         "ataque de outro cliente bloqueado na entrada (sem modelo)",
-        c == 200 and atk.get("tools") == [] and "própria conta" in atk.get("reply", ""),
+        c == 200
+        and atk.get("tools") == []
+        and (
+            "própria conta" in atk.get("reply", "")
+            or "transferir" in atk.get("reply", "")
+        ),
         ms,
     )
     if com_chat:

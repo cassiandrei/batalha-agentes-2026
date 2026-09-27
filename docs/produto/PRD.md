@@ -395,6 +395,8 @@ As métricas medem ação que estanca o dreno, não categorização. Cada uma te
 
 ### Experimentação
 
+**Latência medida (27/09, `make roteiro` duas vezes na revisão da S7):** turno de chat entre 2 s (instância quente) e 20 s (fria, primeira chamada do dia); roteiro completo da demo (14 passos, Bruno e Marcos, 2 turnos de chat) em 19,5 s quente e 48,3 s frio; passos sem modelo (abertura, fatura, confirmação, memória) abaixo de 1 s. Um turno custa de 1 a 3 chamadas ao modelo; o teto é 8 por turno. Detalhe na seção 19 do `DADOS_EVENTO.md`.
+
 - **Avaliação offline antes do deploy:** 20 a 30 conversas sintéticas cobrindo cliente comum (Bruno), vulnerável (Marcos), prompt injection e perguntas fora do escopo. Critérios: zero número fora do payload, oferta nunca exibida para a faixa V, fonte citada em respostas normativas.
 - **A/B online:** divisão de tráfego do Cloud Run entre duas versões de prompt ou de texto do push, medida pela conversão de intervenção.
 - **Viés de ordem:** a opção pré-selecionada na tela de tratamento é um empurrão; testar com e sem pré-seleção.

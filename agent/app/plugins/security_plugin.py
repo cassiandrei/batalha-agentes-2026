@@ -44,6 +44,10 @@ RECUSA_SAIDA = (
     "para reduzir juros, com os números da sua conta."
 )
 RECUSA_FAIXA_V = "Nenhuma oferta de crédito por regra; o caminho é renegociação assistida com uma pessoa."
+RECUSA_LIMITE = (
+    "Não consegui fechar essa resposta agora. Posso mostrar sua visão financeira ou as "
+    "opções para reduzir juros; se preferir, transfiro para uma pessoa."
+)
 # Tools que criam ou simulam crédito novo: a faixa V não chega nelas.
 TOOLS_CREDITO = {"simular_parcelamento_fatura"}
 TRANSFERENCIA = "Vou transferir você para um atendente humano, que consegue ajudar melhor a partir daqui."
@@ -142,6 +146,8 @@ class SecurityPlugin(BasePlugin):
         # S7: o último pedido ao modelo, para regenerar UMA vez a saída reprovada.
         self._pedidos: dict[str, LlmRequest] = {}
         self._regeneracoes: dict[str, int] = {}
+        # S7: chamadas ao modelo por invocação; um laço orquestrador↔tool custou 33.
+        self._chamadas: dict[str, int] = {}
 
     async def before_model_callback(
         self, *, callback_context: CallbackContext, llm_request: LlmRequest
@@ -152,6 +158,14 @@ class SecurityPlugin(BasePlugin):
         self._pedidos[getattr(callback_context, "invocation_id", "sem-invocacao")] = (
             llm_request
         )
+        inv = getattr(callback_context, "invocation_id", "sem-invocacao")
+        self._chamadas[inv] = self._chamadas.get(inv, 0) + 1
+        if self._chamadas[inv] > cfg.max_model_calls_turno:
+            _audit_guard(
+                "limite_chamadas_turno", camada="modelo", chamadas=self._chamadas[inv]
+            )
+            self._chamadas.pop(inv, None)
+            return _texto_resposta(RECUSA_LIMITE)
 
         # Mascaramento PRIMEIRO, no histórico inteiro. Além de idempotente, é o que
         # garante residência: o que atravessa a fronteira já vai sem CPF, cartão,

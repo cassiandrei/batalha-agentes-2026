@@ -24,6 +24,8 @@ class Config:
     llm_mode: str
     # S7: quantas vezes a saída reprovada é regenerada antes da resposta segura.
     regeneracoes_max: int
+    # S7: teto de chamadas ao modelo por turno; acima disso, resposta segura (laço).
+    max_model_calls_turno: int
     demo_customer_id_marcos: str
     prompt_version: str
     data_source: str
@@ -45,6 +47,7 @@ def load_config() -> Config:
         model_name_redator=os.getenv("MODEL_NAME_REDATOR", "gemini-3.5-flash"),
         llm_mode=os.getenv("LLM_MODE", "real").strip().lower(),
         regeneracoes_max=int(os.getenv("REGENERACOES_MAX", "1")),
+        max_model_calls_turno=int(os.getenv("MAX_MODEL_CALLS_TURNO", "8")),
         demo_customer_id_marcos=os.getenv(
             "DEMO_CUSTOMER_ID_MARCOS", "8fbc8ba3-7d20-4382-ba8d-ffd070e836a1"
         ),
