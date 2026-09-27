@@ -1,131 +1,100 @@
 import React from 'react';
-import { BarChart3, Receipt, Volume2, VolumeX, Smartphone, Monitor, UserRound } from 'lucide-react';
+import { ArrowLeft, Volume2, VolumeX, Smartphone, Monitor, UserRound } from 'lucide-react';
+import { VitaMark } from './ui';
 
+// Top App Bar do Vita-UI: voltar, marca, nome + ponto de presença, e os controles.
 interface HeaderProps {
-  onOpenFinancialOverview: () => void;
-  onOpenInvoice: () => void;
   onReset: () => void;
   speechEnabled: boolean;
   onToggleSpeech: () => void;
-  treatmentStatus: 'pending' | 'flow_adjusted' | 'installment_active';
   isMobileFrame: boolean;
   onToggleFrame: () => void;
-  // S1: vem do perfil; null até a S3 definir o índice. Nada de número fixo aqui.
-  score: number | null;
-  // S5: saída humana sempre visível
   onTalkToHuman: () => void;
+  cliente: 'bruno' | 'marcos';
 }
 
 export const Header: React.FC<HeaderProps> = ({
-  onOpenFinancialOverview,
-  onOpenInvoice,
   onReset,
   speechEnabled,
   onToggleSpeech,
-  treatmentStatus,
   isMobileFrame,
   onToggleFrame,
-  score,
   onTalkToHuman,
+  cliente,
 }) => {
-  const isHealthy = treatmentStatus !== 'pending';
+  const nome = cliente === 'marcos' ? 'Marcos' : 'Bruno';
+  const trocar = () => {
+    window.location.search = cliente === 'marcos' ? '' : '?cliente=marcos';
+  };
 
   return (
-    <header className="flex items-center justify-between px-4 py-3.5 border-b border-gray-800 bg-[#1E1E1E] shrink-0 sticky top-0 z-30 select-none">
-      {/* Brand Identity */}
-      <div className="flex items-center gap-2.5">
-        <div className="bg-[#1FA37C] text-white font-bold px-2.5 py-1 rounded text-sm tracking-wide shadow-sm shadow-teal-900/30">
-          Vita
+    <header className="shrink-0 z-20 bg-surface/95 backdrop-blur-xl border-b border-line shadow-[0_1px_6px_rgba(0,0,0,0.03)] px-3 pt-2 pb-2">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <button
+            type="button"
+            onClick={onReset}
+            className="w-11 h-11 rounded-full hover:bg-canvas flex items-center justify-center text-mid hover:text-ink transition cursor-pointer shrink-0"
+            title="Voltar para a tela de bloqueio"
+            aria-label="Voltar para a tela de bloqueio"
+          >
+            <ArrowLeft className="w-4.5 h-4.5" />
+          </button>
+          <VitaMark size="sm" />
+          <div className="flex flex-col min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[15px] font-semibold text-ink tracking-tight leading-none">Vita</span>
+              <span className="relative flex h-2 w-2" aria-hidden="true">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-success" />
+              </span>
+            </div>
+            <span className="text-[11px] text-mid leading-tight">assistente com IA</span>
+          </div>
         </div>
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-gray-200 font-light text-xl tracking-tight">Vita</span>
-          <span className="hidden sm:inline text-[11px] text-gray-500 font-normal">
-            organização financeira
-          </span>
+
+        <div className="flex items-center gap-0.5 shrink-0">
+          <button
+            type="button"
+            onClick={onTalkToHuman}
+            className="w-11 h-11 rounded-full flex items-center justify-center text-ink-3 hover:text-ink hover:bg-canvas transition-colors cursor-pointer"
+            title="Falar com uma pessoa"
+            aria-label="Falar com uma pessoa"
+          >
+            <UserRound className="w-4.5 h-4.5" />
+          </button>
+          <button
+            type="button"
+            onClick={onToggleSpeech}
+            className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
+              speechEnabled ? 'text-accent bg-accent-soft' : 'text-ink-3 hover:text-ink hover:bg-canvas'
+            }`}
+            title={speechEnabled ? 'Desativar leitura por voz' : 'Ativar leitura por voz'}
+            aria-label={speechEnabled ? 'Desativar leitura por voz' : 'Ativar leitura por voz'}
+            aria-pressed={speechEnabled}
+          >
+            {speechEnabled ? <Volume2 className="w-4.5 h-4.5" /> : <VolumeX className="w-4.5 h-4.5" />}
+          </button>
+          <button
+            type="button"
+            onClick={onToggleFrame}
+            className="hidden md:inline-flex w-11 h-11 rounded-full items-center justify-center text-ink-3 hover:text-ink hover:bg-canvas transition-colors cursor-pointer"
+            title={isMobileFrame ? 'Expandir para tela cheia' : 'Modo aplicativo móvel'}
+            aria-label={isMobileFrame ? 'Expandir para tela cheia' : 'Modo aplicativo móvel'}
+          >
+            {isMobileFrame ? <Monitor className="w-4.5 h-4.5" /> : <Smartphone className="w-4.5 h-4.5" />}
+          </button>
+          {/* S6: cena do Marcos. Sem foto: inicial do cliente no lugar do avatar. Recarrega a página. */}
+          <button
+            type="button"
+            onClick={trocar}
+            className="ml-1 w-9 h-9 rounded-full border border-line-strong bg-canvas text-ink font-bold text-[13px] flex items-center justify-center hover:bg-line transition-colors cursor-pointer"
+            title={`${nome} · alternar para ${cliente === 'marcos' ? 'Bruno' : 'Marcos'}`}
+            aria-label={`Cliente da demo: ${nome}. Alternar para ${cliente === 'marcos' ? 'Bruno' : 'Marcos'}`}
+          >
+            {nome[0]}
+          </button>
         </div>
-      </div>
-
-      {/* Quick Access Badges & Controls */}
-      <div className="flex items-center gap-1.5 sm:gap-2">
-        {/* Financial Overview quick trigger */}
-        <button
-          onClick={onOpenFinancialOverview}
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-            isHealthy
-              ? 'bg-emerald-950/30 text-emerald-400 border border-emerald-900/40 hover:bg-emerald-900/30'
-              : 'bg-teal-950/30 text-[#1FA37C] border border-[#1FA37C]/30 hover:bg-[#1FA37C]/20'
-          }`}
-          title="Ver Visão Financeira"
-        >
-          <BarChart3 className={`w-3.5 h-3.5 ${!isHealthy ? 'text-[#1FA37C]' : 'text-emerald-400'}`} />
-          <span className="hidden xs:inline">Visão Financeira</span>
-          {score !== null && (
-            <span className="text-[10px] font-bold opacity-80">{score}%</span>
-          )}
-        </button>
-
-        {/* Invoice trigger */}
-        <button
-          onClick={onOpenInvoice}
-          className="p-2.5 min-w-11 min-h-11 inline-flex items-center justify-center text-gray-300 hover:text-white hover:bg-gray-800/80 rounded-lg transition-colors cursor-pointer"
-          title="Ver detalhes da fatura"
-          aria-label="Ver detalhes da fatura"
-        >
-          <Receipt className="w-4 h-4" />
-        </button>
-
-        {/* S6: cena do Marcos (faixa V) na demo. Recarrega: conversa e sessão são outras. */}
-        <button
-          onClick={() => {
-            const marcos = new URLSearchParams(window.location.search).get('cliente') === 'marcos';
-            window.location.search = marcos ? '' : '?cliente=marcos';
-          }}
-          className="hidden sm:inline-flex items-center px-3 min-h-11 rounded-lg text-xs font-medium text-gray-300 hover:text-white hover:bg-gray-800/80 border border-gray-700 transition-colors cursor-pointer"
-          title="Alternar entre a cena do Bruno e a do Marcos"
-        >
-          {new URLSearchParams(window.location.search).get('cliente') === 'marcos' ? 'Marcos' : 'Bruno'}
-        </button>
-
-        {/* S5: Falar com uma pessoa, sempre visível */}
-        <button
-          onClick={onTalkToHuman}
-          className="p-2.5 min-w-11 min-h-11 inline-flex items-center justify-center text-gray-300 hover:text-white hover:bg-gray-800/80 rounded-lg transition-colors cursor-pointer"
-          title="Falar com uma pessoa"
-          aria-label="Falar com uma pessoa"
-        >
-          <UserRound className="w-4 h-4" />
-        </button>
-
-        {/* Speech toggle */}
-        <button
-          onClick={onToggleSpeech}
-          className={`p-2.5 min-w-11 min-h-11 inline-flex items-center justify-center rounded-lg transition-colors cursor-pointer ${
-            speechEnabled ? 'text-[#1FA37C] bg-[#1FA37C]/10' : 'text-gray-300 hover:text-white'
-          }`}
-          title={speechEnabled ? 'Voz ativada (clique para silenciar)' : 'Ativar leitura por voz'}
-          aria-pressed={speechEnabled}
-          aria-label={speechEnabled ? 'Desativar leitura por voz' : 'Ativar leitura por voz'}
-        >
-          {speechEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-        </button>
-
-        {/* Frame Toggle (Desktop helper) */}
-        <button
-          onClick={onToggleFrame}
-          className="hidden md:inline-flex p-2.5 min-w-11 min-h-11 items-center justify-center text-gray-300 hover:text-white hover:bg-gray-800/60 rounded-lg transition-colors cursor-pointer"
-          title={isMobileFrame ? 'Expandir para tela cheia' : 'Modo aplicativo móvel'}
-          aria-label={isMobileFrame ? 'Expandir para tela cheia' : 'Modo aplicativo móvel'}
-        >
-          {isMobileFrame ? <Monitor className="w-4 h-4" /> : <Smartphone className="w-4 h-4" />}
-        </button>
-
-        {/* Fechar button (Exact style from prompt) */}
-        <button
-          onClick={onReset}
-          className="text-[#1FA37C] hover:text-teal-400 text-sm font-medium px-3 min-h-11 rounded transition-colors ml-1 cursor-pointer"
-        >
-          Fechar
-        </button>
       </div>
     </header>
   );

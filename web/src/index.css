@@ -1,39 +1,113 @@
 @import "tailwindcss";
 
+/* Mundo visual do Vita: superfícies claras, forma "pedra" (24 px), pílulas, Inter.
+   Acento verde próprio do Vita (nenhuma cor, fonte ou nome do Itaú). */
+@theme {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  --color-canvas: #f7f7f7;
+  --color-surface: #ffffff;
+  --color-line: #ededed;
+  --color-line-strong: #d6d6d6;
+  --color-ink: #1a1a1a;
+  --color-ink-2: #2e2e2e;
+  --color-ink-3: #4d4d4d;
+  --color-mid: #6e6e6e;
+  --color-low: #a3a3a3;
+
+  --color-accent: #0f7a5a;
+  --color-accent-dark: #0b5c44;
+  --color-accent-soft: #e6f4ee;
+
+  --color-success: #00875a;
+  --color-success-text: #0b6b48;
+  --color-success-soft: #e6f7f0;
+  --color-alert: #de350b;
+  --color-alert-text: #b92b08;
+  --color-alert-soft: #ffebe5;
+  --color-warn: #ffab00;
+  --color-warn-text: #7a5200;
+  --color-warn-soft: #fff8e6;
+  --color-info: #0052cc;
+  --color-info-soft: #e6f0ff;
+
+  --radius-pedra: 24px;
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.03);
+  --shadow-chip: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-sheet: 0 -8px 32px rgba(0, 0, 0, 0.12);
+
+  --animate-fade-in: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-sheet-up: sheetUp 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-pop: pop 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  /* Pontos de digitação e a seta do bloqueio: subida curta com desaceleração exponencial. */
+  --animate-dot: dot 1.1s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  --animate-nudge: nudge 1.6s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+@keyframes dot {
+  0%, 100% { transform: translateY(0); opacity: 0.45; }
+  35% { transform: translateY(-3px); opacity: 1; }
+}
+@keyframes nudge {
+  0%, 100% { transform: translateY(0); opacity: 0.6; }
+  40% { transform: translateY(-4px); opacity: 1; }
+}
+
 @layer base {
   body {
-    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: var(--font-sans);
+    font-feature-settings: 'tnum' 1, 'cv11' 1;
+  }
+  ::selection {
+    background: var(--color-accent-soft);
+    color: var(--color-accent-dark);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 999px;
+  }
+  input:focus-visible,
+  textarea:focus-visible {
+    outline-offset: 0;
+    border-radius: 12px;
+  }
+  input {
+    caret-color: var(--color-accent);
   }
 }
 
-/* Animations */
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes sheetUp {
+  from { opacity: 0.6; transform: translateY(32px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pop {
+  from { opacity: 0; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1); }
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+/* Barra de rolagem discreta, no tom do mundo claro */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.12); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.25); }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+
+/* Relógio da tela de bloqueio: dígitos tabulares */
+.font-clock {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
+  font-feature-settings: 'tnum' 1;
 }
 
-/* Custom subtle scrollbar */
-::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: #333333;
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #1FA37C;
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

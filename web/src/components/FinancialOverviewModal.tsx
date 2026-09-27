@@ -1,18 +1,14 @@
 import React from 'react';
-import { X, TrendingUp, AlertTriangle, ShieldCheck, DollarSign, ArrowRight, BarChart3, PieChart } from 'lucide-react';
+import { TrendingUp, AlertTriangle, ShieldCheck, ArrowRight, BarChart3, PieChart, Zap } from 'lucide-react';
 import { FinancialProfile } from '../types';
+import { brl, pct, Botao, Sheet } from './ui';
 
 // S3: todo número desta tela vem de profile.financialOverview, profile.reserve e
 // profile.t01 (agente). Nada escrito à mão; sem dado, mostra "—".
-const brl = (v: number | null | undefined) =>
-  v === null || v === undefined ? '—' : v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-const pct = (v: number | null | undefined, casas = 1) =>
-  v === null || v === undefined ? '—' : `${v.toLocaleString('pt-BR', { maximumFractionDigits: casas })}%`;
-
-const STATUS: Record<string, { rotulo: string; cor: string }> = {
-  organizado: { rotulo: 'Organizado', cor: 'text-emerald-400' },
-  atencao: { rotulo: 'Atenção: juros do rotativo pesando', cor: 'text-amber-400' },
-  critico: { rotulo: 'Crítico', cor: 'text-red-400' },
+const STATUS: Record<string, { rotulo: string; classe: string }> = {
+  organizado: { rotulo: 'Organizado', classe: 'text-success-text' },
+  atencao: { rotulo: 'Atenção: juros do rotativo pesando', classe: 'text-warn-text' },
+  critico: { rotulo: 'Crítico', classe: 'text-alert-text' },
 };
 
 interface FinancialOverviewModalProps {
@@ -23,200 +19,117 @@ interface FinancialOverviewModalProps {
   onSelectOption: (type: 'flow' | 'installment') => void;
 }
 
-export const FinancialOverviewModal: React.FC<FinancialOverviewModalProps> = ({
-  isOpen,
-  onClose,
-  profile,
-  treatmentStatus,
-  onSelectOption,
-}) => {
-  if (!isOpen) return null;
-
+export const FinancialOverviewModal: React.FC<FinancialOverviewModalProps> = ({ isOpen, onClose, profile, treatmentStatus, onSelectOption }) => {
   const fo = profile.financialOverview;
   const reserva = profile.reserve;
   const t01 = profile.t01;
   const isAdjusted = treatmentStatus !== 'pending';
   const score = fo.score;
   const status = fo.status ? STATUS[fo.status] : null;
-  const cobertura =
-    reserva?.saldo != null && fo.essenciaisMediaMensal ? reserva.saldo / fo.essenciaisMediaMensal : null;
+  const cobertura = reserva?.saldo != null && fo.essenciaisMediaMensal ? reserva.saldo / fo.essenciaisMediaMensal : null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-      <div
-        className="bg-[#181818] border border-gray-800 w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="p-5 border-b border-gray-800 flex items-center justify-between bg-[#1E1E1E]">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#1FA37C]/10 border border-[#1FA37C]/30 flex items-center justify-center text-[#1FA37C]">
-              <BarChart3 className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-base font-semibold text-white">Visão Financeira</h2>
-              <p className="text-xs text-gray-400">Diagnóstico de 2025, calculado sobre o seu extrato</p>
-            </div>
+    <Sheet
+      open={isOpen}
+      onClose={onClose}
+      icon={<div className="w-7 h-7 rounded-lg bg-accent-soft flex items-center justify-center text-accent shrink-0" aria-hidden="true"><BarChart3 className="w-4 h-4" /></div>}
+      title="Visão financeira"
+      subtitle="Diagnóstico de 2025, calculado sobre o seu extrato"
+      footer={
+        !isAdjusted && t01 ? (
+          <div className="grid grid-cols-2 gap-2">
+            <Botao onClick={() => { onClose(); onSelectOption('flow'); }}>
+              <Zap className="w-4 h-4" aria-hidden="true" /> Usar a reserva
+            </Botao>
+            <Botao variante="secundario" onClick={() => { onClose(); onSelectOption('installment'); }}>
+              Comparar com parcelar <ArrowRight className="w-4 h-4" aria-hidden="true" />
+            </Botao>
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-gray-800 transition-colors"
-            aria-label="Fechar"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="p-5 overflow-y-auto space-y-6">
-          {/* Índice */}
-          <div className="bg-[#121212] border border-gray-800 rounded-xl p-5 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-[#1FA37C]/10 rounded-full blur-2xl pointer-events-none" />
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-xs uppercase tracking-wider text-gray-400 font-medium">Índice de Organização Financeira</span>
-                <div className="flex items-baseline gap-2 mt-1">
-                  <span className="text-4xl font-extrabold text-white tracking-tight">{score ?? '—'}</span>
-                  <span className="text-sm text-gray-500 font-medium">/ 100</span>
-                </div>
-                {status && (
-                  <div className={`flex items-center gap-1.5 mt-2 text-xs font-semibold ${status.cor}`}>
-                    {fo.status === 'organizado' ? (
-                      <ShieldCheck className="w-4 h-4" />
-                    ) : (
-                      <AlertTriangle className="w-4 h-4" />
-                    )}
-                    <span>{status.rotulo}</span>
-                  </div>
-                )}
-              </div>
-              <div className="relative w-20 h-20 flex items-center justify-center" aria-hidden="true">
-                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                  <path className="text-gray-800" strokeWidth="3.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                  <path className="text-[#1FA37C]" strokeDasharray={`${score ?? 0}, 100`} strokeWidth="3.5" strokeLinecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                </svg>
-                <span className="absolute text-xs font-bold text-gray-300">{score ?? '—'}</span>
-              </div>
+        ) : undefined
+      }
+    >
+      <section className="bg-surface rounded-pedra p-4 border border-line shadow-card">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <span className="text-[12px] text-mid font-medium">Índice de Organização Financeira</span>
+            <div className="flex items-baseline gap-1.5 mt-0.5">
+              <span className="text-[40px] font-extrabold text-ink tracking-tight leading-none">{score ?? '—'}</span>
+              <span className="text-[13px] text-mid font-medium">/ 100</span>
             </div>
-
-            {fo.componentes && (
-              <div className="mt-4 pt-3 border-t border-gray-800/80 grid grid-cols-4 gap-2 text-center">
-                {(
-                  [
-                    ['Poupança', fo.componentes.poupanca],
-                    ['Dreno', fo.componentes.dreno],
-                    ['Crédito', fo.componentes.comprometimento],
-                    ['Juros no ano', fo.componentes.cronicidade],
-                  ] as const
-                ).map(([nome, valor]) => (
-                  <div key={nome}>
-                    <div className="text-sm font-bold text-white">{valor.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}</div>
-                    <div className="text-[10px] text-gray-500">{nome} / 25</div>
-                  </div>
-                ))}
+            {status && (
+              <div className={`flex items-center gap-1.5 mt-2 text-[12.5px] font-semibold ${status.classe}`}>
+                {fo.status === 'organizado' ? <ShieldCheck className="w-4 h-4" aria-hidden="true" /> : <AlertTriangle className="w-4 h-4" aria-hidden="true" />}
+                <span>{status.rotulo}</span>
               </div>
             )}
           </div>
-
-          {/* Indicadores */}
-          <div className="space-y-3">
-            <h3 className="text-xs uppercase tracking-wider text-gray-400 font-semibold px-1">Indicadores do seu extrato</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className={`p-4 rounded-xl border ${isAdjusted ? 'bg-emerald-950/20 border-emerald-900/40' : 'bg-red-950/20 border-red-900/40'}`}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-gray-300">Juros do rotativo no mês</span>
-                  <DollarSign className={`w-4 h-4 ${isAdjusted ? 'text-emerald-400' : 'text-red-400'}`} />
-                </div>
-                <div className="text-lg font-bold text-white">{brl(fo.jurosUltimoMes)}</div>
-                <p className="text-[11px] text-gray-400 mt-1">
-                  {brl(fo.jurosEncargosAno)} de juros e encargos em 2025, em {fo.mesesPagandoJuros ?? '—'} meses
-                </p>
-              </div>
-
-              <div className="p-4 rounded-xl bg-[#141414] border border-gray-800">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-gray-300">Reserva ({reserva?.produto ?? 'sem aplicação'})</span>
-                  <ShieldCheck className="w-4 h-4 text-[#1FA37C]" />
-                </div>
-                <div className="text-lg font-bold text-white">{brl(reserva?.saldo)}</div>
-                <p className="text-[11px] text-gray-400 mt-1">
-                  {cobertura !== null
-                    ? `${cobertura.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} meses de despesas essenciais`
-                    : 'sem aplicação com liquidez diária'}
-                </p>
-              </div>
-
-              <div className="p-4 rounded-xl bg-[#141414] border border-gray-800">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-gray-300">Poupança sobre entradas</span>
-                  <TrendingUp className="w-4 h-4 text-sky-400" />
-                </div>
-                <div className="text-lg font-bold text-white">{pct(fo.poupancaSobreEntradasPct)}</div>
-                <p className="text-[11px] text-gray-400 mt-1">Do que entrou em 2025, quanto sobrou</p>
-              </div>
-
-              <div className="p-4 rounded-xl bg-[#141414] border border-gray-800">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-gray-300">Crédito na renda</span>
-                  <PieChart className="w-4 h-4 text-amber-400" />
-                </div>
-                <div className="text-lg font-bold text-white">{pct(fo.comprometimentoCreditoPct)}</div>
-                <p className="text-[11px] text-gray-400 mt-1">Parcelas de financiamento e empréstimo sobre a renda; dreno de {pct(fo.drenoPctRenda, 2)} da renda com juros e tarifas</p>
-              </div>
-            </div>
+          <div className="relative w-20 h-20 flex items-center justify-center shrink-0" role="img" aria-label={`Índice ${score ?? 'indisponível'} de 100`}>
+            <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36" aria-hidden="true">
+              <path className="text-line" strokeWidth="3.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              <path className="text-accent" strokeDasharray={`${score ?? 0}, 100`} strokeWidth="3.5" strokeLinecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+            </svg>
+            <span className="absolute text-[13px] font-bold text-ink">{score ?? '—'}</span>
           </div>
-
-          {/* Recomendação: T01 quando existir */}
-          {!isAdjusted && t01 && (
-            <div className="p-4 bg-teal-950/20 border border-[#1FA37C]/40 rounded-xl space-y-3">
-              <div className="flex items-center gap-2 text-xs font-semibold text-[#1FA37C]">
-                <BarChart3 className="w-4 h-4" />
-                <span>Recomendação principal: usar a reserva</span>
-              </div>
-              <p className="text-xs text-gray-200">
-                Quitar {brl(t01.saldo_quitado)} do rotativo com a reserva evita {brl(t01.juros_evitados_mes)} de juros por mês; a
-                reserva deixa de render {brl(t01.rendimento_liquido_perdido_mes)} líquidos. Ganho de {brl(t01.ganho_liquido_mes)} por mês.
-              </p>
-              <details className="text-[11px] text-gray-400">
-                <summary className="cursor-pointer text-gray-300">Por que recomendamos isso</summary>
-                <p className="mt-1.5 leading-relaxed">{t01.justificativa}</p>
-              </details>
-              <div className="grid grid-cols-2 gap-2 pt-1">
-                <button
-                  onClick={() => {
-                    onClose();
-                    onSelectOption('flow');
-                  }}
-                  className="bg-[#1FA37C] hover:bg-[#178a68] text-white text-xs font-semibold py-2.5 px-3 rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <span>Simular usar a reserva</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => {
-                    onClose();
-                    onSelectOption('installment');
-                  }}
-                  className="border border-[#1FA37C] text-[#1FA37C] hover:bg-gray-800 text-xs font-semibold py-2.5 px-3 rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <span>Comparar com parcelar</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          )}
         </div>
+        {fo.componentes && (
+          <div className="mt-4 pt-3 border-t border-line grid grid-cols-4 gap-2 text-center">
+            {(
+              [
+                ['Poupança', fo.componentes.poupanca],
+                ['Dreno', fo.componentes.dreno],
+                ['Crédito', fo.componentes.comprometimento],
+                ['Juros no ano', fo.componentes.cronicidade],
+              ] as const
+            ).map(([nome, valor]) => (
+              <div key={nome}>
+                <div className="text-[14px] font-bold text-ink">{valor.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}</div>
+                <div className="text-[10.5px] text-mid">{nome} / 25</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
-        {/* Footer */}
-        <div className="p-4 border-t border-gray-800 bg-[#141414] flex justify-end">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-medium rounded-lg transition-colors cursor-pointer"
-          >
-            Fechar
-          </button>
+      <div className="space-y-2">
+        <h3 className="text-[13px] font-bold text-ink px-1">Indicadores do seu extrato</h3>
+        <div className="grid grid-cols-2 gap-2.5">
+          <Indicador tom={isAdjusted ? 'sucesso' : 'alerta'} icone={<TrendingUp className="w-4 h-4" />} rotulo="Juros do rotativo no mês" valor={brl(fo.jurosUltimoMes)} nota={`${brl(fo.jurosEncargosAno)} de juros e encargos em 2025, em ${fo.mesesPagandoJuros ?? '—'} meses`} />
+          <Indicador tom="acento" icone={<ShieldCheck className="w-4 h-4" />} rotulo={`Reserva (${reserva?.produto ?? 'sem aplicação'})`} valor={brl(reserva?.saldo)} nota={cobertura !== null ? `${cobertura.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} meses de despesas essenciais` : 'sem aplicação com liquidez diária'} />
+          <Indicador tom="neutro" icone={<TrendingUp className="w-4 h-4" />} rotulo="Poupança sobre entradas" valor={pct(fo.poupancaSobreEntradasPct)} nota="Do que entrou em 2025, quanto sobrou" />
+          <Indicador tom="neutro" icone={<PieChart className="w-4 h-4" />} rotulo="Crédito na renda" valor={pct(fo.comprometimentoCreditoPct)} nota={`Parcelas sobre a renda; dreno de ${pct(fo.drenoPctRenda, 2)} da renda com juros e tarifas`} />
         </div>
       </div>
+
+      {!isAdjusted && t01 && (
+        <section className="bg-accent-soft/60 border border-accent/25 rounded-pedra p-4 space-y-2.5">
+          <div className="flex items-center gap-2 text-[12.5px] font-bold text-accent-dark">
+            <Zap className="w-4 h-4" aria-hidden="true" />
+            <span>Recomendação principal: usar a reserva</span>
+          </div>
+          <p className="text-[13px] text-ink-2 leading-relaxed">
+            Quitar {brl(t01.saldo_quitado)} do rotativo com a reserva evita {brl(t01.juros_evitados_mes)} de juros por mês; a reserva deixa de render {brl(t01.rendimento_liquido_perdido_mes)} líquidos. Ganho de {brl(t01.ganho_liquido_mes)} por mês.
+          </p>
+          <details className="text-[12px] text-mid">
+            <summary className="cursor-pointer text-ink-3 font-semibold min-h-11 flex items-center">Por que recomendamos isso</summary>
+            <p className="mt-1 leading-relaxed">{t01.justificativa}</p>
+          </details>
+        </section>
+      )}
+    </Sheet>
+  );
+};
+
+const Indicador: React.FC<{ tom: 'alerta' | 'sucesso' | 'acento' | 'neutro'; icone: React.ReactNode; rotulo: string; valor: string; nota: string }> = ({ tom, icone, rotulo, valor, nota }) => {
+  const box = { alerta: 'bg-alert-soft/60 border-alert/20', sucesso: 'bg-success-soft border-success/25', acento: 'bg-accent-soft/60 border-accent/20', neutro: 'bg-surface border-line' }[tom];
+  const ic = { alerta: 'text-alert', sucesso: 'text-success-text', acento: 'text-accent', neutro: 'text-ink-3' }[tom];
+  return (
+    <div className={`p-3.5 rounded-2xl border ${box}`}>
+      <div className="flex items-center justify-between mb-1.5 gap-2">
+        <span className="text-[11.5px] font-medium text-ink-3 leading-tight">{rotulo}</span>
+        <span className={`shrink-0 ${ic}`} aria-hidden="true">{icone}</span>
+      </div>
+      <div className="text-[17px] font-bold text-ink">{valor}</div>
+      <p className="text-[11px] text-mid mt-1 leading-snug">{nota}</p>
     </div>
   );
 };

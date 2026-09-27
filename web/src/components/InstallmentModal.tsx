@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
-import { X, Calendar, CheckCircle2, XCircle, Shield, ArrowRight } from 'lucide-react';
+import { ArrowRight, Calendar, CheckCircle2, XCircle, Lock, ShieldCheck } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { OpcaoT02, SimulacaoT02 } from '../types';
+import { brl, Botao, HeroSucesso, Linha, Sheet } from './ui';
 
 // S4: todo número desta tela vem de t02 (simular_parcelamento_fatura, no agente).
-// Aprovado e rejeitado aparecem em texto e ícone, não só em cor.
-const brl = (v: number | null | undefined) =>
-  v === null || v === undefined ? '—' : v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-
+// Cabe e não cabe na regra aparecem em texto e ícone, não só em cor.
 interface InstallmentModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -16,6 +14,7 @@ interface InstallmentModalProps {
 }
 
 const novaChave = () => `t02-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+const reduzMovimento = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
 export const InstallmentModal: React.FC<InstallmentModalProps> = ({ isOpen, onClose, onConfirm, t02 }) => {
   const [prazoEscolhido, setPrazoEscolhido] = useState<number | null>(null);
@@ -24,11 +23,9 @@ export const InstallmentModal: React.FC<InstallmentModalProps> = ({ isOpen, onCl
   const [itoken, setItoken] = useState('');
   const [chave, setChave] = useState<string>(novaChave);
 
-  if (!isOpen) return null;
-
   const aprovadas = t02?.opcoes.filter((o) => o.aprovado) ?? [];
   const escolhida =
-    (t02?.opcoes.find((o) => o.prazo === prazoEscolhido && o.aprovado)) ??
+    t02?.opcoes.find((o) => o.prazo === prazoEscolhido && o.aprovado) ??
     (aprovadas.length ? aprovadas.reduce((a, b) => (a.juros_totais <= b.juros_totais ? a : b)) : null);
 
   const handleApply = async () => {
@@ -38,10 +35,12 @@ export const InstallmentModal: React.FC<InstallmentModalProps> = ({ isOpen, onCl
     setIsSubmitting(false);
     if (!ok) return;
     setSuccessView(true);
-    try {
-      confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 }, colors: ['#1FA37C', '#FFFFFF'] });
-    } catch {
-      // ignore
+    if (!reduzMovimento()) {
+      try {
+        confetti({ particleCount: 70, spread: 60, origin: { y: 0.7 }, colors: ['#0F7A5A', '#00875A', '#FFFFFF'] });
+      } catch {
+        // ignore
+      }
     }
   };
 
@@ -53,207 +52,137 @@ export const InstallmentModal: React.FC<InstallmentModalProps> = ({ isOpen, onCl
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-      <div
-        className="bg-[#181818] border border-gray-800 w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="p-5 border-b border-gray-800 flex items-center justify-between bg-[#1E1E1E]">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl border border-[#1FA37C] text-[#1FA37C] flex items-center justify-center font-bold bg-[#1FA37C]/10">
-              <Calendar className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#1FA37C] bg-[#1FA37C]/10 px-2 py-0.5 rounded border border-[#1FA37C]/20">
-                  T02
-                </span>
-                <h2 className="text-base font-semibold text-white">Parcelar o saldo do rotativo</h2>
-              </div>
-              <p className="text-xs text-gray-400 mt-0.5">Prazos calculados pelo agente; a regra decide o que cabe no seu orçamento</p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-gray-800 transition-colors cursor-pointer"
-            aria-label="Fechar"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {!t02 ? (
-          <div className="p-6 text-sm text-gray-300">
-            Não há parcelamento disponível para você agora. Isso acontece quando não há saldo no rotativo ou quando a regra
-            não permite oferta de crédito. Se quiser, fale com uma pessoa.
-          </div>
-        ) : !successView ? (
-          <div className="p-5 overflow-y-auto space-y-5">
-            {/* Resumo */}
-            <div className="p-4 bg-[#121212] border border-gray-800 rounded-xl space-y-2">
-              <div className="flex items-center justify-between text-xs text-gray-400">
-                <span>Saldo a parcelar:</span>
-                <span className="font-semibold text-white">{brl(t02.saldo)}</span>
-              </div>
-              <div className="flex items-center justify-between text-xs text-gray-400">
-                <span>Custo atual de juros por mês:</span>
-                <span className="text-red-400 font-semibold">{brl(t02.custo_mensal_juros_atual)}</span>
-              </div>
-              <div className="flex items-center justify-between text-xs pt-2 border-t border-gray-800">
-                <span className="text-emerald-400 font-medium">Taxa do parcelamento (faixa {t02.faixa_risco}):</span>
-                <span className="text-emerald-400 font-bold">{(t02.taxa_mensal * 100).toLocaleString('pt-BR')}% ao mês</span>
-              </div>
-              {t02.regra_atencao && (
-                <p className="text-[11px] text-amber-300 pt-1">
-                  Regra de atenção: só entra prazo cuja parcela fique até o custo atual de juros ({brl(t02.custo_mensal_juros_atual)}).
-                </p>
-              )}
-            </div>
-
-            {/* Prazos */}
-            <div className="space-y-3">
-              <span className="text-xs font-semibold text-gray-300 uppercase tracking-wider block">Prazos calculados</span>
-              <div className="space-y-2.5" role="radiogroup" aria-label="Prazos do parcelamento">
-                {t02.opcoes.map((o) => {
-                  const selecionada = escolhida?.prazo === o.prazo;
-                  return (
-                    <button
-                      key={o.prazo}
-                      type="button"
-                      role="radio"
-                      aria-checked={selecionada}
-                      disabled={!o.aprovado}
-                      onClick={() => setPrazoEscolhido(o.prazo)}
-                      className={`w-full text-left p-4 rounded-xl border transition-all flex items-center justify-between ${
-                        !o.aprovado
-                          ? 'bg-[#141414] border-gray-800 opacity-70 cursor-not-allowed'
-                          : selecionada
-                            ? 'bg-[#1FA37C]/15 border-[#1FA37C] ring-1 ring-[#1FA37C] cursor-pointer'
-                            : 'bg-[#141414] border-gray-800 hover:border-gray-700 cursor-pointer'
-                      }`}
-                    >
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-bold text-white">
-                            {o.prazo}x de {brl(o.parcela)}
-                          </span>
-                          <span
-                            className={`text-[10px] px-2 py-0.5 rounded font-medium inline-flex items-center gap-1 ${
-                              o.aprovado ? 'bg-emerald-900/50 text-emerald-300' : 'bg-red-950/50 text-red-300'
-                            }`}
-                          >
-                            {o.aprovado ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
-                            {o.aprovado ? 'Aprovado' : 'Rejeitado'}
-                          </span>
-                        </div>
-                        <div className="text-xs text-gray-400">
-                          {brl(o.juros_totais)} de juros no total · {o.motivo}
-                        </div>
-                      </div>
-                      <div
-                        className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${
-                          selecionada ? 'border-[#1FA37C] bg-[#1FA37C]' : 'border-gray-600'
-                        }`}
-                        aria-hidden="true"
-                      >
-                        {selecionada && <div className="w-2 h-2 rounded-full bg-white" />}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="p-3.5 bg-gray-900/60 rounded-xl border border-gray-800/80 text-xs text-gray-300 space-y-1.5">
-              <div className="flex items-center gap-1.5 font-semibold text-white">
-                <Shield className="w-4 h-4 text-emerald-400" />
-                <span>{t02.aviso}</span>
-              </div>
-              <p className="text-[11px] text-gray-400 leading-relaxed">
-                Primeira parcela em {t02.carencia_dias} dias. Nada é contratado sem a sua confirmação no aplicativo.
-              </p>
-            </div>
-
-            <div className="bg-[#121212] border border-gray-800 rounded-xl p-4 space-y-2">
-              <label htmlFor="itoken-t02" className="text-xs font-semibold text-gray-200">Confirme com o seu iToken (6 dígitos)</label>
-              <input
-                id="itoken-t02"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength={6}
-                value={itoken}
-                onChange={(e) => setItoken(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                placeholder="••••••"
-                className="w-full bg-[#1E1E1E] border border-gray-700 focus:border-[#1FA37C] rounded-lg px-3 py-2 text-sm tracking-[0.4em] text-white outline-none"
-              />
-              <p className="text-[11px] text-gray-500">Nada é executado sem o token. Na demo, qualquer 6 dígitos vale, menos 000000.</p>
-            </div>
-          </div>
+    <Sheet
+      open={isOpen}
+      onClose={successView ? handleFinish : onClose}
+      icon={<div className="w-7 h-7 rounded-lg bg-accent flex items-center justify-center text-white shrink-0" aria-hidden="true"><Calendar className="w-4 h-4" /></div>}
+      tag="T02"
+      title="Parcelar o saldo do rotativo"
+      subtitle="Prazos calculados pelo agente; a regra decide o que cabe no seu orçamento"
+      footer={
+        !t02 ? undefined : !successView ? (
+          <Botao onClick={handleApply} disabled={isSubmitting || !escolhida || itoken.length !== 6} className="w-full">
+            {isSubmitting ? (
+              <>
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" aria-hidden="true" />
+                <span>Confirmando…</span>
+              </>
+            ) : (
+              <>
+                <span>{escolhida ? `Confirmar ${escolhida.prazo}x de ${brl(escolhida.parcela)}` : 'Nenhum prazo cabe na regra'}</span>
+                <ArrowRight className="w-4 h-4" aria-hidden="true" />
+              </>
+            )}
+          </Botao>
         ) : (
-          <div className="p-8 text-center space-y-4">
-            <div className="w-16 h-16 bg-[#1FA37C]/10 border-2 border-[#1FA37C] rounded-full flex items-center justify-center mx-auto text-[#1FA37C] animate-bounce">
-              <CheckCircle2 className="w-8 h-8" />
+          <Botao onClick={handleFinish} className="w-full">
+            Voltar para a conversa <ArrowRight className="w-4 h-4" aria-hidden="true" />
+          </Botao>
+        )
+      }
+    >
+      {!t02 ? (
+        <p className="text-[13.5px] text-ink-2 leading-relaxed">
+          Não há parcelamento disponível para você agora. Isso acontece quando não há saldo no rotativo ou quando a regra não permite oferta de crédito. Se quiser, fale com uma pessoa.
+        </p>
+      ) : !successView ? (
+        <>
+          <section className="bg-surface rounded-pedra p-4 border border-line shadow-card">
+            <div className="divide-y divide-line">
+              <Linha rotulo="Saldo a parcelar" valor={brl(t02.saldo)} />
+              <Linha rotulo="Custo atual de juros por mês" valor={brl(t02.custo_mensal_juros_atual)} destaque="alert" />
+              <Linha rotulo={`Taxa do parcelamento (faixa ${t02.faixa_risco})`} valor={`${(t02.taxa_mensal * 100).toLocaleString('pt-BR')}% ao mês`} destaque="accent" />
             </div>
-            <div>
-              <h3 className="text-xl font-bold text-white">Parcelamento confirmado</h3>
-              <p className="text-sm text-gray-300 mt-2 max-w-sm mx-auto">
-                {escolhida ? `${escolhida.prazo}x de ${brl(escolhida.parcela)}` : ''}. O rotativo para de correr.
+            {t02.regra_atencao && (
+              <p className="mt-2 text-[11.5px] text-warn-text bg-warn-soft border border-warn/40 rounded-xl px-3 py-2">
+                Regra de atenção: só cabe prazo cuja parcela fique até o custo atual de juros ({brl(t02.custo_mensal_juros_atual)}).
               </p>
-            </div>
-            <div className="bg-[#121212] border border-gray-800 rounded-xl p-4 max-w-xs mx-auto text-left space-y-2 text-xs">
-              <div className="flex justify-between">
-                <span className="text-gray-400">Juros no total:</span>
-                <span className="font-bold text-white">{brl(escolhida?.juros_totais)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Simulação:</span>
-                <span className="font-mono text-gray-400">{t02.simulacao_id}</span>
-              </div>
-            </div>
-          </div>
-        )}
+            )}
+          </section>
 
-        {/* Footer */}
-        <div className="p-4 border-t border-gray-800 bg-[#141414] flex gap-3 justify-end">
-          {!successView ? (
-            <>
-              <button
-                onClick={onClose}
-                disabled={isSubmitting}
-                className="px-4 py-2.5 bg-transparent hover:bg-gray-800 text-gray-400 text-xs font-medium rounded-lg transition-colors cursor-pointer"
-              >
-                Voltar
-              </button>
-              <button
-                onClick={handleApply}
-                disabled={isSubmitting || !escolhida || itoken.length !== 6}
-                className="bg-[#1FA37C] hover:bg-[#178a68] disabled:opacity-50 text-white text-xs font-semibold px-5 py-2.5 rounded-lg transition-colors flex items-center gap-2 cursor-pointer"
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Confirmando...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>{escolhida ? `Confirmar ${escolhida.prazo}x de ${brl(escolhida.parcela)}` : 'Nenhum prazo aprovado'}</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
-            </>
-          ) : (
-            <button
-              onClick={handleFinish}
-              className="bg-[#1FA37C] hover:bg-[#178a68] text-white text-xs font-semibold px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 w-full justify-center cursor-pointer"
-            >
-              <span>Voltar para a conversa</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
+          <div className="space-y-2" role="radiogroup" aria-label="Prazos do parcelamento">
+            <h3 className="text-[13px] font-bold text-ink px-1">Prazos calculados</h3>
+            {t02.opcoes.map((o) => {
+              const selecionada = escolhida?.prazo === o.prazo;
+              return (
+                <button
+                  key={o.prazo}
+                  type="button"
+                  role="radio"
+                  aria-checked={selecionada}
+                  disabled={!o.aprovado}
+                  onClick={() => setPrazoEscolhido(o.prazo)}
+                  className={`w-full text-left p-3.5 rounded-2xl border transition-all flex items-center justify-between gap-3 ${
+                    !o.aprovado ? 'bg-canvas border-line opacity-70 cursor-not-allowed' : selecionada ? 'bg-accent-soft/60 border-accent shadow-xs cursor-pointer' : 'bg-surface border-line hover:border-low cursor-pointer'
+                  }`}
+                >
+                  <div className="space-y-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[14px] font-bold text-ink">{o.prazo}x de {brl(o.parcela)}</span>
+                      <span className={`text-[10.5px] px-2 py-0.5 rounded-full font-semibold inline-flex items-center gap-1 ${o.aprovado ? 'bg-success-soft text-success-text' : 'bg-alert-soft text-alert-text'}`}>
+                        {o.aprovado ? <CheckCircle2 className="w-3 h-3" aria-hidden="true" /> : <XCircle className="w-3 h-3" aria-hidden="true" />}
+                        {o.aprovado ? 'Cabe na regra' : 'Não cabe na regra'}
+                      </span>
+                    </div>
+                    <div className="text-[11.5px] text-mid leading-snug">{brl(o.juros_totais)} de juros no total · {o.motivo}</div>
+                  </div>
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${selecionada ? 'border-accent bg-accent' : 'border-line-strong'}`} aria-hidden="true">
+                    {selecionada && <div className="w-2 h-2 rounded-full bg-white" />}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="p-3.5 bg-surface rounded-pedra border border-line text-[12px] text-ink-2 space-y-1">
+            <div className="flex items-center gap-1.5 font-semibold text-ink">
+              <ShieldCheck className="w-4 h-4 text-accent" aria-hidden="true" />
+              <span>{t02.aviso}</span>
+            </div>
+            <p className="text-[11.5px] text-mid leading-relaxed">Primeira parcela em {t02.carencia_dias} dias. Nada é contratado sem a sua confirmação.</p>
+          </div>
+
+          <section className="bg-surface rounded-pedra p-4 border border-line space-y-2">
+            <label htmlFor="itoken-t02" className="flex items-center gap-2 text-[12.5px] font-semibold text-ink">
+              <Lock className="w-3.5 h-3.5 text-accent" aria-hidden="true" />
+              Confirme com o seu iToken (6 dígitos)
+            </label>
+            <input
+              id="itoken-t02"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={6}
+              value={itoken}
+              onChange={(e) => setItoken(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              placeholder="••••••"
+              className="w-full bg-canvas border border-line-strong focus:border-accent rounded-xl px-3 min-h-12 text-[16px] tracking-[0.4em] text-ink outline-none"
+            />
+            <p className="text-[11px] text-mid">Nada é executado sem o token. Na demo, qualquer 6 dígitos vale, menos 000000.</p>
+          </section>
+        </>
+      ) : (
+        <>
+          <HeroSucesso tag="Confirmado" titulo="Parcelamento no lugar do rotativo" texto={escolhida ? `${escolhida.prazo}x de ${brl(escolhida.parcela)}. O rotativo para de correr.` : ''} />
+          <section className="bg-surface rounded-pedra p-4 border border-line shadow-card">
+            <h3 className="text-[15px] font-bold text-ink mb-1">Condição confirmada</h3>
+            <div className="divide-y divide-line">
+              <Linha rotulo="Plano" valor={escolhida ? `${escolhida.prazo}x de ${brl(escolhida.parcela)}` : '—'} />
+              <Linha rotulo="Taxa" valor={`${(t02.taxa_mensal * 100).toLocaleString('pt-BR')}% ao mês`} />
+              <Linha rotulo="Juros no total" valor={brl(escolhida?.juros_totais)} />
+              <Linha rotulo="Primeira parcela" valor={`em ${t02.carencia_dias} dias`} />
+              <Linha rotulo="Simulação" valor={<span className="font-mono text-[12px] font-medium text-mid">{t02.simulacao_id}</span>} />
+            </div>
+            <p className="text-[11px] text-mid mt-2">{t02.aviso}</p>
+          </section>
+          <section className="bg-surface rounded-pedra p-4 border border-line shadow-card">
+            <h3 className="text-[15px] font-bold text-ink mb-2">Comparativo de fluxo mensal</h3>
+            <div className="grid grid-cols-2 gap-2.5">
+              <div className="bg-canvas p-3 rounded-2xl border border-line"><span className="text-[11.5px] text-mid font-medium block">Mês anterior (rotativo)</span><span className="text-[18px] font-bold text-alert-text block mt-1.5 leading-tight">-{brl(t02.custo_mensal_juros_atual)}</span><span className="text-[11px] text-mid">em juros</span></div>
+              <div className="bg-success-soft p-3 rounded-2xl border border-success/25"><span className="text-[11.5px] text-success-text font-semibold block">Próximos meses (parcela)</span><span className="text-[18px] font-bold text-success-text block mt-1.5 leading-tight">{escolhida ? brl(escolhida.parcela) : '—'}</span><span className="text-[11px] text-success-text font-medium">fixa, sem novos juros do rotativo</span></div>
+            </div>
+          </section>
+        </>
+      )}
+    </Sheet>
   );
 };

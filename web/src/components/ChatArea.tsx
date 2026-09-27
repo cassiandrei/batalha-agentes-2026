@@ -1,12 +1,20 @@
 import React, { useRef, useEffect } from 'react';
-import { Volume2, CheckCheck, Sparkles, BarChart3, ShieldCheck, BookOpen } from 'lucide-react';
-import { AcaoAgente, Message } from '../types';
+import { Volume2, BarChart3, Receipt, Zap, Calendar, UserRound, BookOpen, ShieldCheck, Sparkles } from 'lucide-react';
+import { AcaoAgente, FinancialProfile, Message } from '../types';
+import { RaioXCard, TratamentosCard } from './Cards';
+import { Chip, VitaMark } from './ui';
 
 interface ChatAreaProps {
   messages: Message[];
   isTyping: boolean;
+  profile: FinancialProfile;
+  treatmentStatus: 'pending' | 'flow_adjusted' | 'installment_active';
   onOpenFinancialOverview: () => void;
   onOpenInvoice: () => void;
+  onSelectFlowAdjustment: () => void;
+  onSelectInstallment: () => void;
+  onResetTreatment: () => void;
+  onTalkToHuman: () => void;
   onSpeak: (text: string) => void;
   // S2: botões estruturados vindos do agente
   onAction: (acao: AcaoAgente) => void;
@@ -20,7 +28,7 @@ export function renderTexto(texto: string): React.ReactNode {
     <p key={i}>
       {paragrafo.split(/(\*\*[^*]+\*\*)/g).map((parte, j) =>
         parte.startsWith('**') && parte.endsWith('**') ? (
-          <strong key={j} className="font-bold text-white">
+          <strong key={j} className="font-semibold text-ink">
             {parte.slice(2, -2)}
           </strong>
         ) : (
@@ -31,11 +39,25 @@ export function renderTexto(texto: string): React.ReactNode {
   ));
 }
 
+const ICONE_ACAO: Record<AcaoAgente['tipo'], React.ReactNode> = {
+  abrir_visao_financeira: <BarChart3 className="w-4 h-4" />,
+  abrir_fatura: <Receipt className="w-4 h-4" />,
+  abrir_simulacao_t01: <Zap className="w-4 h-4" />,
+  abrir_simulacao_t02: <Calendar className="w-4 h-4" />,
+  falar_com_pessoa: <UserRound className="w-4 h-4" />,
+};
+
 export const ChatArea: React.FC<ChatAreaProps> = ({
   messages,
   isTyping,
+  profile,
+  treatmentStatus,
   onOpenFinancialOverview,
   onOpenInvoice,
+  onSelectFlowAdjustment,
+  onSelectInstallment,
+  onResetTreatment,
+  onTalkToHuman,
   onSpeak,
   onAction,
   onConsent,
@@ -47,149 +69,115 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
   }, [messages, isTyping]);
 
   return (
-    <main
-      className="flex-1 overflow-y-auto p-4 space-y-5 flex flex-col scroll-smooth"
-      role="log"
-      aria-live="polite"
-      aria-label="Conversa com o Vita"
-    >
-      {/* Date Pill / Conversation Start */}
-      <div className="flex justify-center my-1">
-        <span className="text-[11px] text-gray-500 bg-gray-900/60 px-3 py-1 rounded-full border border-gray-800">
-          Hoje · Vita
-        </span>
-      </div>
-
+    <main className="flex-1 overflow-y-auto px-3.5 py-3 space-y-3.5 bg-canvas" role="log" aria-live="polite" aria-label="Conversa com o Vita">
       {messages.map((message) => {
-        const isAssistant = message.role === 'assistant';
-
-        if (isAssistant) {
+        if (message.role === 'user') {
           return (
-            <div key={message.id} className="flex flex-col items-start max-w-[88%] sm:max-w-[85%] group animate-fade-in">
-              {/* Vita Assistant Message - Exact styling from prompt */}
-              <div className="bg-gray-800/50 border-l-2 border-[#1FA37C] p-4 rounded-r-xl rounded-bl-xl text-sm leading-relaxed text-gray-200 shadow-sm relative">
-                {/* S6: markdown sanitizado (só negrito e parágrafos), nunca HTML do modelo */}
-                <div className="space-y-1.5">{renderTexto(message.content)}</div>
-
-                {/* S8: fonte citada pelo especialista em normas, com link */}
-                {message.citacoes && message.citacoes.length > 0 && (
-                  <div className="mt-3 pt-2.5 border-t border-gray-700/60 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-gray-400">
-                    {message.citacoes.map((c) => (
-                      <span key={c.fonte} className="inline-flex items-center gap-1">
-                        <BookOpen className="w-3 h-3 text-[#1FA37C]" aria-hidden="true" />
-                        <span>Fonte:</span>
-                        {/^https?:\/\//.test(c.link) ? (
-                          <a href={c.link} target="_blank" rel="noopener noreferrer" className="text-[#1FA37C] hover:underline">
-                            {c.fonte}
-                          </a>
-                        ) : (
-                          <span className="text-gray-300">{c.fonte}</span>
-                        )}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                {/* S5: consentimento de memória — "sim" explícito, ou nada é guardado */}
-                {message.consentPrompt && (
-                  <div className="mt-3 pt-2.5 border-t border-gray-700/60 flex flex-wrap gap-2">
-                    <button
-                      onClick={() => onConsent(true)}
-                      className="inline-flex items-center gap-1.5 text-xs text-[#1FA37C] hover:text-teal-300 font-semibold bg-[#1FA37C]/10 hover:bg-[#1FA37C]/20 px-2.5 py-1 rounded-md transition-colors cursor-pointer"
-                    >
-                      Sim, pode lembrar
-                    </button>
-                    <button
-                      onClick={() => onConsent(false)}
-                      className="inline-flex items-center gap-1.5 text-xs text-gray-300 hover:text-white font-medium bg-gray-700/50 hover:bg-gray-700 px-2.5 py-1 rounded-md transition-colors cursor-pointer"
-                    >
-                      Agora não
-                    </button>
-                  </div>
-                )}
-
-                {/* S2: botões renderizados a partir das ações do agente, não do front */}
-                {message.actions && message.actions.length > 0 && (
-                  <div className="mt-3 pt-2.5 border-t border-gray-700/60 flex flex-wrap gap-2">
-                    {message.actions.map((acao, i) => (
-                      <button
-                        key={`${acao.tipo}-${i}`}
-                        onClick={() => onAction(acao)}
-                        className={
-                          i === 0
-                            ? 'inline-flex items-center gap-1.5 text-xs text-[#1FA37C] hover:text-teal-300 font-semibold bg-[#1FA37C]/10 hover:bg-[#1FA37C]/20 px-2.5 py-1 rounded-md transition-colors cursor-pointer'
-                            : 'inline-flex items-center gap-1.5 text-xs text-gray-300 hover:text-white font-medium bg-gray-700/50 hover:bg-gray-700 px-2.5 py-1 rounded-md transition-colors cursor-pointer'
-                        }
-                      >
-                        {acao.tipo === 'abrir_visao_financeira' && <BarChart3 className="w-3.5 h-3.5" />}
-                        <span>{acao.rotulo}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {/* Status badge if treatment was applied */}
-                {message.actionTaken === 'flow_adjusted' && (
-                  <div className="mt-3 p-2.5 bg-emerald-950/30 border border-emerald-800/40 rounded-lg space-y-2">
-                    <div className="flex items-center gap-2 text-xs text-emerald-300">
-                      <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span>Rotativo quitado com a sua reserva; os juros param aqui</span>
-                    </div>
-                  </div>
-                )}
-
-                {message.actionTaken === 'installment_active' && (
-                  <div className="mt-3 p-2.5 bg-teal-950/30 border border-[#1FA37C]/40 rounded-lg space-y-2">
-                    <div className="flex items-center gap-2 text-xs text-teal-200">
-                      <Sparkles className="w-4 h-4 text-[#1FA37C] shrink-0" />
-                      <span>Taxa congelada em parcelas fixas sem novos juros rotativos</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Message metadata & listen button */}
-              <div className="flex items-center gap-2 mt-1 px-1 text-[11px] text-gray-400">
-                <span className="font-semibold text-gray-300">Vita · IA</span>
-                <span>·</span>
-                <span>{message.timestamp}</span>
-                <button
-                  onClick={() => onSpeak(message.content)}
-                  className="opacity-60 focus:opacity-100 group-hover:opacity-100 hover:text-[#1FA37C] transition-opacity p-2 -m-1 min-w-11 min-h-11 inline-flex items-center justify-center cursor-pointer"
-                  title="Ouvir mensagem"
-                  aria-label="Ouvir mensagem"
-                >
-                  <Volume2 className="w-3 h-3" />
-                </button>
-              </div>
+            <div key={message.id} className="flex flex-col items-end animate-fade-in">
+              <div className="bg-ink text-white p-3 rounded-2xl rounded-br-sm text-[13.5px] max-w-[85%] leading-relaxed">{message.content}</div>
+              <span className="text-[10px] text-mid mt-1 px-1">{message.timestamp}</span>
             </div>
           );
         }
 
-        // User Message - Exact styling from prompt
         return (
-          <div key={message.id} className="flex flex-col items-end self-end max-w-[88%] sm:max-w-[85%] group animate-fade-in">
-            <div className="bg-gray-700 p-4 rounded-l-xl rounded-br-xl text-sm leading-relaxed text-white shadow-sm">
-              {message.content}
+          <React.Fragment key={message.id}>
+            <div className="flex items-start gap-2 group animate-fade-in">
+              <VitaMark size="md" className="mt-0.5" />
+              <div className="flex-1 flex flex-col gap-1 min-w-0">
+                <div className="flex items-center gap-1.5 px-0.5">
+                  <span className="text-[12px] text-ink font-semibold">Vita</span>
+                  <span className="text-[10px] text-mid">· IA · {message.timestamp}</span>
+                  <button
+                    type="button"
+                    onClick={() => onSpeak(message.content)}
+                    className="ml-auto opacity-60 focus:opacity-100 group-hover:opacity-100 w-9 h-9 -my-2 inline-flex items-center justify-center rounded-full text-mid hover:text-accent hover:bg-surface cursor-pointer"
+                    title="Ouvir mensagem"
+                    aria-label="Ouvir mensagem"
+                  >
+                    <Volume2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                <div className="bg-surface p-3.5 rounded-2xl rounded-tl-sm shadow-chip border border-line text-[13.5px] leading-relaxed text-ink-2 space-y-2">
+                  {renderTexto(message.content)}
+
+                  {message.citacoes && message.citacoes.length > 0 && (
+                    <div className="pt-2 border-t border-line flex flex-wrap gap-x-3 gap-y-1 text-[11.5px] text-mid">
+                      {message.citacoes.map((c) => (
+                        <span key={c.fonte} className="inline-flex items-center gap-1">
+                          <BookOpen className="w-3.5 h-3.5 text-accent" aria-hidden="true" />
+                          <span>Fonte:</span>
+                          {/^https?:\/\//.test(c.link) ? (
+                            <a href={c.link} target="_blank" rel="noopener noreferrer" className="text-accent-dark font-semibold hover:underline underline-offset-2">
+                              {c.fonte}
+                            </a>
+                          ) : (
+                            <span className="text-ink-3 font-medium">{c.fonte}</span>
+                          )}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {message.consentPrompt && (
+                    <div className="pt-2.5 border-t border-line flex flex-wrap gap-2">
+                      <Chip ativo onClick={() => onConsent(true)} icon={<ShieldCheck className="w-4 h-4 text-accent" />}>
+                        Sim, pode lembrar
+                      </Chip>
+                      <Chip onClick={() => onConsent(false)}>Agora não</Chip>
+                    </div>
+                  )}
+
+                  {message.actionTaken && (
+                    <div className="flex items-center gap-2 text-[12px] text-success-text bg-success-soft rounded-xl px-3 py-2 border border-success/20">
+                      {message.actionTaken === 'flow_adjusted' ? <ShieldCheck className="w-4 h-4 shrink-0" aria-hidden="true" /> : <Sparkles className="w-4 h-4 shrink-0" aria-hidden="true" />}
+                      <span>{message.actionTaken === 'flow_adjusted' ? 'Rotativo quitado com a sua reserva; os juros param aqui' : 'Parcelas fixas no lugar do rotativo; sem novos juros do rotativo'}</span>
+                    </div>
+                  )}
+                </div>
+
+                {message.actions && message.actions.length > 0 && (
+                  <div className="flex flex-col items-start gap-2 pt-1.5">
+                    <span className="text-[13px] font-semibold text-ink px-0.5">Ações sugeridas pelo Vita:</span>
+                    {message.actions.map((acao, i) => (
+                      <Chip key={`${acao.tipo}-${i}`} onClick={() => onAction(acao)} icon={ICONE_ACAO[acao.tipo]} ativo={i === 0}>
+                        {acao.rotulo}
+                      </Chip>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="flex items-center gap-1 mt-1 px-1 text-[11px] text-gray-400">
-              <span>{message.timestamp}</span>
-              <CheckCheck className="w-3 h-3 text-[#1FA37C]" />
-            </div>
-          </div>
+
+            {/* Cards do diagnóstico logo abaixo da abertura, como no Vita-UI */}
+            {message.isInitial && (
+              <>
+                <RaioXCard profile={profile} onOpenInvoice={onOpenInvoice} onOpenFinancialOverview={onOpenFinancialOverview} />
+                <TratamentosCard
+                  profile={profile}
+                  treatmentStatus={treatmentStatus}
+                  onSelectFlowAdjustment={onSelectFlowAdjustment}
+                  onSelectInstallment={onSelectInstallment}
+                  onTalkToHuman={onTalkToHuman}
+                  onResetTreatment={onResetTreatment}
+                />
+              </>
+            )}
+          </React.Fragment>
         );
       })}
 
-      {/* Typing indicator */}
       {isTyping && (
-        <div className="flex flex-col items-start max-w-[85%] animate-fade-in" role="status" aria-live="polite">
-          <div className="bg-gray-800/50 border-l-2 border-[#1FA37C] p-3.5 rounded-r-xl rounded-bl-xl text-sm text-gray-300 flex items-center gap-2">
-            <div className="flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#1FA37C] animate-bounce" style={{ animationDelay: '0ms' }} />
-              <span className="w-1.5 h-1.5 rounded-full bg-[#1FA37C] animate-bounce" style={{ animationDelay: '150ms' }} />
-              <span className="w-1.5 h-1.5 rounded-full bg-[#1FA37C] animate-bounce" style={{ animationDelay: '300ms' }} />
-            </div>
-            <span className="text-xs text-gray-400">Vita está calculando as opções...</span>
+        <div className="flex items-start gap-2 animate-fade-in" role="status" aria-live="polite">
+          <VitaMark size="md" className="mt-0.5" />
+          <div className="bg-surface border border-line shadow-chip px-4 py-3 rounded-2xl rounded-tl-sm flex items-center gap-2 text-[12.5px] text-mid">
+            <span className="flex items-center gap-1" aria-hidden="true">
+              <span className="w-1.5 h-1.5 rounded-full bg-accent animate-dot" style={{ animationDelay: '0ms' }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-accent animate-dot" style={{ animationDelay: '180ms' }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-accent animate-dot" style={{ animationDelay: '360ms' }} />
+            </span>
+            <span>O Vita está calculando…</span>
           </div>
         </div>
       )}
