@@ -11,3 +11,6 @@ agent/data/
 agent/artifacts/
 data/evento/
 .claude/worktrees/
+
+# capturas de revisão do Impeccable (regeneráveis)
+.impeccable/review/

@@ -217,6 +217,10 @@ Use o LLM simulado. Publique com --tag s5 --no-traffic e mostre o fluxo na URL d
 
 **Feito:** `agent/app/confirmacoes.py` (idempotência, iToken mock, evento `tratamento_confirmado`), `agent/app/memory/politica.py` (o que pode ser lembrado; semente do Bruno em `data/seeds/`), endpoints `/confirmations`, `/memory`, `/memory/consent`, `/handoff`; no front, iToken no modal, pergunta de consentimento no chat, botões "O que você lembra?" e "Esqueça tudo" sem modelo, "Falar com uma pessoa" no cabeçalho; smoke `make smoke-fatia FATIA=s5` (8 checks). Seção 16 do `DADOS_EVENTO.md`.
 
+## S7b — Migração de UI para o Vita-UI (feita em 27/09)
+
+Apenas UI, funcionalidades do chat mantidas. O `web/` passou para o mundo visual do repositório `Grazinascito/Vita-UI` (superfícies claras, pedra 24 px, pílulas, Inter, feedback semântico; tela de bloqueio com push rico, Raio-X e tratamentos no chat, sheets, hero de confirmação, negociação assistida) com acento verde próprio e sem marca Itaú. Fluxo Impeccable: `PRODUCT.md`, brief com contrato de direção, revisão de acabamento (`ship` após uma rodada de 8 correções), `DESIGN.md` + `.impeccable/design.json`. Publicado como tag `ui-vita` do `vita-app` apontando para a `fatia-s7`: roteiro 12/12 sem modelo, smokes s6 5/5 e s8 4/4.
+
 ## S6 — Guardrails e cena do Marcos (feita em 27/09)
 
 Ao fim da S6, os 12 controles da seção Guardrails do PRD rodam na revisão, um ataque ao vivo é bloqueado com log no Cloud Logging, o Marcos passa pela cena do guardrail e o relatório do red team substitui as metas no PRD.

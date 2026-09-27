@@ -52,3 +52,13 @@ agente.
 ## Cena do Marcos (S6)
 
 `?cliente=marcos` na URL troca o cliente da demo para o Marcos (faixa V): o id vem do ambiente (`DEMO_CUSTOMER_ID_MARCOS`), nunca da conversa. O botão Bruno/Marcos no cabeçalho recarrega a página com esse parâmetro. As mensagens do agente são renderizadas sem HTML (só negrito e parágrafos).
+
+## Mundo visual (27/09, migração de UI)
+
+O front segue a estrutura do repositório privado `Grazinascito/Vita-UI` (tela de bloqueio com push
+rico, Top App Bar, balões, Raio-X e tratamentos dentro do chat, chips e composer em pílula, sheets
+que sobem do rodapé, hero de confirmação, negociação assistida com estados), com o acento verde
+próprio do Vita (`#0F7A5A`) no lugar de qualquer marca do Itaú (regra 3). Tokens em
+`src/index.css` (`@theme`); primitivas em `src/components/ui.tsx`; o design system está
+registrado em `DESIGN.md` (raiz) e `.impeccable/design.json`. Nenhuma funcionalidade do chat mudou:
+todos os números continuam vindo de `/api/*`.
