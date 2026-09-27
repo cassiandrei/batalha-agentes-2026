@@ -556,7 +556,7 @@ A implementação está organizada em fatias verticais, uma sessão do Claude Co
 
 - [x] Diagrama de arquitetura em LeanIX, Gliffy ou equivalente (entregável 4) — Engenharia — *`docs/entregaveis/4. Desenho de solução (arquitetura).drawio`*
 - [x] Documento explicativo da arquitetura (entregável 5), a partir das seções de arquitetura, dados e segurança deste PRD — Engenharia — *`docs/ARCHITECTURE.md`*
-- [ ] Racional de prototipação (entregável 3) — Design
+- [x] Racional de prototipação (entregável 3) — Design — *`docs/3. Racional de prototipação.md`*
 - [ ] Proposta de negócio (entregável 1) com o dreno regressivo e o público de 355 clientes — Produto
 
 ## Decisões do time
