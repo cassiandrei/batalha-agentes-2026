@@ -222,10 +222,6 @@ export default function App() {
     setMessages((prev) => [...prev, confirmMsg]);
   };
 
-
-    setMessages((prev) => [...prev, confirmMsg]);
-  };
-
   // Execution: Option B - Installment Treatment
   const handleConfirmInstallment = (plan: { count: number; value: number; total: number }) => {
     setTreatmentStatus('installment_active');

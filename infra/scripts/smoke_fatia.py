@@ -196,5 +196,7 @@ if __name__ == "__main__":
     ap.add_argument("--customer-id", required=True)
     args = ap.parse_args()
     sys.exit(
-        {"s1": s1, "s2": s2, "s2b": s2b}[args.fatia](args.base_url, args.customer_id)
+        {"s1": s1, "s2": s2, "s2b": s2b, "s3": s3}[args.fatia](
+            args.base_url, args.customer_id
+        )
     )
