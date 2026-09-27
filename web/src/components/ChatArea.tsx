@@ -28,15 +28,20 @@ interface ChatAreaProps {
 export function renderTexto(texto: string): React.ReactNode {
   return texto.split(/\n{2,}/).map((paragrafo, i) => (
     <p key={i}>
-      {paragrafo.split(/(\*\*[^*]+\*\*)/g).map((parte, j) =>
-        parte.startsWith('**') && parte.endsWith('**') ? (
-          <strong key={j} className="font-semibold text-ink">
-            {parte.slice(2, -2)}
-          </strong>
-        ) : (
-          <React.Fragment key={j}>{parte}</React.Fragment>
-        ),
-      )}
+      {paragrafo.split('\n').map((linha, l) => (
+        <React.Fragment key={l}>
+          {l > 0 && <br />}
+          {linha.split(/(\*\*[^*]+\*\*)/g).map((parte, j) =>
+            parte.startsWith('**') && parte.endsWith('**') ? (
+              <strong key={j} className="font-semibold text-ink">
+                {parte.slice(2, -2)}
+              </strong>
+            ) : (
+              <React.Fragment key={j}>{parte}</React.Fragment>
+            ),
+          )}
+        </React.Fragment>
+      ))}
     </p>
   ));
 }

@@ -32,6 +32,35 @@ A URL é a forma determinística do serviço `vita-app` no Cloud Run (nome do se
 projeto): não muda entre versões e permanece pública. A forma com hash
 (`vita-app-277ilp3dyq-uc.a.run.app`) aponta para o mesmo serviço.
 
+### As jornadas em imagens
+
+Capturas do protótipo em viewport de celular (390 px). Todos os valores vêm das tools do agente
+sobre a base sintética do evento; nenhum foi escrito na tela.
+
+**Jornada do Bruno: do push à confirmação**
+
+| Push na tela bloqueada | Abertura do agente e ações | Raio-X da fatura |
+| --- | --- | --- |
+| ![Push neutro na tela de bloqueio](docs/images/jornada/01-push.png) | ![Mensagem de abertura com ações sugeridas](docs/images/jornada/02-abertura.png) | ![Raio-X da fatura com barra de comprometimento](docs/images/jornada/03-raio-x.png) |
+
+| Tratamentos por regra | Fatura completa, mês a mês | Visão financeira e índice |
+| --- | --- | --- |
+| ![Usar a reserva e parcelar, ordenados pelo motor](docs/images/jornada/04-tratamentos.png) | ![Detalhamento da fatura e histórico de pagamento](docs/images/jornada/05-fatura.png) | ![Índice de Organização Financeira e indicadores](docs/images/jornada/06-visao-financeira.png) |
+
+| T02: parcelar, só o que cabe na regra | T01: usar a reserva, com iToken | Confirmado: hero e comparativo |
+| --- | --- | --- |
+| ![Parcelamento com prazos calculados pela tabela Price](docs/images/jornada/07-t02-parcelar.png) | ![Simulação de uso da reserva com CDI e IR e campo do iToken](docs/images/jornada/08-t01-usar-reserva.png) | ![Rotativo quitado, condição confirmada e fluxo mensal](docs/images/jornada/09-t01-confirmado.png) |
+
+**Memória, normas e pessoa**
+
+| Consentimento para lembrar | O que o Vita lembra (e apagar) | Pergunta normativa com fonte citada |
+| --- | --- | --- |
+| ![Pergunta de consentimento com botões sem modelo](docs/images/jornada/10-consentimento.png) | ![Lista do que é lembrado e o botão de apagar tudo](docs/images/jornada/11-memoria.png) | ![Resposta do especialista com a norma citada e link](docs/images/jornada/14-chat-normas.png) |
+
+| Falar com uma pessoa | Protocolo aberto | Cena do Marcos: faixa V sem oferta |
+| --- | --- | --- |
+| ![Negociação assistida: chat ou ligação, o que vai junto](docs/images/jornada/12-pessoa.png) | ![Pedido registrado com protocolo e fila](docs/images/jornada/13-pessoa-protocolo.png) | ![Sem oferta de crédito por regra e caminho humano](docs/images/jornada/15-marcos-faixa-v.png) |
+
 ---
 
 ## O problema
