@@ -35,8 +35,11 @@ from app.abertura import (
 from app.app_utils import services
 from app.app_utils.a2a import attach_a2a_routes
 from app.config import load_config
+from app.confirmacoes import REGISTRO
 from app.events import EventRequest, build_event_prompt
 from app.financial_profile import build_financial_profile
+from app.memory.factory import get_memory_store
+from app.memory.politica import carregar_semente_memoria, valor_permitido
 
 load_dotenv()
 allow_origins = (
@@ -79,10 +82,18 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         auto_create_session=True,
     )
     # Sessão em memória morre com a instância; a semente na imagem a recria.
+    cfg = load_config()
     await carregar_semente(
         runner.session_service,
         adk_app.name,
-        Path(load_config().data_dir) / "evento" / "seed_sessions.json",
+        Path(cfg.data_dir) / "evento" / "seed_sessions.json",
+    )
+    # Memória de longo prazo do Bruno: lembranças de uma conversa anterior, com o
+    # consentimento daquela conversa. Só o que a política permite.
+    await carregar_semente_memoria(
+        get_memory_store(),
+        Path(cfg.data_dir) / "seeds" / "seed_memory.json",
+        cfg.memory_ttl_days,
     )
     await attach_a2a_routes(
         app,
@@ -187,7 +198,155 @@ def perfil_financeiro(customer_id: str) -> dict:
     perfil = build_financial_profile(customer_id)
     if perfil is None:
         raise HTTPException(status_code=404, detail="cliente não encontrado")
+    # Só o que foi mostrado pode ser confirmado (CA-14).
+    for sim in (perfil["treatments"].get("t01"), perfil["treatments"].get("t02")):
+        if sim:
+            REGISTRO.registrar(customer_id, sim)
     return perfil
+
+
+# ------------------------------------------------------------ S5: confirmação, memória, pessoa
+
+from pydantic import BaseModel, Field  # noqa: E402
+
+
+class ConfirmacaoRequest(BaseModel):
+    simulacao_id: str = Field(min_length=1)
+    itoken: str = ""
+    idempotency_key: str = Field(min_length=1)
+
+
+class ConsentimentoRequest(BaseModel):
+    consentimento: bool
+
+
+class HandoffRequest(BaseModel):
+    consentimento: bool = False
+    motivo: str = ""
+
+
+async def _sessao_abertura(request: Request, customer_id: str):
+    svc = request.app.state.runner.session_service
+    nome = request.app.state.agent_app_name
+    sid = session_id_abertura(customer_id)
+    sessao = await svc.get_session(app_name=nome, user_id=customer_id, session_id=sid)
+    if sessao is None:
+        sessao = await svc.create_session(
+            app_name=nome,
+            user_id=customer_id,
+            session_id=sid,
+            state={"customer_id": customer_id},
+        )
+    return svc, sessao
+
+
+async def _gravar_estado(request: Request, customer_id: str, delta: dict) -> None:
+    from google.adk.events import Event, EventActions
+
+    svc, sessao = await _sessao_abertura(request, customer_id)
+    await svc.append_event(
+        sessao, Event(author="vita", actions=EventActions(state_delta=delta))
+    )
+
+
+@app.post("/customers/{customer_id}/confirmations")
+async def confirmar_tratamento(
+    customer_id: str, corpo: ConfirmacaoRequest, request: Request
+) -> dict:
+    """CA-14: executa uma vez por simulação, só com iToken válido; registra o evento
+    tratamento_confirmado. Com consentimento, o tratamento vai para a memória."""
+    resultado = REGISTRO.confirmar(
+        customer_id, corpo.simulacao_id, corpo.itoken, corpo.idempotency_key
+    )
+    if resultado["status"] == "recusada":
+        raise HTTPException(
+            status_code=401 if "iToken" in resultado["motivo"] else 409,
+            detail=resultado["motivo"],
+        )
+    if resultado["status"] == "confirmada":
+        _, sessao = await _sessao_abertura(request, customer_id)
+        consentimento = sessao.state.get("consent_given_at")
+        if consentimento:
+            chave = f"tratamento:{resultado['em'][:10]}"
+            valor = f"{resultado['tipo'].upper()} confirmado em {resultado['em'][:10]}"
+            if valor_permitido(chave, valor):
+                await get_memory_store().save_preference(
+                    customer_id,
+                    chave,
+                    valor,
+                    consentimento,
+                    load_config().memory_ttl_days,
+                )
+        await _gravar_estado(
+            request, customer_id, {"tratamento_confirmado": resultado["tipo"]}
+        )
+    return resultado
+
+
+@app.get("/customers/{customer_id}/memory")
+async def ver_memoria(customer_id: str, request: Request) -> dict:
+    """'O que você lembra sobre mim?' — direito de acesso, sem chamar o modelo."""
+    _, sessao = await _sessao_abertura(request, customer_id)
+    resumo = await get_memory_store().get_profile_summary(customer_id)
+    return {
+        "consentimento": bool(sessao.state.get("consent_given_at")),
+        "lembrancas": resumo["preferences"],
+        "expira_em": resumo.get("expires_at", {}),
+        "politica": "objetivos, ofertas recusadas e tratamentos confirmados; nunca valores, payload, cadastro ou texto bruto",
+    }
+
+
+@app.post("/customers/{customer_id}/memory/consent")
+async def consentir_memoria(
+    customer_id: str, corpo: ConsentimentoRequest, request: Request
+) -> dict:
+    """Consentimento vai para o estado da sessão do chat, onde as tools o leem."""
+    from datetime import UTC, datetime
+
+    valor = datetime.now(UTC).isoformat() if corpo.consentimento else ""
+    await _gravar_estado(request, customer_id, {"consent_given_at": valor})
+    return {"consentimento": corpo.consentimento, "consent_given_at": valor or None}
+
+
+@app.delete("/customers/{customer_id}/memory")
+async def esquecer_tudo(customer_id: str, request: Request) -> dict:
+    """'Esqueça tudo' — apaga a memória de longo prazo e revoga o consentimento (art. 18)."""
+    apagadas = await get_memory_store().delete_all(customer_id)
+    await _gravar_estado(request, customer_id, {"consent_given_at": ""})
+    return {"apagadas": apagadas, "consentimento": False}
+
+
+@app.post("/customers/{customer_id}/handoff")
+async def falar_com_pessoa(
+    customer_id: str, corpo: HandoffRequest, request: Request
+) -> dict:
+    """Encaminhamento simulado para uma pessoa. O resumo vai só com consentimento e
+    nunca leva valores, nome ou identificador: faixa, mês e tratamento em curso."""
+    protocolo = f"VITA-{uuid.uuid4().hex[:8].upper()}"
+    resumo = None
+    if corpo.consentimento:
+        perfil = build_financial_profile(customer_id) or {}
+        _, sessao = await _sessao_abertura(request, customer_id)
+        resumo = {
+            "faixa_risco": (perfil.get("risk_profile") or {}).get("faixa_risco"),
+            "mes_referencia": perfil.get("reference_month"),
+            "gatilho": sessao.state.get("trigger"),
+            "tratamento_confirmado": sessao.state.get("tratamento_confirmado"),
+            "recomendacao_principal": (perfil.get("treatments") or {}).get("principal"),
+            "motivo_do_cliente": (corpo.motivo or "")[:120],
+        }
+    fila = (
+        "renegociacao_assistida"
+        if (resumo or {}).get("faixa_risco") in (None, "C", "V")
+        else "atendimento"
+    )
+    await _gravar_estado(request, customer_id, {"handoff_protocolo": protocolo})
+    return {
+        "protocolo": protocolo,
+        "fila": fila,
+        "resumo": resumo,
+        "mensagem": "Encaminhei para uma pessoa da equipe. O protocolo é seu.",
+    }
 
 
 # Main execution

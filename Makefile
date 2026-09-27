@@ -50,6 +50,7 @@ stage-data: ## copia data/ para dentro do contexto de build (agent/data/)
 	cp -R data/knowledge agent/data/knowledge
 	cp -R data/synthetic agent/data/synthetic
 	@test -d data/evento && cp -R data/evento agent/data/evento || true
+	@test -d data/seeds && cp -R data/seeds agent/data/seeds || true
 	@echo "agent/data/ pronto para o build"
 
 deploy: stage-data ## deploy: make deploy PROJECT_ID=x AGENT_ENGINE_ID=y [PUBLIC=1] [DRY_RUN=1]
