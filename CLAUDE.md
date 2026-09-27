@@ -43,6 +43,12 @@ publicado). `docs/SATURDAY_CHECKLIST.md` tem o roteiro do dia da banca.
    do deploy; a chave do AI Studio (`MODEL_KEY_SECRET`) não é mais necessária. Nada de
    contornar por outro projeto. Detalhe e contorno de cada um: `docs/SATURDAY_CHECKLIST.md`,
    Bloco 2.5. Se algo novo for negado, acrescente aqui na hora.
+   **27/09, ~07h20:** o acesso público (`allUsers` invoker) do serviço `batalha-agentes`
+   sumiu e a religação pelo `deploy.sh` (`PUBLIC=1`) travou em "Setting IAM Policy". **Não
+   reaplique.** O agente fica privado: o `vita-app` (que roda como `squad-agent-sa`, com
+   `run.invoker`) chama o agente com o ID token da própria SA (`web/server.ts`), e os
+   smokes usam `TOKEN=$(gcloud auth print-identity-token)`. Deploy do agente sempre com
+   `PUBLIC=0`.
    **Exceção dada pela organização (26/09, noite):** a SA `squad-agent-sa@…` tem
    `aiplatform.user`, BigQuery e Secret Manager. Usá-la como `RUNTIME_SA` é o caminho
    oficial, não reincidência. Model Armor e IAM continuam negados. **Nunca baixe nem
@@ -121,7 +127,7 @@ docs/                  arquitetura (entregável 5), drawio (entregável 4), LGPD
 | `make deploy PROJECT_ID=x [TAG=fatia-sN] [MIN_INSTANCES=1] [DRY_RUN=1]` | deploy no Cloud Run; com `TAG`, revisão sem tráfego |
 | `make deploy-web PROJECT_ID=x AGENT_URL=y` | publica o front como `vita-app` |
 | `make smoke BASE_URL=x [TOKEN=y]` | verificações de arquitetura contra o agente vivo |
-| `make smoke-fatia FATIA=sN BASE_URL=x` | smoke de uma fatia (s1–s8), quase sempre sem modelo |
+| `make smoke-fatia FATIA=sN BASE_URL=x [TOKEN=...]` | smoke de uma fatia (s1–s8); contra o agente, `TOKEN=$(gcloud auth print-identity-token)` |
 | `make seed-abertura BASE_URL=x CUSTOMER_ID=y` | gera a semente da abertura proativa a partir do agente vivo |
 | `make roteiro BASE_URL=x [SEM_CHAT=1]` | roteiro ponta a ponta da demo (Bruno + Marcos) com latência por passo |
 | `make redteam` | red team sobre as camadas determinísticas, sem modelo; grava `docs/redteam/RELATORIO.md` |

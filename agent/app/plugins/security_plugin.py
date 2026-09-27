@@ -29,7 +29,7 @@ from app.config import load_config
 
 RECUSA = (
     "Não consigo ajudar com isso. Posso mostrar sua visão financeira ou as opções "
-    "para reduzir juros. Se preferir, posso transferir para uma pessoa."
+    "para reduzir juros."
 )
 RECUSA_ESCOPO = (
     "Isso fica fora do que eu faço. Posso ajudar com a sua fatura, o rotativo, a "
@@ -46,7 +46,7 @@ RECUSA_SAIDA = (
 RECUSA_FAIXA_V = "Nenhuma oferta de crédito por regra; o caminho é renegociação assistida com uma pessoa."
 RECUSA_LIMITE = (
     "Não consegui fechar essa resposta agora. Posso mostrar sua visão financeira ou as "
-    "opções para reduzir juros; se preferir, transfiro para uma pessoa."
+    "opções para reduzir juros."
 )
 # Tools que criam ou simulam crédito novo: a faixa V não chega nelas.
 TOOLS_CREDITO = {"simular_parcelamento_fatura"}

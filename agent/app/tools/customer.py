@@ -48,13 +48,15 @@ def get_transactions(
     Args:
         start_date: data inicial no formato AAAA-MM-DD.
         end_date: data final no formato AAAA-MM-DD.
-        category: opcional; moradia, mercado, transporte, lazer, assinaturas,
-            pix_enviado, pix_recebido ou salario.
+        category: opcional, em minúsculas e sem acento: delivery, restaurantes,
+            mercado, assinaturas, casa, transporte_por_app, posto_de_combustivel,
+            lojas_e_sites, produtos_financeiros, transferencias_diversas, saude.
 
     Returns:
         transactions com a lista; total_out (quanto saiu, positivo), total_in
-        (quanto entrou) e net (entradas menos saídas). Para "quanto gastei",
-        use total_out, nunca net.
+        (quanto entrou), net (entradas menos saídas) e by_category (quanto saiu por
+        categoria). Para "quanto gastei", use total_out ou by_category; nunca some
+        transações de cabeça.
     """
     cid = _customer_id(tool_context)
     if not cid:
@@ -74,11 +76,23 @@ def get_transactions(
     # "quanto gastei?" respondia com um número positivo que era a sobra.
     saidas = sum(-t["amount"] for t in linhas if t["amount"] < 0)
     entradas = sum(t["amount"] for t in linhas if t["amount"] > 0)
+    # QA R1: sem os totais por categoria no payload, o modelo somava de cabeça e o
+    # validador de números recusava a resposta inteira.
+    por_categoria: dict[str, float] = {}
+    for t in linhas:
+        if t["amount"] < 0:
+            por_categoria[t["category"]] = (
+                por_categoria.get(t["category"], 0.0) - t["amount"]
+            )
     return {
         "transactions": linhas,
         "total_out": round(saidas, 2),
         "total_in": round(entradas, 2),
         "net": round(entradas - saidas, 2),
+        "by_category": {
+            k: round(v, 2)
+            for k, v in sorted(por_categoria.items(), key=lambda kv: -kv[1])
+        },
     }
 
 
@@ -108,7 +122,13 @@ def get_goals(tool_context: ToolContext) -> dict:
     cid = _customer_id(tool_context)
     if not cid:
         return dict(NO_IDENTITY)
-    return {"goals": get_data_source().get_goals(cid)}
+    metas = get_data_source().get_goals(cid)
+    if not metas:
+        return {
+            "goals": [],
+            "reason": "Nenhuma meta cadastrada; o cliente pode definir uma na conversa.",
+        }
+    return {"goals": metas}
 
 
 def get_account_summary(tool_context: ToolContext) -> dict:

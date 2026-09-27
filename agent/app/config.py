@@ -57,7 +57,8 @@ def load_config() -> Config:
         demo_mode=_flag("DEMO_MODE", True),
         demo_customer_id=os.getenv("DEMO_CUSTOMER_ID", "FICT-0001"),
         memory_ttl_days=int(os.getenv("MEMORY_TTL_DAYS", "90")),
-        guard_strikes_to_human=int(os.getenv("GUARD_STRIKES_TO_HUMAN", "3")),
+        # QA F4: transferir só depois de muitas tentativas; recusa normal continua ajudando.
+        guard_strikes_to_human=int(os.getenv("GUARD_STRIKES_TO_HUMAN", "10")),
         use_model_armor=_flag("USE_MODEL_ARMOR", False),
         use_rag_engine=_flag("USE_RAG_ENGINE", False),
         # REGION é onde o Cloud Run roda. GOOGLE_CLOUD_LOCATION, lido direto

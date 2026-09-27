@@ -75,6 +75,12 @@ def get_diagnostico(tool_context: ToolContext) -> dict:
     diag = get_data_source().get_diagnostico(cid)
     if diag is None:
         return {"error": f"Cliente {cid} não tem diagnóstico na base."}
+    # QA F8: "quanto sobra" é entradas menos TODAS as saídas médias, não renda menos
+    # parcelas (essa é a sobra do perfil de risco, que serve à faixa).
+    entradas = diag.get("entradas_media_mensal")
+    saidas = diag.get("saidas_media_mensal")
+    if entradas is not None and saidas is not None:
+        diag = {**diag, "sobra_media_mensal": round(float(entradas) - float(saidas), 2)}
     return {"diagnostico": diag}
 
 

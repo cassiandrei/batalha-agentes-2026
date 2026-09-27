@@ -15,9 +15,17 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import urllib.error
 import urllib.request
+
+# 27/09: o agente deixou de ser público. TOKEN=$(gcloud auth print-identity-token) põe o
+# Bearer em toda chamada; o front (vita-app) continua público e usa o token da própria SA.
+if os.getenv("TOKEN"):
+    _opener = urllib.request.build_opener()
+    _opener.addheaders = [("Authorization", f"Bearer {os.environ['TOKEN']}")]
+    urllib.request.install_opener(_opener)
 
 ESPERADO_S1 = {
     "total_invoice": 853.07,

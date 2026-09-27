@@ -894,3 +894,36 @@ analista, orquestrador); o log `event=turn` traz o número exato por turno e por
 
 **Vídeo de backup.** Fora do código: gravar a jornada na URL do `vita-app` no domingo de
 manhã, depois da regressão (ver `docs/SATURDAY_CHECKLIST.md`).
+
+## 20. Correções do plano de testes da equipe (27/09)
+
+O plano de testes (47 casos) e a lista de pendências da QA foram cruzados com a revisão
+`fatia-s7`. Boa parte das falhas foi vista antes das fatias S6 a S8 e já estava
+resolvida (fonte nas normas, regeneração única, acessibilidade, push). O que mudou nesta
+rodada, por item da lista:
+
+| Item | Correção |
+| --- | --- |
+| F1, F2 resposta vazia | `POST /api/chat` nunca devolve vazio: pedido que dispara a tool de ação (confirmação pendente no ADK) vira "não faço transferências, pagamentos nem contratações por aqui"; qualquer outro vazio vira a resposta segura padrão, com log. A tool de ação deixou de sugerir "transfer" na docstring e o prompt diz que o Vita não faz isso |
+| F4 transferir demais | `GUARD_STRIKES_TO_HUMAN` passou de 3 para 10; as recusas de entrada e de limite não oferecem mais atendente; o prompt reserva a pessoa para pedido do cliente, faixa V e risco |
+| F6 "esqueça tudo" no chat | prompt do orquestrador chama `forget_me` na hora e confirma em uma frase; "o que você lembra" e "minha meta" vão a `recall_profile` |
+| F7 `goals: []` | `get_goals` devolve uma frase quando não há meta; prompt proíbe campo técnico na resposta |
+| F8 sobra real | `get_diagnostico` ganhou `sobra_media_mensal` (entradas menos todas as saídas médias); o analista usa esse campo, não a sobra do perfil de risco |
+| F9 "mês atual", "Faixa C" | analista cita "dezembro de 2025" e traduz a faixa |
+| F10 conselho genérico | "por onde começo" vai ao analista, que chama o diagnóstico antes |
+| F11 respostas longas | até 120 palavras, sem títulos, nos três prompts |
+| R1, R4, R5 dados plantados | quatro transações do Bruno em `data/evento/extrato.csv` (farmácia, plano de saúde, doação, descrição com injeção); `data/evento/PLANTADAS.md` explica; prompt proíbe inferir saúde, religião ou política |
+| R1 gastos do mês recusados | `get_transactions` ganhou `by_category` (saídas por categoria): sem isso o modelo somava de cabeça e o validador de números recusava a resposta inteira. Retestado: "Me explique meus gastos deste mês" e "quanto gastei com delivery" respondem com os totais do payload |
+| F3 mensagem mista | **não alterado**: a injeção continua bloqueando a mensagem inteira, como o PRD descreve; separar a parte legítima é decisão de política do time |
+| R3 limite de regeneração | já feito na S7 (`REGENERACOES_MAX`), com teste; não precisa forçar no código |
+| P4 a P7 custo e tempo | custo sai do faturamento do projeto e do log `model_call` (tokens); tempo medido na S7: 2 s quente, até 20 s frio, meta de 5 s só com instância quente (`MIN_INSTANCES=1`) |
+
+Retestes de 27/09 na `fatia-s7` (revisão 00028) pelo `vita-app`: F1, F2, F4, F6, F7, F8, F9, F10, F11, R1, R4 passaram; roteiro 14/14; smoke s8 4/4. Testes em `tests/unit/test_qa_pendencias.py`.
+
+**Acesso ao agente (27/09, ~07h20).** Durante os retestes, o acesso público do serviço
+`batalha-agentes` sumiu (política do serviço vazia) e o passo `PUBLIC=1` do deploy travou
+em "Setting IAM Policy". Pela regra 7, não se insiste: o agente passou a ser privado. O
+`vita-app` roda como `squad-agent-sa`, que tem `run.invoker`, e chama o agente com o ID
+token da própria SA (servidor de metadados do Cloud Run, `web/server.ts`); os smokes
+contra o agente usam `TOKEN=$(gcloud auth print-identity-token)`. O front continua
+público.

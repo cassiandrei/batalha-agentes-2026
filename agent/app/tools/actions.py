@@ -18,7 +18,8 @@ def propose_action(action_type: str, details: str, tool_context: ToolContext) ->
     """Propõe uma ação financeira ao cliente. Só executa após confirmação explícita.
 
     Args:
-        action_type: tipo da ação, por exemplo "transfer", "pay_invoice" ou "set_goal".
+        action_type: tipo da ação, por exemplo "set_goal" ou "schedule_reminder".
+            Nunca use para transferência, pagamento ou contratação: o Vita não faz.
         details: descrição curta do que será feito, em linguagem simples.
 
     Returns:

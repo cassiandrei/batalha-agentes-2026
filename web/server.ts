@@ -27,10 +27,41 @@ const nomeDe = (req: Request) => (req.query.cliente === 'marcos' ? 'Marcos' : 'B
 const APP_NAME = 'app';
 const sessaoDoCliente = (id: string) => `abertura-${id}`;
 
+// 27/09: o acesso público do agente foi removido no projeto do evento e não pode ser
+// reaplicado (regra 7). Este serviço roda como squad-agent-sa, que tem run.invoker: cada
+// chamada leva o ID token da própria SA, obtido no servidor de metadados do Cloud Run.
+// Fora do Cloud Run (dev local) o metadado não existe e a chamada segue sem token.
+// O Cloud Run só verifica o token cuja audiência é a URL canônica do serviço; a URL de
+// tag (fatia-s7---...) devolve 401 "could not be verified". Tira o prefixo da tag.
+const AGENT_AUDIENCE = process.env.AGENT_AUDIENCE || AGENT_URL.replace(/^https:\/\/[a-z0-9-]+---/, 'https://');
+let tokenCache: { valor: string; expira: number } | null = null;
+async function authHeaders(): Promise<Record<string, string>> {
+  if (!AGENT_URL) return {};
+  const agora = Date.now();
+  if (tokenCache && tokenCache.expira > agora) return { Authorization: `Bearer ${tokenCache.valor}` };
+  try {
+    const r = await fetch(
+      `http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/identity?audience=${encodeURIComponent(AGENT_AUDIENCE)}`,
+      { headers: { 'Metadata-Flavor': 'Google' }, signal: AbortSignal.timeout(2000) },
+    );
+    if (!r.ok) return {};
+    const valor = (await r.text()).trim();
+    tokenCache = { valor, expira: agora + 50 * 60 * 1000 };
+    return { Authorization: `Bearer ${valor}` };
+  } catch {
+    return {};
+  }
+}
+
+async function agente(caminho: string, init: RequestInit = {}): Promise<globalThis.Response> {
+  const auth = await authHeaders();
+  return fetch(`${AGENT_URL}${caminho}`, { ...init, headers: { ...(init.headers as Record<string, string> | undefined), ...auth } });
+}
+
 async function garantirSessao(userId: string, sessionId: string): Promise<void> {
-  const r = await fetch(`${AGENT_URL}/apps/${APP_NAME}/users/${userId}/sessions/${sessionId}`);
+  const r = await agente(`/apps/${APP_NAME}/users/${userId}/sessions/${sessionId}`);
   if (r.ok) return;
-  const c = await fetch(`${AGENT_URL}/apps/${APP_NAME}/users/${userId}/sessions/${sessionId}`, {
+  const c = await agente(`/apps/${APP_NAME}/users/${userId}/sessions/${sessionId}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: '{}',
@@ -52,7 +83,7 @@ app.post('/api/chat', async (req: Request, res: Response) => {
   const sessionId = sessaoDoCliente(cliente);
   try {
     await garantirSessao(cliente, sessionId);
-    const r = await fetch(`${AGENT_URL}/run`, {
+    const r = await agente(`/run`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -84,10 +115,16 @@ app.post('/api/chat', async (req: Request, res: Response) => {
       const delta = ev.actions?.stateDelta ?? ev.actions?.state_delta;
       if (delta?.citacoes) citacoes = delta.citacoes;
     }
-    const reply = textos.join(' ').trim();
+    let reply = textos.join(' ').trim();
+    // QA F1/F2: nunca devolver vazio. Pedido de confirmação de ação (transferência etc.)
+    // fica pendente no ADK sem texto; qualquer outro vazio vira a resposta segura padrão.
+    let fallback: string | null = null;
     if (!reply) {
-      res.status(502).json({ error: 'o agente não devolveu texto' });
-      return;
+      fallback = tools.includes('adk_request_confirmation') || tools.includes('propose_action')
+        ? 'Eu não faço transferências, pagamentos nem contratações por aqui. Posso mostrar sua fatura, sua visão financeira ou simular as opções para reduzir juros.'
+        : 'Não consegui montar a resposta agora. Posso mostrar sua visão financeira ou as opções para reduzir juros.';
+      console.error('resposta vazia do agente', { tools });
+      reply = fallback;
     }
     // Só a fonte que a resposta realmente cita vira link; sem citação, sem link.
     const compacta = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\./g, '');
@@ -97,7 +134,7 @@ app.post('/api/chat', async (req: Request, res: Response) => {
       vistas.add(c.fonte);
       return true;
     });
-    res.json({ reply, source: 'agente', tools, citacoes: citadas.map(({ fonte, link }) => ({ fonte, link })) });
+    res.json({ reply, source: 'agente', tools, fallback: fallback !== null, citacoes: citadas.map(({ fonte, link }) => ({ fonte, link })) });
   } catch (e) {
     console.error('falha ao falar com o agente:', e);
     res.status(502).json({ error: `falha ao consultar o agente: ${(e as Error).message}` });
@@ -112,53 +149,53 @@ app.get('/api/financial-profile', async (req: Request, res: Response) => {
     return;
   }
   try {
-    const r = await fetch(`${AGENT_URL}/customers/${clienteDe(req)}/financial-profile`);
+    const r = await agente(`/customers/${clienteDe(req)}/financial-profile`);
     if (!r.ok) {
       res.status(r.status).json({ error: `agente respondeu ${r.status}` });
       return;
     }
-    const agente = await r.json();
+    const perfil = await r.json();
     res.json({
       user: nomeDe(req),
       card: {
         brand: 'Cartão de crédito',
         lastFour: '',
-        referenceMonth: agente.reference_month,
-        paymentMode: agente.card.payment_mode,
-        totalInvoice: agente.card.total_invoice,
-        paidAmount: agente.card.paid_amount,
-        outstandingBalance: agente.card.outstanding_balance,
-        rotaryInterestCharged: agente.card.revolving_interest_charged,
-        invoiceHistory: agente.invoice_history,
+        referenceMonth: perfil.reference_month,
+        paymentMode: perfil.card.payment_mode,
+        totalInvoice: perfil.card.total_invoice,
+        paidAmount: perfil.card.paid_amount,
+        outstandingBalance: perfil.card.outstanding_balance,
+        rotaryInterestCharged: perfil.card.revolving_interest_charged,
+        invoiceHistory: perfil.invoice_history,
       },
       // S3: tudo abaixo vem do agente (índice por regra, reserva e T01 calculado).
-      reserve: agente.reserve
+      reserve: perfil.reserve
         ? {
-            produto: agente.reserve.produto,
-            liquidez: agente.reserve.liquidez,
-            saldo: agente.reserve.saldo,
-            percentualCdi: agente.reserve.percentual_cdi,
-            finalidade: agente.reserve.finalidade,
+            produto: perfil.reserve.produto,
+            liquidez: perfil.reserve.liquidez,
+            saldo: perfil.reserve.saldo,
+            percentualCdi: perfil.reserve.percentual_cdi,
+            finalidade: perfil.reserve.finalidade,
           }
         : null,
       financialOverview: {
-        score: agente.index?.score ?? null,
-        status: agente.index?.status ?? null,
-        componentes: agente.index?.componentes ?? null,
-        poupancaSobreEntradasPct: agente.diagnosis?.poupanca_sobre_entradas_pct ?? null,
-        drenoPctRenda: agente.diagnosis?.dreno_pct_renda ?? null,
-        comprometimentoCreditoPct: agente.diagnosis?.comprometimento_credito_pct ?? null,
-        mesesPagandoJuros: agente.diagnosis?.meses_pagando_juros ?? null,
-        jurosUltimoMes: agente.diagnosis?.juros_ultimo_mes ?? null,
-        jurosEncargosAno: agente.diagnosis?.juros_encargos_ano ?? null,
-        essenciaisMediaMensal: agente.diagnosis?.essenciais_media_mensal ?? null,
+        score: perfil.index?.score ?? null,
+        status: perfil.index?.status ?? null,
+        componentes: perfil.index?.componentes ?? null,
+        poupancaSobreEntradasPct: perfil.diagnosis?.poupanca_sobre_entradas_pct ?? null,
+        drenoPctRenda: perfil.diagnosis?.dreno_pct_renda ?? null,
+        comprometimentoCreditoPct: perfil.diagnosis?.comprometimento_credito_pct ?? null,
+        mesesPagandoJuros: perfil.diagnosis?.meses_pagando_juros ?? null,
+        jurosUltimoMes: perfil.diagnosis?.juros_ultimo_mes ?? null,
+        jurosEncargosAno: perfil.diagnosis?.juros_encargos_ano ?? null,
+        essenciaisMediaMensal: perfil.diagnosis?.essenciais_media_mensal ?? null,
       },
-      t01: agente.treatments?.t01 ?? null,
+      t01: perfil.treatments?.t01 ?? null,
       // S4
-      offers: agente.offers ?? null,
-      t02: agente.treatments?.t02 ?? null,
-      principal: agente.treatments?.principal ?? null,
-      ordem: agente.treatments?.ordem ?? [],
+      offers: perfil.offers ?? null,
+      t02: perfil.treatments?.t02 ?? null,
+      principal: perfil.treatments?.principal ?? null,
+      ordem: perfil.treatments?.ordem ?? [],
     });
   } catch (e) {
     res.status(502).json({ error: `falha ao consultar o agente: ${(e as Error).message}` });
@@ -172,7 +209,7 @@ app.get('/api/abertura', async (req: Request, res: Response) => {
     return;
   }
   try {
-    const r = await fetch(`${AGENT_URL}/customers/${clienteDe(req)}/opening`);
+    const r = await agente(`/customers/${clienteDe(req)}/opening`);
     if (!r.ok) {
       res.status(r.status).json({ error: `agente respondeu ${r.status}` });
       return;
@@ -191,7 +228,7 @@ async function proxyJson(req: Request, res: Response, metodo: string, caminho: s
     return;
   }
   try {
-    const r = await fetch(`${AGENT_URL}/customers/${clienteDe(req)}${caminho}`, {
+    const r = await agente(`/customers/${clienteDe(req)}${caminho}`, {
       method: metodo,
       headers: { 'Content-Type': 'application/json' },
       body: corpo === undefined ? undefined : JSON.stringify(corpo),
