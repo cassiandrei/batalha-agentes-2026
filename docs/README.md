@@ -18,6 +18,7 @@
 | `design/RACIONAL_PROTOTIPACAO.md` | racional de experiência do protótipo: conceito visual, decisões da jornada, acessibilidade e limites |
 | board de prototipação | [Vita UI no Figma](https://www.figma.com/board/Q7AT7ixAWbHOCdK62QAQYq/Vita-UI---prototipa%C3%A7%C3%A3o?node-id=0-1&t=IWzzhY5ypC7wMkV8-1): processo de prototipação da interface |
 | `diagrams/` | SVGs usados no PRD |
+| `HANDOFF_SKILLS_E_EXTENSOES.md` | skills, plugins, conectores, CLIs e extensões usados no projeto, e como reinstalar |
 | `historico/` | blueprint do template, patches do protótipo, specs e planos antigos |
 
 Regra: nenhum documento solto na raiz do repositório, exceto o `README.md` (porta de entrada: os cinco entregáveis obrigatórios e a URL pública do protótipo) e o `CLAUDE.md`.
