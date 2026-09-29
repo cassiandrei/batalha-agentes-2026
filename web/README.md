@@ -25,7 +25,7 @@ Nenhum número da v1 sobrou.
 ```bash
 cd web
 npm install --legacy-peer-deps
-AGENT_URL=https://fatia-s2---batalha-agentes-277ilp3dyq-uc.a.run.app \
+AGENT_URL=https://<url-do-agente-no-cloud-run> \
 DEMO_CUSTOMER_ID=36d74064-cc59-4ad2-9304-aeae46e660e4 \
 npm run dev            # http://localhost:3000
 npm run lint           # tsc --noEmit

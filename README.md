@@ -10,19 +10,15 @@ cliente. **Todo número vem de uma tool determinística; o modelo nunca calcula,
 | # | Entregável | Onde está | Status |
 | --- | --- | --- | --- |
 | 1 | **Proposta de negócio** (jornada, dor, proposta de valor, impacto) | [`docs/entregaveis/1. Proposta de negócio.pdf`](docs/entregaveis/1.%20Proposta%20de%20neg%C3%B3cio.pdf); base em [`docs/produto/PRD.md`](docs/produto/PRD.md) | Entregue |
-| 2 | **Protótipo funcional** (clicável, avaliado em Design & Experiência) | **https://vita-app-996610300787.us-central1.run.app** — público, sem login; [roteiro abaixo](#como-navegar-no-protótipo-entregável-2) | No ar |
+| 2 | **Protótipo funcional** (clicável, avaliado em Design & Experiência) | Foi avaliado ao vivo na URL pública do `vita-app` durante o evento; o ambiente foi encerrado depois da banca. O código está em [`web/`](web/) e as jornadas em imagens estão [abaixo](#as-jornadas-em-imagens); para subir de novo: `make deploy` e `make deploy-web` | Encerrado |
 | 3 | **Racional de prototipação** (elementos, decisões de experiência, critérios) | [`docs/entregaveis/3. Racional de prototipação.md`](docs/entregaveis/3.%20Racional%20de%20prototipa%C3%A7%C3%A3o.md) | Entregue |
 | 4 | **Desenho de solução** (arquitetura, engenharia e ciência de dados) | [`docs/entregaveis/4. Desenho de solução (arquitetura).drawio`](docs/entregaveis/4.%20Desenho%20de%20solu%C3%A7%C3%A3o%20%28arquitetura%29.drawio) (abrir em diagrams.net) e a mesma imagem em [`.svg`](docs/entregaveis/4.%20Desenho%20de%20solu%C3%A7%C3%A3o%20%28arquitetura%29.svg) | Entregue |
 | 5 | **Documento explicativo da arquitetura** (componentes, integrações, decisões, justificativas) | [`docs/entregaveis/5. Documento explicativo da arquitetura.md`](docs/entregaveis/5.%20Documento%20explicativo%20da%20arquitetura.md) (mesmo conteúdo de [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)) | Entregue |
 
-<p align="center">
-  <a href="https://vita-app-996610300787.us-central1.run.app"><img src="docs/images/qrcode-vita.png" width="180" alt="QR code do protótipo do Vita"></a><br>
-  <sub>Aponte a câmera do celular: abre o protótipo no ar.</sub>
-</p>
 
 ### Como navegar no protótipo (entregável 2)
 
-1. Abra a URL: a tela de bloqueio mostra o push do Vita. Toque em **Abrir no Vita**.
+1. Ao abrir o app, a tela de bloqueio mostra o push do Vita. Toque em **Abrir no Vita**.
 2. O chat abre com a mensagem de abertura do agente, o **Raio-X da fatura** (fatura, pago, saldo no
    rotativo, juros, reserva, índice) e os **tratamentos** calculados por regra: usar a reserva e
    parcelar.
@@ -31,11 +27,7 @@ cliente. **Todo número vem de uma tool determinística; o modelo nunca calcula,
 4. Os chips acima do campo de texto disparam perguntas ao agente; "Posso ficar no rotativo por
    mais de um mês?" traz a resposta do especialista com a norma citada e o link oficial.
 5. **Falar com uma pessoa** (ícone no cabeçalho) abre o encaminhamento com protocolo.
-6. Cena do cliente sem oferta de crédito (faixa V): **https://vita-app-996610300787.us-central1.run.app/?cliente=marcos**
-
-A URL é a forma determinística do serviço `vita-app` no Cloud Run (nome do serviço + número do
-projeto): não muda entre versões e permanece pública. A forma com hash
-(`vita-app-277ilp3dyq-uc.a.run.app`) aponta para o mesmo serviço.
+6. Cena do cliente sem oferta de crédito (faixa V): a mesma URL com `?cliente=marcos`.
 
 ### As jornadas em imagens
 
