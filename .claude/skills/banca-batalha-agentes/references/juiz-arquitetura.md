@@ -30,6 +30,14 @@ O diagrama (entregável 4) e o documento de arquitetura (entregável 5) são a p
 - Stack fora do Google sem justificativa (a entrega é avaliada no workspace Google).
 - Diagrama e código contam histórias diferentes.
 
+## Aderência à Resolução Conjunta CMN/BCB nº 8/2023 (o que eu confiro)
+
+- **Art. 3º, III – adequação e personalização:** a personalização vem de dados reais do cliente via tools determinísticas (perfil, fatura, momento), não de o modelo "inferir". Sem tool de contexto, a personalização é promessa.
+- **Art. 3º, § 1º, II – compatível com a complexidade do produto:** cálculo financeiro (CET, juros do rotativo, parcelamento) feito por código, com fonte da regra; o modelo só explica.
+- **Art. 4º, I–III – acompanhamento e controle:** logs, traces e avaliação que permitam identificar e corrigir ineficiência do agente em produção. Observabilidade aqui tem respaldo regulatório.
+
+> Ver `references/res-conjunta-8-2023.md` (texto e mapa por juiz).
+
 ## Perguntas típicas
 
 1. Por que multiagente? O que quebra se for um agente só?

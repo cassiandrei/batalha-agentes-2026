@@ -31,6 +31,16 @@
 
 Banco Central (Relatório de Cidadania Financeira, dados de endividamento e comprometimento de renda das famílias), Serasa (Mapa da Inadimplência), CNC (Pesquisa de Endividamento e Inadimplência do Consumidor), Febraban (Pesquisa de Tecnologia Bancária), relatórios públicos do Itaú e o material fictício/público fornecido no próprio desafio. Se o time citar número, a fonte precisa estar na página.
 
+## Aderência à Resolução Conjunta CMN/BCB nº 8/2023 (o que eu confiro)
+
+- **Art. 2º, § 1º, I–III:** a jornada serve a qual das três finalidades (orçamento, poupança e resiliência, prevenção de inadimplência e superendividamento)? O time diz qual, ou eu deduzo? Se não serve a nenhuma, não é bem-estar financeiro.
+- **Art. 3º, I – valor para o cliente:** o resultado é útil para a vida financeira do cliente, mesmo quando o melhor é não contratar nada. Venda disfarçada contraria a norma.
+- **Art. 3º, § 1º, II:** a educação é sobre o produto concreto da jornada (rotativo, CET, parcelamento), não conteúdo genérico.
+- **Art. 3º, § 1º, III (RC 20/2026, efeitos em 2027):** se há dívida vencida ou rolada, o agente informa e assessora. Antecipar essa obrigação é argumento de negócio.
+- **Art. 4º, II:** a métrica norte mede efetividade (mudou a vida financeira?), não engajamento.
+
+> Ver `references/res-conjunta-8-2023.md` (texto e mapa por juiz).
+
 ## Perguntas típicas
 
 1. Por que essa jornada e não outra? Do que vocês abriram mão?

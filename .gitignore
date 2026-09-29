@@ -14,3 +14,4 @@ data/evento/
 
 # capturas de revisão do Impeccable (regeneráveis)
 .impeccable/review/
+.DS_Store

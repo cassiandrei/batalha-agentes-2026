@@ -28,3 +28,4 @@ Marque cada um como ✅, ⚠️ (parcial, dizendo o que falta) ou ❌. Um entreg
 - Sigilo sobre informações do evento, inclusive depois (3.9).
 - Entrega no workspace Google: a organização sinalizou que a avaliação acontece lá. Confirme no sábado o formato exato (pasta, projeto GCP, links) e o horário-limite de submissão no domingo.
 - Com cerca de 10 minutos por time (estimativa), tenha uma demo de 2–3 minutos e um vídeo de backup caso a rede do evento falhe.
+- **Resolução Conjunta CMN/BCB nº 8/2023** não é critério de desclassificação, mas é a régua regulatória de "bem-estar financeiro" que os juízes usam (`references/res-conjunta-8-2023.md`). Na sabatina, a pergunta "quem responde por isso no banco?" vem do art. 5º (diretor responsável).

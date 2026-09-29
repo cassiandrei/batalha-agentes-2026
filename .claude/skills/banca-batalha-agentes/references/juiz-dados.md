@@ -25,6 +25,14 @@
 - Métricas sem baseline.
 - Dados de pessoas reais (risco de regulamento, ver fiscal).
 
+## Aderência à Resolução Conjunta CMN/BCB nº 8/2023 (o que eu confiro)
+
+- **Art. 4º, II – métricas e indicadores de efetividade:** a norma exige medir se a educação financeira funciona. A métrica primária do experimento é de efetividade (ex.: saída do rotativo, redução de comprometimento de renda), com guardrail de endividamento; engajamento não atende ao inciso.
+- **Art. 4º, III – identificação e correção de ineficiências:** conjunto de avaliação, teste de regressão a cada mudança de prompt e critério de parada do experimento são o mecanismo de correção que a norma pede.
+- **Art. 3º, III – personalização:** os dados que sustentam a personalização existem, têm origem declarada e foram checados para viés (renda, idade, região).
+
+> Ver `references/res-conjunta-8-2023.md` (texto e mapa por juiz).
+
 ## Perguntas típicas
 
 1. Como vocês sabem que a versão 2 do prompt é melhor que a 1?

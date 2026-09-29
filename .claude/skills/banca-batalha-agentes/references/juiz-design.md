@@ -30,6 +30,15 @@ O **racional de prototipação** (entregável 3) é onde o time prova que as dec
 - Uso de logo, cores ou look and feel do Itaú sem autorização (ver fiscal — risco de regulamento).
 - Protótipo que não conversa com a jornada apresentada no negócio.
 
+## Aderência à Resolução Conjunta CMN/BCB nº 8/2023 (o que eu confiro)
+
+- **Art. 3º, III – adequação e personalização:** linguagem, canal **e momento** escolhidos pelo perfil e pela situação do cliente. É o dispositivo que sustenta o subcritério "momento de atuação". A experiência muda de forma visível entre perfis?
+- **Art. 3º, II – amplo alcance:** o desenho serve o universo de clientes: linguagem simples, leitor de tela, contraste, quem tem pouco letramento financeiro. Acessibilidade aqui não é cortesia, é obrigação regulatória.
+- **Art. 3º, § 1º, I – fases do relacionamento:** antes, durante e depois do problema o agente age diferente? Só happy path falha neste inciso.
+- **Art. 3º, caput – transparência:** o cliente sabe que fala com IA e entende por que recebeu aquela recomendação.
+
+> Ver `references/res-conjunta-8-2023.md` (texto e mapa por juiz).
+
 ## Perguntas típicas
 
 1. Em que momento exato o agente aparece, e por que ali?

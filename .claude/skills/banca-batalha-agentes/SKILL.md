@@ -16,7 +16,8 @@ Contexto do desafio (detalhes em `references/regulamento.md`): 14 times interdis
 3. **Clareza é parte da nota.** A banca real lê rápido. Algo bom mas escondido na página 12 conta como fraco.
 4. **Contexto de banco regulado.** Itaú é instituição financeira: LGPD, regras do Banco Central, relação de consumo, reputação de marca, clientes diversos (inclusive vulneráveis). Um agente que gera engajamento mas piora a vida financeira do cliente perde, mesmo que seja tecnicamente brilhante.
 5. **Contexto Google.** O regulamento não proíbe outras ferramentas, mas a organização deixou claro que a entrega é avaliada no workspace Google. Uso nativo e bem justificado da stack GCP conta a favor; fugir dela sem motivo conta contra (sobretudo para o juiz de arquitetura). Veja `references/gcp-referencia.md`.
-6. **Toda crítica vem com a ação.** Para cada gap, diga a ação mais barata que sobe a nota, considerando o tempo que resta no evento.
+6. **Régua regulatória: Resolução Conjunta CMN/BCB nº 8/2023.** É a norma que obriga o banco a fazer educação financeira (finalidades, princípios de valor para o cliente, amplo alcance, adequação e personalização, e métricas de efetividade). Todo juiz confere a parte que lhe cabe e o relatório traz a seção de aderência. Texto e mapa por juiz em `references/res-conjunta-8-2023.md`.
+7. **Toda crítica vem com a ação.** Para cada gap, diga a ação mais barata que sobe a nota, considerando o tempo que resta no evento.
 
 ## Composição da banca
 
@@ -37,7 +38,7 @@ As personas são fictícias; os critérios e pesos oficiais vêm do regulamento.
 
 Identifique o modo pelo pedido. Se houver material e o pedido for genérico ("avalia isso"), use o modo A. Se não houver material nenhum, pergunte o que o time quer submeter à banca.
 
-**A. Banca completa** — leia todos os arquivos de juiz e o do fiscal; produza o relatório completo (formato abaixo).
+**A. Banca completa** — leia todos os arquivos de juiz, o do fiscal e `references/res-conjunta-8-2023.md`; produza o relatório completo (formato abaixo).
 
 **B. Juiz específico** — "o que o juiz de segurança acharia?": leia só o arquivo daquele juiz (e o do fiscal, se for pertinente) e responda na voz dele, com notas por subcritério.
 
@@ -57,7 +58,7 @@ Identifique o modo pelo pedido. Se houver material e o pedido for genérico ("av
 ## Fluxo da banca completa
 
 1. **Inventário**: liste o material recebido por entregável e o que falta.
-2. **Avaliação individual**: cada juiz lê seu arquivo e dá nota 0–10 por subcritério, citando a evidência concreta (trecho, tela, componente) que justificou a nota.
+2. **Avaliação individual**: cada juiz lê seu arquivo e dá nota 0–10 por subcritério, citando a evidência concreta (trecho, tela, componente) que justificou a nota. Cada juiz também confere os dispositivos da Resolução Conjunta nº 8 que o mapa lhe atribui e usa isso como evidência dentro do subcritério (não é peso novo).
 3. **Cálculo**: nota do critério = média ponderada dos subcritérios (pesos no arquivo de cada juiz). Nota final = Σ (peso do juiz × nota do critério), em escala 0–10. Mostre a conta.
 4. **Debate da banca**: 2 ou 3 tensões reais entre juízes (ex.: Design quer o agente proativo, Segurança quer consentimento explícito antes; Negócio quer cross-sell, Dados quer guardrail de endividamento). Isso ajuda o time a antecipar trade-offs que serão perguntados.
 5. **Plano de ação**: ordene as ações por (pontos ganhos × facilidade), estimando esforço em horas e o ganho aproximado na nota final. Use a agenda do evento para dizer o que cabe antes do feedback com mentores (sáb 17h30) e antes da submissão (dom 09h30).
@@ -83,6 +84,9 @@ Identifique o modo pelo pedido. Se houver material e o pedido for genérico ("av
 
 ## Fiscal do regulamento
 Riscos de desclassificação e pendências.
+
+## Aderência à Resolução Conjunta nº 8/2023
+| Dispositivo | Evidência no material | Status (✅ / ⚠️ / ❌) | Ação |
 
 ## Debate da banca
 2–3 tensões entre juízes e como o time deveria se posicionar.
